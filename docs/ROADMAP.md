@@ -1,19 +1,26 @@
 # Roadmap progresivo y condiciones de aceptación
 
-## Hito 0 — Prototipo navegable (incluido parcialmente en este paquete)
+## Hito 0 — Prototipo navegable para revisión visual
 - [x] Proyecto web Next.js + TypeScript, estilos y rutas principales.
 - [x] Onboarding: escoger sector, modalidad, módulos y nombre.
 - [x] Catálogo inicial de sectores y módulos.
 - [x] Panel de negocio condicionado por módulos.
 - [x] Panel de cliente con actividad de muestra.
 - [x] Directorio de muestra; placeholder explícito de mapa futuro.
-- [ ] Codex: instalar dependencias en su entorno, comprobar compilación y accesibilidad.
-- [ ] Revisar visualmente móvil, tableta y escritorio.
+- [x] Instalar dependencias y verificar TypeScript y compilación de producción.
+- [x] Rediseñar landing, onboarding, panel empresa, cuenta cliente y directorio con componentes reutilizables.
+- [x] Validar el catálogo y la persistencia local mediante 12 pruebas unitarias.
+- [x] Ejecutar 12 pruebas de navegador correctas para cuatro sectores, navegación, persistencia, menú móvil y vistas a 360, 768 y 1440 px.
+- [x] Revisar capturas responsive en móvil y escritorio; consultar `NOTAS_PRUEBAS.md`.
 - [ ] Revisar y aprobar el diseño con el propietario.
 
 **Salida verificable**: interfaz navegable en localhost, sin errores de compilación, datos claramente ficticios.
 
+Las vistas de módulos son demostraciones, no dominios operativos completos. Cobros y Facturación están deshabilitados; Clientes siempre forma parte del núcleo. Consulta `HITO_0.md` para decisiones y limitaciones.
+
 ## Hito 1 — Autenticación y multiempresa
+**No iniciado. Requiere aprobación explícita del propietario tras revisar el Hito 0.**
+
 - Registro/login, sesiones robustas, perfil único.
 - Creación de empresa real y membresías/roles (propietario, administrador, empleado).
 - Módulos por organización, perfiles públicos desactivados por defecto.
