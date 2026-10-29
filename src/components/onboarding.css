@@ -1100,3 +1100,467 @@
     transition: none;
   }
 }
+
+/* Optional onboarding details keep the default flow short. */
+.nx-additional-activities {
+  margin-top: 21px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+}
+.nx-additional-activities summary {
+  cursor: pointer;
+  padding: 15px;
+  font-size: 12px;
+  color: var(--text);
+  font-weight: 550;
+  list-style-position: inside;
+}
+.nx-additional-activities summary > span {
+  float: right;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 400;
+  margin-left: 12px;
+}
+.nx-additional-activities > p {
+  font-size: 11px;
+  color: var(--muted);
+  padding: 0 15px;
+  margin: 0 0 15px;
+  line-height: 1.7;
+}
+.nx-additional-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 11px;
+  padding: 0 15px 17px;
+  max-height: 230px;
+  overflow: auto;
+  scrollbar-width: thin;
+}
+.nx-additional-grid label {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+.nx-additional-grid input {
+  accent-color: var(--accent);
+  margin-top: 2px;
+  flex-shrink: 0;
+  width: 13px;
+  height: 13px;
+}
+.nx-offering-field {
+  margin-top: 24px;
+}
+.nx-offering-field .field {
+  font-size: 12px;
+}
+.nx-operating-details {
+  margin-bottom: 25px;
+  margin-top: 3px;
+}
+.nx-operating-content {
+  padding: 0 15px 18px;
+}
+.nx-operating-content > .field {
+  margin-bottom: 12px;
+}
+.nx-schedule-fieldset {
+  border: 0;
+  padding: 0;
+  margin: 23px 0 18px;
+}
+.nx-schedule-fieldset legend {
+  font-size: 12px;
+  margin-bottom: 13px;
+  padding: 0;
+}
+.nx-day-picker {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.nx-day-picker button {
+  display: grid;
+  place-items: center;
+  width: 35px;
+  height: 35px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 12px;
+}
+.nx-day-picker button[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+  color: var(--accent);
+}
+.nx-schedule-times {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}
+.nx-schedule-times .field {
+  min-width: 0;
+}
+.nx-business-review-details {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  margin: 0 0 29px;
+  padding: 0 0 25px;
+  border-bottom: 1px solid var(--border);
+}
+.nx-business-review-details dt {
+  font-size: 10px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.nx-business-review-details dd {
+  font-size: 12px;
+  color: var(--text);
+  margin: 0;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+.nx-customer-registration {
+  padding-top: 32px;
+  padding-bottom: 42px;
+}
+.nx-customer-intro {
+  padding-top: 39px;
+  padding-bottom: 32px;
+}
+.nx-customer-intro h1 {
+  font-size: 45px;
+  line-height: 1.15;
+  font-weight: 500;
+  letter-spacing: -1.8px;
+  margin: 17px 0;
+}
+.nx-customer-intro > p {
+  font-size: 14px;
+  color: var(--muted);
+  margin: 0;
+  max-width: 650px;
+}
+.nx-customer-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(260px, 1fr);
+  gap: 36px;
+  align-items: start;
+}
+.nx-customer-layout .nx-onboarding-form > h2 {
+  font-size: 25px;
+  margin: 29px 0 14px;
+}
+.nx-customer-layout .nx-onboarding-form > h2:focus {
+  outline: 0;
+}
+.nx-customer-step-copy {
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 26px;
+}
+.nx-customer-layout .field {
+  margin-bottom: 24px;
+}
+.nx-customer-layout .nx-fineprint {
+  font-size: 11px;
+}
+.nx-customer-progress {
+  display: flex;
+  align-items: center;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  gap: 25px;
+}
+.nx-customer-progress li {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.nx-customer-progress li > span {
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  width: 29px;
+  height: 29px;
+  font-size: 10px;
+}
+.nx-customer-progress .is-current {
+  color: var(--text);
+}
+.nx-customer-progress .is-current > span {
+  color: var(--bg);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.nx-customer-progress .is-complete > span {
+  color: var(--accent);
+  background: var(--accent-dim);
+  border-color: var(--accent);
+}
+.nx-customer-interests {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 26px 0 18px;
+}
+.nx-customer-interests > button {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--muted);
+  font-size: 12px;
+  padding: 10px 14px;
+}
+.nx-customer-interests > button[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+  color: var(--accent);
+}
+.nx-customer-benefits {
+  padding: 32px 0 0 10px;
+}
+.nx-customer-benefit-icon {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+  color: var(--accent);
+  margin-bottom: 23px;
+}
+.nx-customer-benefits > h2 {
+  font-size: 30px;
+  line-height: 1.25;
+  letter-spacing: -0.9px;
+  font-weight: 500;
+  margin-bottom: 19px;
+}
+.nx-customer-benefits > p {
+  font-size: 13px;
+  color: var(--muted);
+  max-width: 390px;
+  line-height: 1.9;
+}
+.nx-customer-benefits ul {
+  padding: 0;
+  margin: 30px 0;
+  list-style: none;
+  display: grid;
+  gap: 24px;
+}
+.nx-customer-benefits li {
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+  font-size: 11px;
+  line-height: 1.8;
+  color: var(--muted);
+}
+.nx-customer-benefits li > svg {
+  color: var(--accent);
+  margin-top: 3px;
+}
+.nx-customer-benefits strong {
+  display: block;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 5px;
+}
+.nx-customer-benefits .notice {
+  font-size: 11px;
+}
+@media (max-width: 800px) {
+  .nx-customer-layout {
+    grid-template-columns: 1fr;
+    gap: 25px;
+  }
+  .nx-customer-benefits {
+    padding: 0 5px;
+  }
+  .nx-customer-benefits ul {
+    grid-template-columns: 1fr 1fr;
+  }
+  .nx-customer-benefits > p {
+    max-width: 100%;
+  }
+  .nx-customer-benefits > h2 br {
+    display: none;
+  }
+  .nx-customer-intro h1 {
+    font-size: 37px;
+  }
+  .nx-customer-intro > p {
+    font-size: 13px;
+  }
+}
+@media (max-width: 520px) {
+  .nx-additional-grid {
+    grid-template-columns: 1fr;
+  }
+  .nx-additional-activities summary {
+    font-size: 11px;
+    padding: 14px 11px;
+  }
+  .nx-additional-activities summary > span {
+    font-size: 9px;
+    margin-left: 8px;
+  }
+  .nx-operating-content {
+    padding: 0 11px 16px;
+  }
+  .nx-day-picker {
+    gap: 5px;
+  }
+  .nx-day-picker button {
+    width: 31px;
+    height: 33px;
+  }
+  .nx-schedule-times {
+    gap: 10px;
+  }
+  .nx-business-review-details {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+  .nx-business-review-details dd {
+    font-size: 11px;
+  }
+  .nx-customer-registration {
+    padding-top: 25px;
+  }
+  .nx-customer-intro {
+    padding-top: 31px;
+    padding-bottom: 25px;
+  }
+  .nx-customer-intro h1 {
+    font-size: 32px;
+    letter-spacing: -1.2px;
+  }
+  .nx-customer-intro > p {
+    font-size: 12px;
+    line-height: 1.8;
+  }
+  .nx-customer-layout .nx-onboarding-form > h2 {
+    font-size: 23px;
+    line-height: 1.3;
+    margin-top: 25px;
+  }
+  .nx-customer-step-copy {
+    font-size: 12px;
+  }
+  .nx-customer-layout .nx-form-actions .button {
+    font-size: 10px;
+    min-width: 0;
+    padding: 11px 13px;
+  }
+  .nx-customer-progress {
+    gap: 21px;
+  }
+  .nx-customer-progress li {
+    font-size: 10px;
+  }
+  .nx-customer-interests {
+    gap: 8px;
+  }
+  .nx-customer-interests > button {
+    padding: 9px 11px;
+    font-size: 11px;
+  }
+  .nx-customer-benefits ul {
+    grid-template-columns: 1fr;
+    gap: 21px;
+  }
+  .nx-customer-benefits > h2 {
+    font-size: 26px;
+  }
+  .nx-customer-benefits > p {
+    font-size: 12px;
+  }
+  .nx-customer-benefits .notice {
+    font-size: 10px;
+  }
+}
+@media (max-width: 520px) {
+  .nx-onboarding-top .nx-back-link {
+    min-width: 0;
+    flex: 1;
+    line-height: 1.6;
+  }
+  .nx-onboarding-top > .nx-back-link svg {
+    flex-shrink: 0;
+  }
+  .nx-onboarding-top > span {
+    max-width: 108px;
+    font-size: 9px;
+    flex-shrink: 0;
+  }
+}
+
+/* Shared tokens cover both themes; fixed preview accents get readable light variants. */
+[data-theme="light"] .nx-stepper .is-current .nx-step-number,
+[data-theme="light"] .nx-preview-avatar,
+[data-theme="light"] .nx-review-avatar,
+[data-theme="light"] .is-active .nx-module-check {
+  color: var(--on-accent, #fff);
+}
+[data-theme="light"] .nx-recommendation {
+  color: #4e613d;
+  background: #f1f7e9;
+  border-color: #b6cc9c;
+}
+[data-theme="light"] .nx-recommendation strong,
+[data-theme="light"] .is-active .nx-module-copy > em {
+  color: var(--accent);
+}
+[data-theme="light"] .nx-preview-window {
+  background: #fff;
+  border-color: var(--border);
+  box-shadow: 0 16px 50px #334a1f0a;
+}
+[data-theme="light"] .nx-preview-window-top {
+  background: #eef3e8;
+}
+[data-theme="light"] .nx-preview-window-top > span {
+  color: #637153;
+}
+[data-theme="light"] .nx-preview-nav > span {
+  color: #526047;
+}
+[data-theme="light"] .nx-preview-nav > span:first-child {
+  color: var(--accent);
+  background: #edf5e3;
+}
+[data-theme="light"] .nx-preview-stat {
+  border-color: #c5d4b5;
+}
+[data-theme="light"] .nx-form-error {
+  color: #993d2c;
+  background: #fff3ef;
+  border-color: #e5c2b9;
+}
+[data-theme="light"] .nx-mode-card.is-selected,
+[data-theme="light"] .nx-sector-option.is-selected,
+[data-theme="light"] .nx-module-card.is-active {
+  border-color: #73954d;
+  background: #f0f6e9;
+}

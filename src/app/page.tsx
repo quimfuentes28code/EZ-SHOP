@@ -1,241 +1,185 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import {
   ArrowRight,
   ArrowUpRight,
-  Blocks,
-  Camera,
+  Building2,
   Check,
-  ChevronRight,
-  Circle,
-  Command,
   Layers3,
-  Scissors,
+  MessageCircle,
   ShieldCheck,
   Sparkles,
-  Store,
-  UsersRound,
+  UserRound,
 } from "lucide-react";
+import {
+  EXPERIENCE_STORAGE_KEY,
+  loadDemoExperience,
+  setDemoExperience,
+  type DemoExperience,
+} from "@/lib/experience";
 import "./home.css";
 
 export default function HomePage() {
+  const [last, setLast] = useState<DemoExperience | null>(null);
+  useEffect(() => {
+    try {
+      if (window.localStorage.getItem(EXPERIENCE_STORAGE_KEY))
+        setLast(loadDemoExperience());
+    } catch {
+      /* The chooser works without storage. */
+    }
+  }, []);
   return (
     <div className="container home">
-      <section className="home-hero">
-        <div className="hero-intro">
-          <div className="hero-label">
-            <span /> MENOS HERRAMIENTAS. MÁS POSIBILIDADES.
+      <section className="experience-intro">
+        <span className="eyebrow">
+          <span className="intro-dot" /> UNA CUENTA. TU FORMA DE USARLA.
+        </span>
+        <h1>
+          ¿Cómo quieres utilizar
+          <br />
+          <span>AutonoService?</span>
+        </h1>
+        <p>Tu negocio. Más fácil.</p>
+        <span className="intro-prototype">
+          <ShieldCheck size={14} /> Prototipo navegable · Sin registro real
+        </span>
+      </section>
+      <section className="experience-options" aria-label="Elige tu experiencia">
+        <article className="experience-option professional-option">
+          <div className="experience-option-top">
+            <span className="experience-option-icon">
+              <Building2 size={29} strokeWidth={1.5} />
+            </span>
+            <span className="experience-tier">PARA TU NEGOCIO</span>
           </div>
-          <h1>
-            Tu negocio es único.
-            <br />
-            Tu espacio de trabajo,
-            <br />
-            <em>también.</em>
-          </h1>
+          <h2>AutonoService</h2>
           <p>
-            Conecta lo que haces con todo lo que necesitas.
-            <br className="desktop-br" /> Clientes, proyectos, reservas y mucho
-            más.
-            <br className="desktop-br" /> Un solo lugar. A tu manera.
+            Gestiona tu negocio, organiza tus clientes, simplifica tus tareas y
+            consigue nuevas oportunidades.
           </p>
-          <div className="hero-actions">
-            <Link href="/onboarding" className="button primary">
-              Diseñar mi espacio <ArrowUpRight size={17} />
-            </Link>
-            <Link href="/empresa" className="hero-demo">
-              Explorar la demo <ArrowRight size={15} />
-            </Link>
-          </div>
-          <div className="hero-footnote">
-            <ShieldCheck size={14} /> Sin registro. Sin tarjeta. Solo
-            posibilidades.
-          </div>
-        </div>
-        <div className="hero-visual" aria-label="Ejemplo de panel modular Nexo">
-          <div className="visual-orbit orbit-one" />
-          <div className="visual-orbit orbit-two" />
-          <div className="floating-label label-project">
-            <span className="tiny-icon">
-              <Layers3 size={15} />
+          <ul>
+            <li>
+              <Check size={15} />
+              Las herramientas que encajan con tu actividad
+            </li>
+            <li>
+              <Check size={15} />
+              Un perfil para mostrar lo que haces
+            </li>
+            <li>
+              <Check size={15} />
+              Clientes, conversaciones y trabajos conectados
+            </li>
+          </ul>
+          <span className="experience-price">
+            Gratis <span>· Mejora disponible con AutonoSuite</span>
+          </span>
+          <Link
+            className="button primary"
+            aria-label="Empezar con AutonoService"
+            href="/onboarding"
+            onClick={() => setDemoExperience("business")}
+          >
+            Empezar con AutonoService <ArrowUpRight size={17} />
+          </Link>
+          <Link
+            className="experience-demo-link"
+            href="/empresa"
+            onClick={() => setDemoExperience("business")}
+          >
+            Ver el negocio de demostración <ArrowRight size={14} />
+          </Link>
+        </article>
+        <article className="experience-option customer-option">
+          <div className="experience-option-top">
+            <span className="experience-option-icon">
+              <UserRound size={29} strokeWidth={1.5} />
             </span>
-            <div>
-              <strong>Campaña de marca</strong>
-              <small>
-                Proyecto en marcha <span>●</span>
-              </small>
-            </div>
-            <span className="mini-avatars">LM</span>
+            <span className="experience-tier">PARA TI</span>
           </div>
-          <div className="mini-dashboard">
-            <div className="mini-top">
-              <Command size={19} />
-              <span>Tu espacio, conectado</span>
-              <span className="mini-live">DEMO</span>
-            </div>
-            <div className="mini-greeting">
-              <small>VISTA GENERAL</small>
-              <h2>
-                Un buen día para crear<span>.</span>
-              </h2>
-            </div>
-            <div className="mini-stats">
-              <div>
-                <small>Proyectos activos</small>
-                <strong>
-                  08 <span>↗ 12%</span>
-                </strong>
-              </div>
-              <div>
-                <small>Clientes conectados</small>
-                <strong>
-                  128 <span>+8 este mes</span>
-                </strong>
-              </div>
-            </div>
-            <div className="mini-chart">
-              <div>
-                <span>Tu actividad</span>
-                <small>Esta semana</small>
-              </div>
-              <svg
-                viewBox="0 0 400 100"
-                role="img"
-                aria-label="Gráfico ilustrativo de actividad creciente"
-              >
-                <defs>
-                  <linearGradient id="home-fill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#c5f277" stopOpacity=".22" />
-                    <stop offset="100%" stopColor="#c5f277" stopOpacity="0" />
-                  </linearGradient>
-                </defs>
-                <path
-                  d="M0 90C30 90 35 60 60 65S100 85 130 55S170 65 195 40S240 65 270 30S310 35 340 15S370 26 400 4V100H0Z"
-                  fill="url(#home-fill)"
-                />
-                <path
-                  d="M0 90C30 90 35 60 60 65S100 85 130 55S170 65 195 40S240 65 270 30S310 35 340 15S370 26 400 4"
-                  fill="none"
-                  stroke="#c5f277"
-                  strokeWidth="2"
-                />
-              </svg>
-              <div className="mini-chart-labels">
-                <span>L</span>
-                <span>M</span>
-                <span>X</span>
-                <span>J</span>
-                <span>V</span>
-                <span>S</span>
-                <span>D</span>
-              </div>
-            </div>
-            <div className="mini-task">
-              <span className="mini-task-check">
-                <Check size={12} />
-              </span>
-              Un nuevo cliente. Una nueva oportunidad.
-              <ChevronRight size={13} />
-            </div>
-          </div>
-          <div className="floating-label label-modules">
-            <span className="tiny-icon">
-              <Blocks size={17} />
-            </span>
-            <div>
-              <strong>Hecho a tu medida</strong>
-              <small>Activa solo lo que necesitas</small>
-            </div>
-            <span className="mini-toggle" />
-          </div>
-        </div>
-      </section>
-      <section className="home-sectors" aria-label="Sectores de ejemplo">
-        <span>Un nexo para cada forma de trabajar</span>
-        <div>
-          <span>
-            <Camera size={17} /> Estudios creativos
-          </span>
-          <span>
-            <Scissors size={17} /> Belleza y bienestar
-          </span>
-          <span>
-            <Store size={17} /> Comercio local
-          </span>
-          <span>
-            <Layers3 size={17} /> Servicios profesionales
-          </span>
-        </div>
-      </section>
-      <section className="home-features">
-        <div className="section-intro">
-          <div>
-            <div className="eyebrow">EL ORDEN QUE NECESITAS</div>
-            <h2>
-              Menos ruido.
-              <br />
-              Más espacio para tu negocio.
-            </h2>
-          </div>
+          <h2>Cliente</h2>
           <p>
-            Empieza con lo esencial. Añade herramientas
-            <br />
-            cuando las necesites. Todo sigue conectado.
+            Descubre negocios cercanos, reserva servicios y gestiona todas tus
+            contrataciones desde un solo lugar.
+          </p>
+          <ul>
+            <li>
+              <Check size={15} />
+              Descubre negocios y conoce lo que ofrecen
+            </li>
+            <li>
+              <Check size={15} />
+              Consulta servicios, productos y perfiles
+            </li>
+            <li>
+              <Check size={15} />
+              Toda tu actividad, en un mismo espacio
+            </li>
+          </ul>
+          <span className="experience-price">Completamente gratis</span>
+          <Link
+            className="button secondary"
+            aria-label="Empezar como Cliente"
+            href="/registro"
+            onClick={() => setDemoExperience("customer")}
+          >
+            Empezar como Cliente <ArrowUpRight size={17} />
+          </Link>
+          <Link
+            className="experience-demo-link"
+            href="/cliente"
+            onClick={() => setDemoExperience("customer")}
+          >
+            Explorar la experiencia Cliente <ArrowRight size={14} />
+          </Link>
+        </article>
+      </section>
+      <div className="one-account-note">
+        <Layers3 size={21} />
+        <div>
+          <strong>Las dos experiencias. Una misma cuenta.</strong>
+          <p>
+            Puedes gestionar tu negocio y reservar en otros. Cambia cuando
+            quieras entre «Mi negocio» y «Modo cliente».
           </p>
         </div>
-        <div className="feature-grid">
-          <article>
-            <span className="feature-number">01 /</span>
-            <Blocks size={27} />
-            <h3>Un espacio que se adapta.</h3>
-            <p>
-              Citas, pedidos, presupuestos o proyectos. Combina módulos sin
-              cambiar tu forma de trabajar.
-            </p>
-            <Link href="/onboarding">
-              Encuentra tus herramientas <ArrowRight size={14} />
-            </Link>
-          </article>
-          <article>
-            <span className="feature-number">02 /</span>
-            <UsersRound size={27} />
-            <h3>Relaciones, no registros.</h3>
-            <p>
-              Una experiencia para tu negocio y otra para tus clientes.
-              Conectadas, con su propio espacio.
-            </p>
-            <Link href="/cliente">
-              Conoce la cuenta cliente <ArrowRight size={14} />
-            </Link>
-          </article>
-          <article>
-            <span className="feature-number">03 /</span>
-            <Sparkles size={27} />
-            <h3>Lo importante, a la vista.</h3>
-            <p>
-              Tu actividad, tus prioridades y tu próximo paso. Un panel pensado
-              para hacer tu día más sencillo.
-            </p>
-            <Link href="/empresa">
-              Entra en el panel demo <ArrowRight size={14} />
-            </Link>
-          </article>
-        </div>
-      </section>
-      <section className="home-callout">
-        <div>
-          <span className="eyebrow">
-            <Circle size={9} /> EL COMIENZO DE ALGO GRANDE
+      </div>
+      {last && (
+        <div className="resume-experience">
+          <span>
+            Tu última experiencia:{" "}
+            <strong>
+              {last === "business" ? "Mi negocio" : "Modo cliente"}
+            </strong>
           </span>
-          <h2>Todo empieza con un nexo.</h2>
-          <p>Descubre cómo se siente tener tu negocio en orden.</p>
+          <Link href={last === "business" ? "/empresa" : "/cliente"}>
+            Continuar donde estabas <ArrowRight size={14} />
+          </Link>
         </div>
-        <Link href="/onboarding" className="button primary">
-          Vamos a crear tu espacio <ArrowUpRight size={17} />
-        </Link>
+      )}
+      <section className="home-simple-features" aria-label="Todo conectado">
+        <div>
+          <MessageCircle size={21} />
+          <h3>Hablar. Compartir. Resolver.</h3>
+          <p>La conversación y los archivos de cada trabajo, juntos.</p>
+        </div>
+        <div>
+          <Building2 size={21} />
+          <h3>Tu perfil, de cara al cliente.</h3>
+          <p>Fotos, productos y servicios en el mismo lugar.</p>
+        </div>
+        <div>
+          <Sparkles size={21} />
+          <h3>Más opciones cuando las necesites.</h3>
+          <p>AutonoSuite mejora tu gestión sin crear otra cuenta.</p>
+        </div>
       </section>
       <p className="home-disclaimer">
-        Vista previa del Hito 0 · Todas las cifras y negocios son ficticios. No
-        se crean cuentas ni se envían reservas.
+        Vista previa del Hito 0. Negocios ficticios, solicitudes locales y
+        funciones previstas. No se envían reservas, mensajes ni cobros reales.
       </p>
     </div>
   );

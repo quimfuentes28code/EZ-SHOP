@@ -86,7 +86,10 @@ for (const template of templates) {
     expect(persisted.modules).not.toContain("invoices");
     await page.reload();
     await expect(
-      page.getByText(`Negocio demo ${template.id}`, { exact: true }).first(),
+      page.getByRole("heading", {
+        name: `Negocio demo ${template.id}`,
+        exact: true,
+      }),
     ).toBeVisible();
   });
 }
@@ -196,11 +199,11 @@ test("la cuenta cliente permite revisar detalles, favoritos y preferencias de mu
   await expect(reminders).toHaveAttribute("aria-checked", "true");
   await reminders.click();
   await expect(reminders).toHaveAttribute("aria-checked", "false");
-  await expect(page.getByRole("status")).toContainText(
+  await expect(page.locator(".personal-feedback")).toContainText(
     "No se enviarán mensajes",
   );
   await page.reload();
-  await page.getByRole("tab", { name: "Mi perfil", exact: true }).click();
+  await page.getByRole("tab", { name: "Perfil", exact: true }).click();
   await expect(
     page.getByRole("switch", { name: "Recordatorios de actividad" }),
   ).toHaveAttribute("aria-checked", "false");
@@ -245,7 +248,9 @@ for (const width of [360, 768, 1440]) {
     const errors: string[] = [];
     const consoleErrors: string[] = [];
     page.on("pageerror", (error) => errors.push(error.message));
-    page.on("console", message => { if (message.type() === "error") consoleErrors.push(message.text()); });
+    page.on("console", (message) => {
+      if (message.type() === "error") consoleErrors.push(message.text());
+    });
     for (const path of [
       "/",
       "/onboarding",
@@ -275,7 +280,9 @@ for (const width of [360, 768, 1440]) {
   });
 }
 
-test("el menú móvil conserva el foco y cierra al navegar entre módulos", async ({ page }) => {
+test("el menú móvil conserva el foco y cierra al navegar entre módulos", async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 360, height: 900 });
   await page.goto("/empresa");
   const menu = page.getByRole("button", { name: "Abrir menú", exact: true });
@@ -284,8 +291,12 @@ test("el menú móvil conserva el foco y cierra al navegar entre módulos", asyn
   await menu.click();
   await expect(menu).toHaveAttribute("aria-expanded", "true");
   await expect(sidebar).not.toHaveAttribute("inert", "");
-  await expect(page.getByRole("navigation", { name: "Módulos del negocio" })).toBeInViewport();
-  await expect(sidebar.getByRole("link", { name: "Nexo, inicio" })).toBeFocused();
+  await expect(
+    page.getByRole("navigation", { name: "Módulos del negocio" }),
+  ).toBeInViewport();
+  await expect(
+    sidebar.getByRole("link", { name: "AutonoService, inicio" }),
+  ).toBeFocused();
   await page.keyboard.press("Shift+Tab");
   await expect(page.locator(".account-switch")).toBeFocused();
   await page.keyboard.press("Escape");
@@ -293,11 +304,18 @@ test("el menú móvil conserva el foco y cierra al navegar entre módulos", asyn
   await expect(sidebar).toHaveAttribute("inert", "");
   await expect(menu).toBeFocused();
   await menu.click();
-  await page.getByRole("navigation", { name: "Módulos del negocio" }).getByRole("button", { name: "Clientes", exact: true }).click();
-  await expect(page.getByRole("heading", { level: 1, name: "Clientes", exact: true })).toBeVisible();
+  await page
+    .getByRole("navigation", { name: "Módulos del negocio" })
+    .getByRole("button", { name: "Clientes", exact: true })
+    .click();
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Clientes", exact: true }),
+  ).toBeVisible();
   await expect(menu).toHaveAttribute("aria-expanded", "false");
   await expect(sidebar).toHaveAttribute("inert", "");
-  await page.getByRole("textbox", { name: "Buscar en este módulo" }).fill("Laura");
+  await page
+    .getByRole("textbox", { name: "Buscar en este módulo" })
+    .fill("Laura");
   await expect(page.getByText("Laura Martínez", { exact: true })).toBeVisible();
   await expect(page.getByText("NOVA Clothing", { exact: true })).toHaveCount(0);
 });

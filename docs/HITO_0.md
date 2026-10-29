@@ -1,52 +1,89 @@
-# Hito 0 — Implementación para revisión visual
+# Hito 0 — Arquitectura y prototipos de AutonoService
 
-## Objetivo y estado
+## Referencia y estado
 
-Preparar una base navegable de Nexo con Next.js App Router, TypeScript estricto y componentes reutilizables. El resultado permite revisar visualmente las experiencias de empresa y cliente antes de conectar servicios reales. El Hito 1 no está iniciado y requiere aprobación explícita del propietario.
+Esta revisión aplica [ESPECIFICACION_MAESTRA.md](ESPECIFICACION_MAESTRA.md): AutonoService es la marca principal, Cliente es la experiencia gratuita y AutonoSuite mejora la gestión profesional dentro de la misma aplicación. El objetivo es revisar arquitectura y experiencia visual; el Hito 1 no está iniciado ni autorizado por terminar este prototipo.
 
-La compilación de producción, TypeScript y 12 pruebas unitarias se han verificado en esta instancia. Las 12 pruebas de navegador finalizaron correctamente contra la compilación de producción, sin fallos ni pruebas omitidas; el alcance se registra en `NOTAS_PRUEBAS.md`. También se revisaron capturas de móvil y escritorio. El prototipo está preparado para revisión; la aprobación de diseño queda pendiente del propietario.
+Los resultados de instalación, TypeScript, pruebas y compilación de la revisión actual se registran en [NOTAS_PRUEBAS.md](NOTAS_PRUEBAS.md). Ya se han comprobado la instalación con `npm ci`, TypeScript, 48 unitarias y la compilación de todas las rutas. Las 27 pruebas de navegador han pasado contra la compilación de producción, sin fallos ni pruebas omitidas. Las comprobaciones de la versión anterior son antecedentes, no pruebas automáticas de estos cambios.
 
-## Experiencias incluidas
+## Inventario del repositorio inspeccionado
 
-| Ruta | Implementación de demostración |
+| Área | Código encontrado | Alcance real |
+| --- | --- | --- |
+| Web | Next.js App Router, TypeScript y rutas de las dos experiencias, mensajes y Mi plan | Aplicación web responsive; no app nativa |
+| Módulos/sectores | `src/lib/catalog.ts`, 28 plantillas y 25 módulos | Recomendaciones y vistas demo; no todas las funciones del catálogo maestro |
+| Configuración | `src/lib/demo.ts` | Normalización de datos locales, Clientes obligatorio y módulos financieros bloqueados |
+| Empresa | Inicio sencillo, menú por actividad, clientes, perfil y herramientas | UI con ejemplos; sin permisos de producción |
+| Cliente | Actividad, favoritos, preferencias y enlaces a negocios | Datos locales y ficticios; sin identidad verificada |
+| Directorio | Cuatro negocios y filtros | Prototipo, sin geolocalización ni comercios reales |
+| Perfil/catálogo | `src/features/business-profile/`, `/negocio/[id]` | Editor y consulta de una misma fuente local; fotos pequeñas y catálogo demo |
+| Solicitudes | Modelo de solicitudes locales en perfil y actividad | No confirma disponibilidad, no bloquea plazas ni avisa al negocio |
+| Conversaciones | `src/features/messaging/`, `/mensajes` | UI y almacenamiento local de demostración; sin entrega a otra persona |
+| Identidad/contexto demo | `src/lib/experience.ts`, selector y registro personal | Una identidad de muestra, recuerdo de experiencia y empresa activa; sin autenticación |
+| Capacidades/premium | `src/lib/access.ts`, `/mi-plan` | Política pura de rol, módulo, versión y plataforma; sin compra ni autorización de servidor |
+| Pruebas | 48 unitarias y 27 E2E correctas; TypeScript y build correctos | La ejecución final está registrada en NOTAS_PRUEBAS.md; el iPhone físico permanece sin verificar |
+
+La inspección revisó los cambios sociales ya iniciados y los conserva. No se reemplazan los perfiles o el catálogo por una segunda fuente de datos para Cliente. Las claves internas heredadas se conservan para evitar borrar preferencias al cambiar la marca.
+
+## Cambios de la especificación maestra en esta revisión
+
+- Primera entrada con la pregunta **¿Cómo quieres utilizar AutonoService?** y las dos opciones correctas.
+- Onboarding profesional por pasos y onboarding personal de Cliente, sin crear cuentas reales.
+- Selector **Mi negocio / Modo cliente**, recuerdo de la elección y selección de negocio de demostración.
+- Marca y eslóganes unificados; eliminación de nombres comerciales obsoletos.
+- Panel profesional centrado en tareas y Cliente orientado a Explorar, Mi actividad, Favoritos y Perfil.
+- **Mi plan** muestra AutonoService gratis y la mejora AutonoSuite, con 99 € de pago único provisional y sin pagos reales.
+- Modelo de capacidades/derechos por versión para revisar la arquitectura; no equivale a verificación de licencia ni autorización de servidor.
+- Estrategia de temas claro/oscuro y componentes reutilizables.
+- Arquitectura documentada de identidad global, membresías, sectores, local-first y adaptación futura a Expo.
+
+Las rutas nuevas y los controles están implementados como prototipos, con compilación y unitarias comprobadas. La verificación final de navegador está completada; no se describen como servicios operativos de producción.
+
+## Rutas de revisión
+
+| Ruta | Recorrido |
 | --- | --- |
-| `/` | Presentación del producto, propuesta modular y acceso a las dos experiencias |
-| `/onboarding` | Flujo guiado de actividad, modalidad, módulos, identidad y resumen antes de entrar al panel |
-| `/empresa` | Resumen de actividad ficticia, navegación según módulos, buscador, personalización y vistas de ejemplo |
-| `/cliente` | Cuenta personal de muestra independiente del panel de negocio, actividad, favoritos y preferencias locales |
-| `/explorar` | Directorio de cuatro ejemplos, búsquedas y filtros; mapa futuro sin pines ni direcciones |
+| `/` | Elección AutonoService o Cliente |
+| `/onboarding` | Datos del negocio, actividad, modalidad y herramientas |
+| `/registro` | Preferencias personales de Cliente de demostración |
+| `/empresa` | Inicio, clientes, mensajes, perfil y herramientas de la actividad |
+| `/empresa?vista=perfil` | Edición de presentación, fotos y catálogo |
+| `/cliente` | Actividad, favoritos y perfil personal |
+| `/explorar` | Directorio ficticio y filtros |
+| `/negocio/photo`, `/negocio/beauty`, `/negocio/bakery`, `/negocio/repairs` | Consulta de perfiles/catálogos de muestra |
+| `/mensajes` | Conversaciones vistas desde el contexto de negocio o Cliente |
+| `/mi-plan` | Mejora profesional AutonoSuite sin checkout |
 
-Diseño oscuro con acentos lima, jerarquía visual, estados vacíos, mensajes de almacenamiento, navegación móvil y foco visible. Los componentes compartidos incluyen marca, cabecera, selector de módulos, modal y vistas de módulo.
+## Decisiones que se conservan
 
-## Decisiones de arquitectura
+- **Núcleo compartido.** Los sectores recomiendan módulos; no generan aplicaciones distintas. Citas, capacidad, pedidos, proyectos y alquileres conservan sus propias reglas.
+- **Interacción sencilla.** Hablar con el cliente, compartir archivos, preparar el perfil y consultar el catálogo son accesos directos. No se añaden métricas decorativas que dificulten tareas básicas.
+- **Catálogo común.** El negocio edita productos/servicios y Cliente consulta la misma fuente local. Esta especificación no introduce publicación de productos por particulares.
+- **Público frente a privado.** Las fotos del negocio están separadas de entregas/adjuntos de conversación. El prototipo no publica archivos de clientes reales.
+- **Identidad única.** Cambiar de experiencia no equivale a registrarse de nuevo. Las perspectivas demo no autentican ni verifican membresías.
+- **Premium contextual.** Cliente no requiere AutonoSuite. Los derechos profesionales previstos se cruzarán con permiso del miembro, configuración del negocio, versión adquirida y servicios online aplicables.
 
-- **Composición por capacidades.** `src/lib/catalog.ts` define 28 plantillas sectoriales y 25 módulos con identificadores estables. Una plantilla recomienda una combinación; no crea otra aplicación. Los dominios de cita, capacidad, encargo, proyecto o alquiler se mantienen diferenciados.
-- **Estado de las capacidades.** 23 módulos disponen de vista `preview`; Cobros y Facturación permanecen `planned` y deshabilitados. Las vistas presentan ejemplos, no procesos comerciales completos. Clientes es obligatorio en cualquier configuración.
-- **Datos locales no fiables.** `src/lib/demo.ts` normaliza carga y guardado en `nexo-demo-business-v1`: descarta módulos desconocidos o planificados, deduplica, mantiene el núcleo y recupera una configuración de muestra ante JSON inválido o almacenamiento bloqueado.
-- **Persistencia limitada.** Empresa, favoritos y preferencias se guardan sólo en `localStorage`. No existe sincronización entre dispositivos ni sesión real. Los mensajes de error distinguen un guardado fallido de uno correcto.
-- **Visibilidad pública.** Desactivada por defecto. Una preferencia local no publica el negocio y no alimenta el directorio, que conserva sus ejemplos fijos.
-- **Acceso y privacidad futuros.** El catálogo modular y la ocultación de menús no proporcionan autorización. Servidor, membresías verificadas y RLS pertenecen a una fase posterior. La propuesta de `ARQUITECTURA.md` no describe controles ya implementados.
-- **Dependencias acotadas.** Next.js y React soportan las vistas; Lucide aporta iconos reutilizables. `tsx` ejecuta las pruebas TypeScript con el runner de Node y Playwright verifica recorridos reales en navegador. No se conectan proveedores comerciales.
-- **Entorno de desarrollo reproducible.** `typecheck` ejecuta `next typegen` antes de TypeScript. `next.config.ts` admite el origen de desarrollo local `127.0.0.1` utilizado por Playwright y desactiva la generación automática de reglas de agente para conservar `AGENTS.md`.
+## Límites de datos y operaciones
 
-## Vista previa y configuración del entorno
+La configuración, perfiles, fotos pequeñas, catálogo, preferencias, textos y solicitudes se almacenan sólo en el navegador cuando sus funciones demo lo permiten. No hay sincronización entre equipos, Safari del iPhone y el ordenador. Un archivo de chat mantenido mediante URL de objeto puede dejar de estar disponible tras recargar; la UI debe explicarlo y evitar descargas falsas.
 
-El servidor se inicia con `npm run dev -- --hostname 0.0.0.0` en el puerto 3000; para comprobar la salida compilada, utiliza `npm run build` y después `npm run start -- --hostname 0.0.0.0`. Las capturas de `docs/previews/` permiten revisar empresa, móvil, cliente e inicio; no implican hosting público.
+Preparar una reserva no verifica horarios reales, concurrencia, política de cancelación o zona horaria del negocio. La solicitud es un ejemplo no enviado. El perfil visible en `/negocio/[id]` no acredita una publicación consentida en un directorio real. Los precios de catálogo y las cifras son ilustrativos.
 
-Se han guardado instrucciones de instalación y arranque en el borrador de configuración del entorno en la nube. El borrador no equivale a una configuración publicada: el propietario debe revisarlo y guardarlo en los ajustes del entorno, y después publicar el entorno. La publicación y la restauración en una tarea nueva no se han verificado en esta entrega.
+No hay autenticación real, RLS, aislamiento de producción, pagos, facturación española operativa, orientación fiscal certificada, mapa conectado, geolocalización real, aplicación Expo publicada o licencia verificada. Tampoco se promete funcionamiento offline completo por usar almacenamiento local.
 
-## Límites deliberados
+Las capturas renovadas de `docs/previews/` muestran la entrada en ambos temas, los paneles, Mi plan, el perfil y los mensajes con datos de demostración.
 
-No hay autenticación real, creación de cuentas, base de datos de producción, reservas enviadas, facturas, cobros, correos, mapa ni datos de clientes reales. Todos los negocios, métricas, contactos y actividades de ejemplo son ficticios. Los sectores regulados muestran advertencias y no incluyen expedientes clínicos o financieros operativos.
+## Cómo revisar
 
-Esta fase verifica la interfaz y el flujo de configuración; no certifica aislamiento multiempresa, seguridad de producción, cumplimiento regulatorio ni operación comercial.
+1. Abrir la entrada y recorrer ambas opciones de onboarding.
+2. Cambiar entre Mi negocio y Modo cliente; recargar y comprobar el recuerdo de experiencia sin perder el acceso al selector.
+3. En la vista profesional, editar el perfil/catálogo y comprobar la misma ficha desde Cliente.
+4. Preparar una solicitud de ejemplo para un servicio y revisarla en Mi actividad, siempre marcada como local/no enviada.
+5. Revisar conversación y adjuntos de prueba en sus dos perspectivas dentro del mismo navegador.
+6. Abrir Mi plan y comprobar que AutonoSuite no exige otra app/cuenta ni presenta un cobro realizado.
+7. Probar temas claro/oscuro, móvil, teclado, foco y fallos de almacenamiento.
+8. Usar la guía [MOVIL_Y_PRUEBAS.md](MOVIL_Y_PRUEBAS.md) para revisar la web en Safari; Expo Go y TestFlight corresponden al camino futuro.
 
-## Backlog priorizado, fuera de esta entrega
+## Condiciones para continuar
 
-1. **Revisión visual y aprobación del Hito 0.** Recoger cambios de diseño y seleccionar el primer sector piloto.
-2. **Hito 1, sólo tras aprobación.** Identidad global, organizaciones, membresías, roles y persistencia real de módulos. Diseñar y probar permisos de servidor y RLS, incluyendo intentos de acceso cruzado entre empresas, antes de conectar operaciones reales.
-3. **Hito 2.** CRM mínimo y servicios; después motor de reservas con recursos, horarios, zona horaria, concurrencia y cancelaciones. No extender indiscriminadamente la lógica de citas a otros dominios.
-4. **Hitos posteriores.** Presupuestos/proyectos, vinculación verificada de la cuenta cliente y validación de composición con Peluquería y Pastelería, siguiendo `ROADMAP.md`.
-5. **Fases posteriores de descubrimiento y comercialización.** Consentimiento de perfiles públicos, directorio real, mapas y pagos sólo cuando existan requisitos y revisión específica.
-
-No se avanza automáticamente a ninguno de estos puntos por terminar las pruebas del prototipo.
+Cerrar las pruebas de esta revisión, recoger la aprobación visual del propietario y acordar el primer piloto. Sólo entonces se puede iniciar el Hito 1 con identidad, membresías, permisos de servidor y RLS. Los flujos reales y las compras se habilitan en sus hitos con las pruebas y políticas que requieren.

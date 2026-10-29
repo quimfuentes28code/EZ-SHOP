@@ -3,10 +3,18 @@ import {
   isPreviewModule,
   sectorById,
   suggestedPreviewModules,
+  SECTORS,
   type ModuleId,
 } from "./catalog";
 
 export type BusinessMode = "local" | "mobile" | "online" | "hybrid";
+export type BusinessEntityType = "self_employed" | "company" | "team";
+export type BusinessOffering = "services" | "products" | "both";
+export type DemoAvailability = {
+  days: number[];
+  opens: string;
+  closes: string;
+};
 export type DemoConfig = {
   name: string;
   city: string;
@@ -14,6 +22,11 @@ export type DemoConfig = {
   mode: BusinessMode;
   modules: ModuleId[];
   publicListing: boolean;
+  entityType?: BusinessEntityType;
+  additionalSectorIds?: string[];
+  offering?: BusinessOffering;
+  coverage?: string;
+  availability?: DemoAvailability;
 };
 
 export const DEMO_STORAGE_KEY = "nexo-demo-business-v1";
@@ -24,6 +37,11 @@ export const DEFAULT_CONFIG: DemoConfig = {
   mode: "local",
   modules: suggestedPreviewModules("photo"),
   publicListing: false,
+  entityType: "self_employed",
+  additionalSectorIds: [],
+  offering: "services",
+  coverage: "",
+  availability: { days: [1, 2, 3, 4, 5], opens: "09:00", closes: "18:00" },
 };
 
 function ownValue(record: Record<string, unknown>, key: string): unknown {
@@ -64,6 +82,51 @@ export function normalizeDemoConfig(input: unknown): DemoConfig {
       ...candidates.filter(isModuleId).filter(isPreviewModule),
     ]),
   ];
+  const rawEntity = ownValue(record, "entityType");
+  const rawOffering = ownValue(record, "offering");
+  const rawAdditional = ownValue(record, "additionalSectorIds");
+  const additionalSectorIds = Array.isArray(rawAdditional)
+    ? [
+        ...new Set(
+          rawAdditional.filter(
+            (value): value is string =>
+              typeof value === "string" &&
+              value !== sectorId &&
+              SECTORS.some((sector) => sector.id === value),
+          ),
+        ),
+      ].slice(0, 4)
+    : [];
+  const rawCoverage = ownValue(record, "coverage");
+  const rawAvailability = ownValue(record, "availability");
+  const availability =
+    rawAvailability &&
+    typeof rawAvailability === "object" &&
+    !Array.isArray(rawAvailability)
+      ? (rawAvailability as Record<string, unknown>)
+      : {};
+  const rawDays = ownValue(availability, "days");
+  const days = Array.isArray(rawDays)
+    ? [
+        ...new Set(
+          rawDays.filter(
+            (value): value is number =>
+              typeof value === "number" &&
+              Number.isInteger(value) &&
+              value >= 1 &&
+              value <= 7,
+          ),
+        ),
+      ].sort((a, b) => a - b)
+    : [1, 2, 3, 4, 5];
+  const time = (value: unknown, fallback: string) =>
+    typeof value === "string" && /^([01]\d|2[0-3]):[0-5]\d$/.test(value)
+      ? value
+      : fallback;
+  const opens = time(ownValue(availability, "opens"), "09:00");
+  const proposedClose = time(ownValue(availability, "closes"), "18:00");
+  // This is a same-day illustrative schedule, never a live availability engine.
+  const scheduleValid = opens < proposedClose;
 
   return {
     name:
@@ -74,6 +137,22 @@ export function normalizeDemoConfig(input: unknown): DemoConfig {
     mode,
     modules,
     publicListing: ownValue(record, "publicListing") === true,
+    entityType:
+      rawEntity === "company" || rawEntity === "team"
+        ? rawEntity
+        : "self_employed",
+    additionalSectorIds,
+    offering:
+      rawOffering === "products" || rawOffering === "both"
+        ? rawOffering
+        : "services",
+    coverage:
+      typeof rawCoverage === "string" ? rawCoverage.trim().slice(0, 160) : "",
+    availability: {
+      days,
+      opens: scheduleValid ? opens : "09:00",
+      closes: scheduleValid ? proposedClose : "18:00",
+    },
   };
 }
 

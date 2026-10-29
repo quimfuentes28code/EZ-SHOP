@@ -1,5 +1,5 @@
 {
-  "name": "nexo",
+  "name": "autonoservice",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "next typegen && tsc --noEmit",
-    "test": "node --import tsx tests/unit/catalog.test.ts && node --import tsx tests/unit/demo.test.ts",
+    "test": "node scripts/test.mjs",
     "test:e2e": "playwright test"
   },
   "dependencies": {

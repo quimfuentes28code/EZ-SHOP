@@ -1,21 +1,24 @@
-# Verificación del Hito 0
+# Verificación de AutonoService — Hito 0
 
-## Registro de esta implementación
+## Revisión actual: especificación maestra
 
-| Comprobación | Resultado registrado |
+Están implementados la marca, entrada, onboarding de dos experiencias, selector, Mi plan y los recorridos locales de perfil, catálogo, conversación y solicitudes. **Verificación final completada: 27 pruebas de navegador correctas.**
+
+| Comprobación de la revisión actual | Estado registrado |
 | --- | --- |
-| Dependencias | `npm install` inicial y reinstalación reproducible con `npm ci` correctas |
+| Instalación desde el lockfile | `npm ci` correcto |
 | `npm run typecheck` | Correcto |
-| `npm test` | 12 pruebas unitarias correctas |
-| `npm run build` | Compilación de producción correcta |
-| `npm run test:e2e` | 12 pruebas correctas en 50,6 s contra la compilación de producción (`npm start`); 0 fallos y 0 omitidas |
+| `npm test` | 48 pruebas unitarias correctas |
+| `npm run build` | Compilación correcta de todas las rutas |
+| `npm run test:e2e` | 27 pruebas correctas contra `npm start`, 0 fallos y 0 omitidas (2,7 min) |
+| iPhone físico | No verificado en esta entrega por el agente |
 | Aprobación visual del propietario | Pendiente |
 
-La suite comprobó las cinco rutas a 360, 768 y 1440 px sin errores JavaScript ni mensajes `console.error`. Se revisaron también capturas de las cinco rutas en móvil y escritorio; `docs/previews/` conserva una selección para revisión del propietario. Tras reinstalar con `npm ci`, se repitieron correctamente TypeScript, las 12 unitarias y la compilación. Las comprobaciones de adaptación y foco de esta suite no equivalen a una auditoría completa de accesibilidad ni prueban seguridad de producción.
+La evidencia anterior corresponde a esta revisión, salvo donde se indica el antecedente histórico. Las pruebas se ejecutaron contra la compilación de producción sin sesiones de capturas simultáneas; verifican los recorridos de esta revisión, no garantías de seguridad de producción.
 
-## Pruebas automatizadas
+## Ejecutar
 
-Desde la raíz del repositorio:
+Desde la carpeta que contiene el lockfile:
 
 ```bash
 npm ci
@@ -25,35 +28,54 @@ npm run build
 npm run test:e2e
 ```
 
-Las pruebas unitarias (`tests/unit/`) comprueban:
+En Windows/PowerShell utiliza `npm.cmd` para evitar el bloqueo de `npm.ps1`. `scripts/test.mjs` descubre `*.test.ts` de `tests/unit/` sin depender de la expansión de comodines del shell y conserva el resultado de cada suite.
 
-- Identificadores y composición del catálogo: 28 sectores y 25 módulos.
-- Clientes obligatorio; Cobros y Facturación excluidos de módulos activables.
-- Normalización de campos, claves heredadas, valores corruptos y duplicados.
-- Lectura sin `window`, almacenamiento bloqueado y guardado en clave local versionada.
+Playwright reutiliza un servidor en el puerto 3000 o inicia uno. Usa `/usr/bin/chromium` cuando existe; puede indicarse otro ejecutable con `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`. Si falta el navegador, ejecutar `npx playwright install chromium` (`npx.cmd` en PowerShell). Los resultados de fallos en `test-results/` son artefactos locales ignorados por Git.
 
-Las 12 pruebas de Playwright (`tests/e2e/hito-0.spec.ts`) comprueban:
+Se han renovado capturas del prototipo compilado en `docs/previews/`: entrada oscura/clara, Mi negocio, móvil, Cliente, Mi plan, perfil del negocio y mensajes. Son evidencia visual, no sustituyen la ejecución de los recorridos.
 
-- Onboarding de Fotografía, Peluquería, Panadería y Otro/Mixto, modalidad online y persistencia al recargar.
-- Desactivar y activar Proyectos, con navegación empresarial acorde.
-- Validación de nombre vacío y error visible cuando no se puede guardar.
-- Cuenta cliente: detalles de muestra, pestañas por teclado y preferencia local de recordatorios.
-- Directorio: filtros, estado vacío, restablecer filtros y mapa sin pines ni direcciones.
-- Las cinco rutas a 360, 768 y 1440 px, sin desbordamiento horizontal ni errores JavaScript detectados, con foco visible al tabular.
-- Menú móvil de empresa: apertura, recorrido de foco y cierre mediante Escape.
+## Casos que deben validar la revisión
 
-Playwright usa Chromium en `/usr/bin/chromium` si existe. Para otro ejecutable, define `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`. Si no hay navegador instalado, ejecuta `npx playwright install chromium`. El servidor de pruebas se inicia automáticamente en el puerto 3000 o se reutiliza si ya está disponible. Los artefactos de fallo se generan en `test-results/`; no se deben subir al repositorio.
+### Marca y primera entrada
 
-## Recorrido manual de revisión
+- Marca AutonoService y los eslóganes correctos; Cliente como experiencia, AutonoSuite sólo como mejora profesional.
+- Entrada con la pregunta y las dos opciones exactas, sin inventar dos cuentas o productos independientes.
+- Onboarding de ambas experiencias, validación y errores de almacenamiento visibles.
+- Selector Mi negocio/Modo cliente y elección de empresa demo, con recuerdo tras recargar y posibilidad de cambiar.
+- Mi plan sin solicitud de tarjeta, checkout, recibo o licencia real; Cliente nunca requiere premium.
+- Derechos profesionales por capacidad/versión: no tratar un booleano editable como permiso de producción.
 
-1. Abrir `/` y seguir los accesos a onboarding, empresa, cliente y explorar.
-2. En `/onboarding`, buscar Fotografía, Peluquería, Panadería y Otro/Mixto. Revisar las modalidades local, domicilio, online y mixta, la selección de módulos y el resumen.
-3. Comprobar que Clientes no se puede desactivar y que Cobros y Facturación figuran como próximas capacidades.
-4. Completar nombre y ciudad; abrir `/empresa`, recargar y verificar persistencia sólo en ese navegador. No introducir datos reales.
-5. Personalizar módulos y comprobar que el menú cambia. Revisar búsquedas, vistas de muestra, selector de periodo y ayuda.
-6. En `/cliente`, revisar actividad, favoritos y preferencias; confirmar que no se envía ningún mensaje, reserva o pago.
-7. En `/explorar`, combinar búsquedas y filtros, provocar un estado vacío, restablecerlos y abrir Mapa futuro. No debe haber ubicaciones reales ni pines ficticios.
-8. Revisar móvil, tableta y escritorio (360, 768 y 1440 px), recorrido con teclado, foco, etiquetas, legibilidad y contenido de modales.
-9. Confirmar que toda actividad está identificada como ficticia y que no se ha conectado autenticación, Supabase, mapas ni pagos.
+### Interacción conservada
 
-La revisión visual y la aprobación del propietario son necesarias para decidir el siguiente hito. No hay pruebas de autorización multiempresa, RLS o concurrencia de reservas porque esas capacidades no se implementan en el Hito 0.
+- Cuatro sectores en onboarding y navegación de herramientas activas; Clientes obligatorio y finanzas no operativas.
+- Edición de perfil/catálogo desde negocio y consulta de los mismos datos desde Cliente/directorio.
+- Creación de elementos y adjuntos sin `crypto.randomUUID`, simulando la ausencia de esa API en HTTP local; no equivale a una prueba física en Safari.
+- Búsqueda, filtros, favoritos, preferencias y estados vacíos.
+- Solicitud de reserva local con fecha/hora válidas, sin POST a un negocio, confirmación o plaza bloqueada.
+- Mi actividad identifica cada solicitud como ejemplo no enviado y no mezcla reglas de cita y pedido.
+- Conversaciones locales separadas por hilo; cambio de perspectiva no simula entrega a otra persona.
+- Adjuntos de prueba, límites/tipos, descarga durante la sesión y aviso de archivo no disponible tras recarga.
+- Fotos de perfil separadas de adjuntos privados.
+
+### UI, datos y accesibilidad
+
+- Rutas antiguas y nuevas a 360, 768 y 1440 px sin desbordamiento horizontal involuntario.
+- Navegación por teclado, nombres accesibles, foco visible, Escape y restitución de foco en modales/menú móvil.
+- Temas claro/oscuro y contraste legible en componentes y estados.
+- Cero errores de ejecución/hidratación; inspeccionar tanto `pageerror` como `console.error` cuando proceda.
+- Datos corruptos, claves heredadas, duplicados, bloqueo de almacenamiento, cuotas y recuperación sin fingir guardado.
+- Compatibilidad de las claves antiguas y ausencia de borrado silencioso al cambiar de marca.
+
+## Pruebas móviles
+
+La guía [MOVIL_Y_PRUEBAS.md](MOVIL_Y_PRUEBAS.md) explica la revisión web en Safari/Chrome y el futuro camino nativo. El viewport de Chromium emula un tamaño, no demuestra el comportamiento de un iPhone real o de una app React Native.
+
+Para el iPhone físico revisar red local, controles táctiles, teclado, selección de archivos y persistencia de Safari. No dar por comprobadas ubicación, push, autenticación nativa, Expo Go, compras de tienda o distribución sin una implementación y un dispositivo/build adecuados.
+
+## Antecedente de la primera versión
+
+En la primera versión se comprobaron instalación, reinstalación con `npm ci`, TypeScript, 12 unitarias, compilación y 12 E2E en 50,6 s contra `npm start`, sin fallos ni omitidas. Las cinco rutas originales se revisaron a 360, 768 y 1440 px sin errores JavaScript detectados. Esa evidencia corresponde a una revisión anterior y no certifica los cambios actuales.
+
+## Fuera del alcance de validación del Hito 0
+
+Autorización multiempresa, RLS, aislamiento de archivos de producción, concurrencia de reservas reales, fiscalidad española operativa, pagos/licencias verificadas, sincronización, migraciones de una base productiva y publicación en App Store/Google Play. No hay backend o apps nativas que permitan declarar esas garantías. Deben probarse en sus hitos.

@@ -14,6 +14,7 @@ import {
   Compass,
   Heart,
   MapPin,
+  MessageCircle,
   Scissors,
   Settings2,
   ShieldCheck,
@@ -21,6 +22,21 @@ import {
   UserRound,
   Wrench,
 } from "lucide-react";
+import {
+  DEMO_PROFILE_EVENT,
+  DEMO_REQUEST_EVENT,
+  getDemoRequests,
+  loadBusinessProfile,
+  type BusinessId,
+  type BusinessProfile,
+  type DemoRequest,
+} from "@/features/business-profile/model";
+import {
+  EXPERIENCE_EVENT,
+  loadCustomerProfile,
+  saveCustomerProfile,
+  type CustomerProfile,
+} from "@/lib/experience";
 import "@/components/client-directory.css";
 
 const experiences = [
@@ -37,7 +53,7 @@ const experiences = [
     icon: Camera,
     tone: "lilac",
     detail:
-      "Una sesión de retrato en estudio, con selección de imágenes y una galería privada de muestra. No existe una cita real.",
+      "Una sesión de retrato en estudio, con selección de imágenes y archivos compartidos en una conversación de muestra. No existe una cita real.",
   },
   {
     id: "beauty",
@@ -80,10 +96,16 @@ const favoriteBusinesses = [
     tone: "sage",
   },
 ];
+const conversationIds: Record<string, string> = {
+  photo: "lumen-alex",
+  beauty: "barberia-alex",
+  bakery: "dulce-alex",
+  repairs: "taller-alex",
+};
 const accountTabs = [
   ["activity", "Mi actividad"],
   ["favorites", "Favoritos"],
-  ["account", "Mi perfil"],
+  ["account", "Perfil"],
 ] as const;
 const FAVORITES_KEY = "nexo-demo-favorites-v1";
 const PREFS_KEY = "nexo-demo-client-preferences-v1";
@@ -99,6 +121,54 @@ export default function ClientPage() {
     news: false,
   });
   const [message, setMessage] = useState("");
+  const [customer, setCustomer] = useState<CustomerProfile>({
+    name: "Alex López",
+    city: "Barcelona",
+    interests: [],
+  });
+  useEffect(() => {
+    const refresh = () => setCustomer(loadCustomerProfile());
+    refresh();
+    window.addEventListener(EXPERIENCE_EVENT, refresh);
+    window.addEventListener("storage", refresh);
+    return () => {
+      window.removeEventListener(EXPERIENCE_EVENT, refresh);
+      window.removeEventListener("storage", refresh);
+    };
+  }, []);
+  const [requests, setRequests] = useState<DemoRequest[]>([]);
+  const [businessProfiles, setBusinessProfiles] = useState<
+    Partial<Record<BusinessId, BusinessProfile>>
+  >({});
+  useEffect(() => {
+    const refresh = () => {
+      setRequests(getDemoRequests());
+      setBusinessProfiles(
+        Object.fromEntries(
+          favoriteBusinesses.map((item) => [
+            item.id,
+            loadBusinessProfile(item.id as BusinessId),
+          ]),
+        ),
+      );
+    };
+    refresh();
+    window.addEventListener(DEMO_REQUEST_EVENT, refresh);
+    window.addEventListener(DEMO_PROFILE_EVENT, refresh);
+    window.addEventListener("storage", refresh);
+    return () => {
+      window.removeEventListener(DEMO_REQUEST_EVENT, refresh);
+      window.removeEventListener(DEMO_PROFILE_EVENT, refresh);
+      window.removeEventListener("storage", refresh);
+    };
+  }, []);
+  useEffect(() => {
+    const section = new URLSearchParams(window.location.search).get("seccion");
+    if (section === "favoritos") setTab("favorites");
+    if (section === "perfil") setTab("account");
+  }, []);
+  const businessName = (id: string, fallback: string) =>
+    businessProfiles[id as BusinessId]?.name ?? fallback;
   useEffect(() => {
     try {
       const stored: unknown = JSON.parse(
@@ -167,7 +237,7 @@ export default function ClientPage() {
     <div className="container personal-page">
       <div className="personal-breadcrumb">
         <span>
-          <UserRound size={14} /> ESPACIO PERSONAL
+          <UserRound size={14} /> CLIENTE · COMPLETAMENTE GRATIS
         </span>
         <span>Cuenta de demostración</span>
       </div>
@@ -175,18 +245,24 @@ export default function ClientPage() {
         <div>
           <p className="eyebrow">TUS NEGOCIOS. TU ESPACIO.</p>
           <h1>
-            Hola, Alex
+            Hola, {customer.name.split(/\s+/)[0]}
             <span className="personal-wave" aria-hidden="true">
               ✳
             </span>
           </h1>
           <p className="muted">
-            Tus planes, encargos y momentos. Todos conectados.
+            Habla con tus negocios, descubre sus productos y prepara tu próxima
+            visita.
           </p>
         </div>
-        <Link href="/explorar" className="button secondary">
-          <Compass size={16} /> Explorar negocios <ArrowRight size={16} />
-        </Link>
+        <div className="personal-heading-actions">
+          <Link href="/mensajes?como=cliente" className="button primary">
+            <MessageCircle size={16} /> Mensajes
+          </Link>
+          <Link href="/explorar" className="button secondary">
+            <Compass size={16} /> Explorar negocios <ArrowRight size={16} />
+          </Link>
+        </div>
       </div>
       <div className="personal-overview">
         <section className="personal-next">
@@ -199,7 +275,7 @@ export default function ClientPage() {
               <br />
               Muchas historias.
             </h2>
-            <p>Sesión de retrato con Lumen Studio</p>
+            <p>Sesión de retrato con {businessName("photo", "Lumen Studio")}</p>
             <div className="personal-next-time">
               <span>
                 <CalendarDays size={16} /> 12 de noviembre
@@ -208,17 +284,17 @@ export default function ClientPage() {
                 <Clock3 size={16} /> 10:00 h
               </span>
             </div>
-            <button
-              className="personal-text-button"
-              onClick={() => {
-                setTab("activity");
-                document
-                  .getElementById("personal-activity")
-                  ?.scrollIntoView({ behavior: "smooth", block: "center" });
-              }}
-            >
-              Ver mi actividad <ArrowRight size={17} />
-            </button>
+            <div className="personal-next-actions">
+              <Link href="/negocio/photo" className="personal-text-button">
+                Ver negocio <ArrowRight size={16} />
+              </Link>
+              <Link
+                href="/mensajes?como=cliente&conversacion=lumen-alex"
+                className="personal-text-button"
+              >
+                <MessageCircle size={16} /> Hablar con el estudio
+              </Link>
+            </div>
           </div>
           <div className="personal-camera-art" aria-hidden="true">
             <div className="personal-art-orbit" />
@@ -227,7 +303,9 @@ export default function ClientPage() {
             </div>
             <span className="personal-art-spark">✳</span>
             <span className="personal-art-ticket">
-              LUMEN
+              {businessName("photo", "Lumen Studio")
+                .slice(0, 13)
+                .toLocaleUpperCase("es")}
               <br />
               <small>ESTUDIO CREATIVO</small>
             </span>
@@ -238,7 +316,7 @@ export default function ClientPage() {
             <span className="personal-stat-icon">
               <CalendarDays size={20} />
             </span>
-            <strong>03</strong>
+            <strong>{String(3 + requests.length).padStart(2, "0")}</strong>
             <div>
               <h3>Próximos momentos</h3>
               <p>Actividad ficticia para explorar</p>
@@ -273,42 +351,49 @@ export default function ClientPage() {
         </div>
       </div>
       <div className="personal-section-top" id="personal-activity">
-        <div
-          className="personal-tabs"
-          role="tablist"
-          aria-label="Secciones de mi cuenta"
-        >
-          {accountTabs.map(([key, label], index) => (
-            <button
-              key={key}
-              id={`personal-tab-${key}`}
-              role="tab"
-              tabIndex={tab === key ? 0 : -1}
-              onKeyDown={(event) => {
-                let next = index;
-                if (event.key === "ArrowRight")
-                  next = (index + 1) % accountTabs.length;
-                else if (event.key === "ArrowLeft")
-                  next = (index + accountTabs.length - 1) % accountTabs.length;
-                else if (event.key === "Home") next = 0;
-                else if (event.key === "End") next = accountTabs.length - 1;
-                else return;
-                event.preventDefault();
-                setTab(accountTabs[next][0]);
-                document
-                  .getElementById(`personal-tab-${accountTabs[next][0]}`)
-                  ?.focus();
-              }}
-              aria-selected={tab === key}
-              aria-controls="personal-tabpanel"
-              className={tab === key ? "active" : ""}
-              onClick={() => setTab(key)}
-            >
-              {label}
-              {key === "activity" && <span>3</span>}
-            </button>
-          ))}
-        </div>
+        <nav className="personal-navigation" aria-label="Navegación de Cliente">
+          <Link href="/explorar" className="personal-explore-link">
+            <Compass size={15} />
+            Explorar
+          </Link>
+          <div
+            className="personal-tabs"
+            role="tablist"
+            aria-label="Secciones de mi cuenta"
+          >
+            {accountTabs.map(([key, label], index) => (
+              <button
+                key={key}
+                id={`personal-tab-${key}`}
+                role="tab"
+                tabIndex={tab === key ? 0 : -1}
+                onKeyDown={(event) => {
+                  let next = index;
+                  if (event.key === "ArrowRight")
+                    next = (index + 1) % accountTabs.length;
+                  else if (event.key === "ArrowLeft")
+                    next =
+                      (index + accountTabs.length - 1) % accountTabs.length;
+                  else if (event.key === "Home") next = 0;
+                  else if (event.key === "End") next = accountTabs.length - 1;
+                  else return;
+                  event.preventDefault();
+                  setTab(accountTabs[next][0]);
+                  document
+                    .getElementById(`personal-tab-${accountTabs[next][0]}`)
+                    ?.focus();
+                }}
+                aria-selected={tab === key}
+                aria-controls="personal-tabpanel"
+                className={tab === key ? "active" : ""}
+                onClick={() => setTab(key)}
+              >
+                {label}
+                {key === "activity" && <span>{3 + requests.length}</span>}
+              </button>
+            ))}
+          </div>
+        </nav>
         <span className="personal-sample-label">
           <Sparkles size={13} /> Datos de ejemplo
         </span>
@@ -320,6 +405,54 @@ export default function ClientPage() {
       >
         {tab === "activity" && (
           <div className="personal-activity-list">
+            {requests.length > 0 && (
+              <section
+                className="personal-requests"
+                aria-labelledby="personal-requests-title"
+              >
+                <div className="personal-requests-heading">
+                  <h2 id="personal-requests-title">
+                    Tus solicitudes de prueba
+                  </h2>
+                  <span>Sólo en este navegador</span>
+                </div>
+                <p className="personal-requests-note">
+                  Estas solicitudes no se han enviado al negocio ni bloquean una
+                  fecha.
+                </p>
+                {requests.map((request) => (
+                  <article className="personal-demo-request" key={request.id}>
+                    <span className="personal-request-icon">
+                      <CalendarDays size={20} />
+                    </span>
+                    <div>
+                      <span className="personal-request-status">
+                        NO ENVIADA · DEMO
+                      </span>
+                      <h3>{request.itemTitle}</h3>
+                      <p>
+                        {businessName(request.businessId, request.businessName)}{" "}
+                        · {formatRequestDate(request.date)} · {request.time}
+                      </p>
+                      <div className="personal-business-actions">
+                        <Link
+                          href={`/negocio/${request.businessId}`}
+                          className="personal-business-link"
+                        >
+                          Ver negocio <ArrowRight size={13} />
+                        </Link>
+                        <Link
+                          href={`/mensajes?como=cliente&conversacion=${conversationIds[request.businessId]}`}
+                          className="personal-business-link"
+                        >
+                          <MessageCircle size={13} /> Abrir conversación
+                        </Link>
+                      </div>
+                    </div>
+                  </article>
+                ))}
+              </section>
+            )}
             {experiences.map((e) => {
               const Icon = e.icon;
               return (
@@ -333,7 +466,7 @@ export default function ClientPage() {
                       <span className="personal-status">{e.status}</span>
                     </div>
                     <p>
-                      {e.business}
+                      {businessName(e.id, e.business)}
                       <span>·</span>
                       <Clock3 size={12} />
                       {e.time}
@@ -351,6 +484,22 @@ export default function ClientPage() {
                         <strong>Sin reserva, pago ni comunicación real.</strong>
                       </div>
                     </details>
+                    <div className="personal-business-actions">
+                      <Link
+                        href={`/negocio/${e.id}`}
+                        className="personal-business-link"
+                        aria-label={`Ver negocio: ${businessName(e.id, e.business)}`}
+                      >
+                        Ver negocio <ArrowRight size={13} />
+                      </Link>
+                      <Link
+                        href={`/mensajes?como=cliente&conversacion=${conversationIds[e.id]}`}
+                        className="personal-business-link"
+                        aria-label={`Mensaje a ${businessName(e.id, e.business)}`}
+                      >
+                        <MessageCircle size={13} /> Mensaje
+                      </Link>
+                    </div>
                   </div>
                   <div className="personal-experience-date">
                     <span>{e.day}</span>
@@ -360,7 +509,7 @@ export default function ClientPage() {
                   <button
                     className={`personal-heart ${favorites.includes(e.id) ? "saved" : ""}`}
                     aria-pressed={favorites.includes(e.id)}
-                    aria-label={`${favorites.includes(e.id) ? "Quitar de favoritos" : "Guardar en favoritos"}: ${e.business}`}
+                    aria-label={`${favorites.includes(e.id) ? "Quitar de favoritos" : "Guardar en favoritos"}: ${businessName(e.id, e.business)}`}
                     onClick={() => toggleFavorite(e.id)}
                   >
                     <Heart size={18} />
@@ -382,15 +531,36 @@ export default function ClientPage() {
                       <Icon size={26} />
                     </div>
                     <span className="personal-status">Negocio ficticio</span>
-                    <h3>{e.business}</h3>
-                    <p>{e.service} · Barcelona</p>
-                    <button
-                      className="button secondary"
-                      onClick={() => toggleFavorite(e.id)}
-                    >
-                      <Heart size={15} fill="currentColor" /> Quitar de
-                      favoritos
-                    </button>
+                    <h3>{businessName(e.id, e.business)}</h3>
+                    <p>
+                      {e.service} ·{" "}
+                      {businessProfiles[e.id as BusinessId]?.city ??
+                        "Barcelona"}
+                    </p>
+                    <div className="personal-favorite-actions">
+                      <Link
+                        href={`/negocio/${e.id}`}
+                        className="button primary small"
+                        aria-label={`Ver negocio: ${businessName(e.id, e.business)}`}
+                      >
+                        Ver negocio <ArrowRight size={14} />
+                      </Link>
+                      <Link
+                        href={`/mensajes?como=cliente&conversacion=${conversationIds[e.id]}`}
+                        className="button secondary small"
+                        aria-label={`Mensaje a ${businessName(e.id, e.business)}`}
+                      >
+                        <MessageCircle size={14} /> Mensaje
+                      </Link>
+                      <button
+                        className="personal-unfavorite"
+                        onClick={() => toggleFavorite(e.id)}
+                        aria-label={`Quitar de favoritos: ${businessName(e.id, e.business)}`}
+                      >
+                        <Heart size={13} fill="currentColor" /> Quitar de
+                        favoritos
+                      </button>
+                    </div>
                   </article>
                 );
               })}
@@ -412,13 +582,74 @@ export default function ClientPage() {
           <div className="personal-profile">
             <section>
               <div className="personal-profile-head">
-                <span className="personal-avatar">A</span>
+                <span className="personal-avatar">
+                  {customer.name.slice(0, 1).toLocaleUpperCase("es")}
+                </span>
                 <div>
-                  <h2>Alex, perfil de ejemplo</h2>
+                  <h2>{customer.name.split(/\s+/)[0]}, perfil de ejemplo</h2>
                   <p>No hay ninguna cuenta registrada</p>
                 </div>
                 <span className="personal-status">DEMO</span>
               </div>
+              <form
+                className="personal-identity-form"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  if (!customer.name.trim()) {
+                    setMessage(
+                      "Añade un nombre de ejemplo para guardar el perfil.",
+                    );
+                    return;
+                  }
+                  const next = {
+                    ...customer,
+                    name: customer.name.trim(),
+                    city: customer.city.trim(),
+                  };
+                  const saved = saveCustomerProfile(next);
+                  setCustomer(next);
+                  setMessage(
+                    saved
+                      ? "Perfil de Cliente guardado en este navegador. No se crea una cuenta real."
+                      : "Los datos cambian durante esta visita; este navegador no permite guardarlos.",
+                  );
+                }}
+              >
+                <label className="input-label" htmlFor="customer-display-name">
+                  Nombre de ejemplo
+                </label>
+                <input
+                  className="field"
+                  id="customer-display-name"
+                  maxLength={80}
+                  required
+                  value={customer.name}
+                  onChange={(event) =>
+                    setCustomer((value) => ({
+                      ...value,
+                      name: event.target.value,
+                    }))
+                  }
+                />
+                <label className="input-label" htmlFor="customer-city">
+                  Ciudad preferida
+                </label>
+                <input
+                  className="field"
+                  id="customer-city"
+                  maxLength={80}
+                  value={customer.city}
+                  onChange={(event) =>
+                    setCustomer((value) => ({
+                      ...value,
+                      city: event.target.value,
+                    }))
+                  }
+                />
+                <button className="button secondary small" type="submit">
+                  Guardar datos de ejemplo
+                </button>
+              </form>
               <div className="personal-profile-info">
                 <UserRound size={19} />
                 <div>
@@ -474,7 +705,8 @@ export default function ClientPage() {
           <div>
             <h3>¿Tu próximo favorito está por descubrir?</h3>
             <p>
-              Explora una pequeña muestra de cómo se verá el directorio de Nexo.
+              Explora una pequeña muestra de cómo se verá el directorio de
+              AutonoService.
             </p>
           </div>
         </div>
@@ -488,6 +720,15 @@ export default function ClientPage() {
       </p>
     </div>
   );
+}
+
+function formatRequestDate(value: string) {
+  const date = new Date(`${value}T12:00:00`);
+  return Number.isNaN(date.getTime())
+    ? value
+    : new Intl.DateTimeFormat("es", { day: "numeric", month: "short" }).format(
+        date,
+      );
 }
 
 function Preference({

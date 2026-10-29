@@ -9,6 +9,7 @@ import {
   ChevronDown,
   Compass,
   Heart,
+  MessageCircle,
   LayoutGrid,
   MapPin,
   MapPinned,
@@ -19,9 +20,15 @@ import {
   Wrench,
   X,
 } from "lucide-react";
+import {
+  DEMO_PROFILE_EVENT,
+  loadBusinessProfile,
+  type BusinessId,
+  type BusinessProfile,
+} from "@/features/business-profile/model";
 import "@/components/client-directory.css";
 
-const businesses = [
+const businessTemplates = [
   {
     id: "photo",
     name: "Lumen Studio",
@@ -78,6 +85,38 @@ const businesses = [
 const FAVORITES_KEY = "nexo-demo-favorites-v1";
 export default function ExplorePage() {
   const [query, setQuery] = useState("");
+  const [profiles, setProfiles] = useState<
+    Partial<Record<BusinessId, BusinessProfile>>
+  >({});
+  useEffect(() => {
+    const refresh = () =>
+      setProfiles(
+        Object.fromEntries(
+          businessTemplates.map((item) => [
+            item.id,
+            loadBusinessProfile(item.id as BusinessId),
+          ]),
+        ),
+      );
+    refresh();
+    window.addEventListener(DEMO_PROFILE_EVENT, refresh);
+    window.addEventListener("storage", refresh);
+    return () => {
+      window.removeEventListener(DEMO_PROFILE_EVENT, refresh);
+      window.removeEventListener("storage", refresh);
+    };
+  }, []);
+  const businesses = businessTemplates.map((item) => {
+    const profile = profiles[item.id as BusinessId];
+    return {
+      ...item,
+      name: profile?.name ?? item.name,
+      city: profile?.city ?? item.city,
+      desc: profile?.bio ?? item.desc,
+      services: profile?.catalog.map((entry) => entry.title) ?? item.services,
+      photo: profile?.photos[0],
+    };
+  });
   const [category, setCategory] = useState("all");
   const [view, setView] = useState<"list" | "map">("list");
   const [favorites, setFavorites] = useState<string[]>(["photo", "beauty"]);
@@ -103,9 +142,17 @@ export default function ExplorePage() {
   const filtered = businesses.filter(
     (b) =>
       (category === "all" || category === b.id) &&
-      (b.name + " " + b.category + " " + b.city + " " + b.desc)
-        .toLocaleLowerCase("es")
-        .includes(query.toLocaleLowerCase("es")),
+      normalizeSearch(
+        b.name +
+          " " +
+          b.category +
+          " " +
+          b.city +
+          " " +
+          b.desc +
+          " " +
+          b.services.join(" "),
+      ).includes(normalizeSearch(query)),
   );
   function toggleFavorite(id: string) {
     const next = favorites.includes(id)
@@ -127,6 +174,15 @@ export default function ExplorePage() {
   }
   return (
     <div className="container explore-page">
+      <nav className="customer-route-nav" aria-label="Navegación de Cliente">
+        <Link href="/explorar" aria-current="page">
+          <Compass size={15} />
+          Explorar
+        </Link>
+        <Link href="/cliente">Mi actividad</Link>
+        <Link href="/cliente?seccion=favoritos">Favoritos</Link>
+        <Link href="/cliente?seccion=perfil">Perfil</Link>
+      </nav>
       <div className="explore-intro">
         <span className="eyebrow">
           <Compass size={15} /> DESCUBRE TU PRÓXIMO FAVORITO
@@ -140,9 +196,9 @@ export default function ExplorePage() {
           <span>Mejores conexiones.</span>
         </h1>
         <p>
-          Una primera mirada a los espacios, profesionales y experiencias
-          <br className="explore-desktop-break" /> que algún día podrás
-          encontrar en Nexo.
+          Conoce el negocio, mira lo que ofrece y habla directamente con él.
+          <br className="explore-desktop-break" /> Explora perfiles y catálogos
+          de demostración.
         </p>
         <div className="explore-orbit" aria-hidden="true">
           <span>✳</span>
@@ -251,7 +307,16 @@ export default function ExplorePage() {
             const Icon = b.icon;
             return (
               <article className="explore-business" key={b.id}>
-                <div className={`explore-business-art ${b.tone}`}>
+                <div
+                  className={`explore-business-art ${b.tone} ${b.photo ? "has-photo" : ""}`}
+                >
+                  {b.photo && (
+                    <img
+                      className="explore-business-photo"
+                      src={b.photo.src}
+                      alt={b.photo.alt}
+                    />
+                  )}
                   <span className="explore-art-label">{b.type}</span>
                   <span className="explore-art-monogram" aria-hidden="true">
                     {b.monogram}
@@ -279,28 +344,34 @@ export default function ExplorePage() {
                   </div>
                   <h3>{b.name}</h3>
                   <p>{b.desc}</p>
+                  <div className="explore-catalog-tags">
+                    {b.services.slice(0, 2).map((service) => (
+                      <span key={service}>{service}</span>
+                    ))}
+                  </div>
                   <div className="explore-business-location">
                     <MapPin size={13} /> {b.city}
                     <span>· Ciudad ilustrativa</span>
                   </div>
-                  <details>
-                    <summary>
-                      Ver perfil de ejemplo <ArrowRight size={16} />
-                    </summary>
-                    <div className="explore-profile-preview">
-                      <strong>Servicios de muestra</strong>
-                      <div>
-                        {b.services.map((s) => (
-                          <span key={s}>{s}</span>
-                        ))}
-                      </div>
-                      <p>
-                        Esta tarjeta ilustra un futuro perfil público. No
-                        representa un negocio real y no permite enviar
-                        solicitudes ni reservas.
-                      </p>
-                    </div>
-                  </details>
+                  <div className="explore-card-actions">
+                    <Link
+                      href={`/negocio/${b.id}`}
+                      className="button primary small"
+                      aria-label={`Ver negocio: ${b.name}`}
+                    >
+                      Ver negocio <ArrowRight size={14} />
+                    </Link>
+                    <Link
+                      href={`/mensajes?como=cliente&conversacion=${({ photo: "lumen-alex", beauty: "barberia-alex", bakery: "dulce-alex", repairs: "taller-alex" } as Record<string, string>)[b.id]}`}
+                      className="button secondary small"
+                      aria-label={`Mensaje a ${b.name}`}
+                    >
+                      <MessageCircle size={14} /> Mensaje
+                    </Link>
+                  </div>
+                  <p className="explore-card-footnote">
+                    Fotos, productos y servicios · Vista de ejemplo
+                  </p>
                 </div>
               </article>
             );
@@ -328,8 +399,8 @@ export default function ExplorePage() {
       </p>
       <section className="explore-business-cta">
         <div>
-          <span className="eyebrow">EL OTRO LADO DE NEXO</span>
-          <h2>Tu negocio, a tu manera.</h2>
+          <span className="eyebrow">AUTONOSERVICE PARA TU NEGOCIO</span>
+          <h2>Tu negocio. Más fácil.</h2>
           <p>Explora las herramientas que se adaptan a tu actividad.</p>
         </div>
         <Link className="button primary" href="/onboarding">
@@ -342,4 +413,12 @@ export default function ExplorePage() {
       </p>
     </div>
   );
+}
+
+function normalizeSearch(value: string) {
+  return value
+    .trim()
+    .toLocaleLowerCase("es")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
 }

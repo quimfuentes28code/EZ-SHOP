@@ -3,9 +3,9 @@ import { SiteChrome } from "@/components/site-chrome";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Nexo | Software modular para negocios — Demo",
+  title: "AutonoService — Tu negocio. Más fácil.",
   description:
-    "Prototipo navegable de una plataforma modular de gestión para negocios y clientes.",
+    "AutonoService: gestión modular para profesionales y experiencia Cliente gratuita. Prototipo de arquitectura y navegación.",
   robots: { index: false, follow: false },
 };
 

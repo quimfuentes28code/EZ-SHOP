@@ -30,6 +30,7 @@ import {
   type DemoConfig,
 } from "@/lib/demo";
 import { ModulePicker } from "@/components/module-picker";
+import { setDemoExperience } from "@/lib/experience";
 
 const steps = ["Tu actividad", "Tus módulos", "Tu negocio", "Todo listo"];
 const modes = [
@@ -71,7 +72,7 @@ const titles = [
   "Tu próximo capítulo empieza aquí.",
 ];
 const descriptions = [
-  "Cuéntanos a qué te dedicas. Prepararemos una selección de herramientas para tu día a día.",
+  "Elige una actividad principal y, si lo necesitas, añade otras. Las plantillas comparten las mismas herramientas.",
   "Empieza con lo que necesitas. Puedes sumar o quitar herramientas cuando quieras.",
   "Un par de detalles para que este espacio se sienta tuyo. Usa datos de ejemplo en esta demo.",
   "Revisa tu configuración y descubre cómo podría ser trabajar con todo conectado.",
@@ -107,11 +108,27 @@ export default function OnboardingPage() {
       .toLocaleLowerCase("es")
       .includes(sectorQuery.trim().toLocaleLowerCase("es")),
   );
+  const schedule = form.availability ?? {
+    days: [1, 2, 3, 4, 5],
+    opens: "09:00",
+    closes: "18:00",
+  };
+  const extraActivities = form.additionalSectorIds ?? [];
   const next = () => {
     setError("");
     if (step === 2 && (!form.name.trim() || !form.city.trim())) {
       setError(
         "Añade un nombre de negocio y una ciudad o zona para continuar.",
+      );
+      return;
+    }
+    if (
+      step === 2 &&
+      schedule.days.length > 0 &&
+      (!schedule.opens || !schedule.closes || schedule.opens >= schedule.closes)
+    ) {
+      setError(
+        "La hora de cierre debe ser posterior a la apertura. Este horario de ejemplo contempla un solo día.",
       );
       return;
     }
@@ -131,6 +148,7 @@ export default function OnboardingPage() {
         );
         return;
       }
+      setDemoExperience("business");
       router.push("/empresa");
     } catch {
       setError(
@@ -143,7 +161,7 @@ export default function OnboardingPage() {
     <div className="container nx-onboarding">
       <div className="nx-onboarding-top">
         <Link href="/" className="nx-back-link">
-          <ArrowLeft size={15} /> Volver a Nexo
+          <ArrowLeft size={15} /> Volver a AutonoService
         </Link>
         <span>
           <ShieldCheck size={14} /> Sin registro · Solo demostración
@@ -151,12 +169,15 @@ export default function OnboardingPage() {
       </div>
       <div className="nx-onboarding-intro">
         <p className="eyebrow">
-          <Sparkles size={14} /> TU NEGOCIO, TU FORMA DE TRABAJAR
+          <Sparkles size={14} /> AUTONOSERVICE · GRATIS
         </p>
         <h1>
           Un espacio a tu medida<span>.</span>
         </h1>
-        <p>Las herramientas adecuadas. Todas conectadas. Empecemos por ti.</p>
+        <p>
+          Tu negocio. Más fácil. Configura una muestra de tu espacio
+          profesional.
+        </p>
       </div>
       <ol className="nx-stepper" aria-label="Progreso de configuración">
         {steps.map((label, index) => (
@@ -215,7 +236,22 @@ export default function OnboardingPage() {
                     onClick={() =>
                       update({
                         sectorId: item.id,
-                        modules: item.suggested.filter(isPreviewModule),
+                        offering: item.suggested.includes("products")
+                          ? item.suggested.includes("services")
+                            ? "both"
+                            : "products"
+                          : "services",
+                        additionalSectorIds: extraActivities.filter(
+                          (id) => id !== item.id,
+                        ),
+                        modules: [
+                          ...new Set([
+                            ...item.suggested,
+                            ...extraActivities
+                              .filter((id) => id !== item.id)
+                              .flatMap((id) => sectorById(id).suggested),
+                          ]),
+                        ].filter(isPreviewModule),
                       })
                     }
                   >
@@ -258,8 +294,88 @@ export default function OnboardingPage() {
                   </button>
                 </div>
               )}
+              <details className="nx-additional-activities">
+                <summary>
+                  Actividades adicionales{" "}
+                  <span>
+                    {extraActivities.length
+                      ? `${extraActivities.length} seleccionadas`
+                      : "Opcional"}
+                  </span>
+                </summary>
+                <p>
+                  Puedes combinar hasta cuatro actividades adicionales. No se
+                  crean negocios separados.
+                </p>
+                <div className="nx-additional-grid">
+                  {SECTORS.filter((item) => item.id !== form.sectorId).map(
+                    (item) => (
+                      <label key={item.id}>
+                        <input
+                          type="checkbox"
+                          checked={extraActivities.includes(item.id)}
+                          disabled={
+                            !extraActivities.includes(item.id) &&
+                            extraActivities.length >= 4
+                          }
+                          onChange={(event) => {
+                            const selected = event.target.checked
+                              ? [...extraActivities, item.id]
+                              : extraActivities.filter((id) => id !== item.id);
+                            update({
+                              additionalSectorIds: selected,
+                              modules: event.target.checked
+                                ? [
+                                    ...new Set([
+                                      ...form.modules,
+                                      ...item.suggested,
+                                    ]),
+                                  ].filter(isPreviewModule)
+                                : form.modules,
+                            });
+                          }}
+                        />
+                        <span>{item.label}</span>
+                      </label>
+                    ),
+                  )}
+                </div>
+              </details>
+              <div className="nx-offering-field">
+                <label className="nx-input-label" htmlFor="business-offering">
+                  ¿Qué ofreces?
+                </label>
+                <select
+                  className="field"
+                  id="business-offering"
+                  value={form.offering ?? "services"}
+                  onChange={(event) => {
+                    const offering = event.target.value as
+                      "services" | "products" | "both";
+                    const modules = [...form.modules];
+                    if (
+                      offering !== "services" &&
+                      !modules.includes("products")
+                    )
+                      modules.push("products");
+                    if (
+                      offering !== "products" &&
+                      !modules.includes("services")
+                    )
+                      modules.push("services");
+                    update({ offering, modules });
+                  }}
+                >
+                  <option value="services">Servicios</option>
+                  <option value="products">Productos</option>
+                  <option value="both">Servicios y productos</option>
+                </select>
+                <p className="nx-fineprint">
+                  Los detalles del catálogo se podrán editar desde Mi perfil.
+                </p>
+              </div>
               <div className="nx-mode-heading">
-                <h3>¿Dónde ocurre la magia?</h3>
+                <h3>¿Cómo trabajas?</h3>
                 <p>Elige cómo atiendes a tus clientes.</p>
               </div>
               <div
@@ -308,6 +424,29 @@ export default function OnboardingPage() {
           {step === 2 && (
             <>
               <div className="nx-identity-fields">
+                <label
+                  className="nx-input-label"
+                  htmlFor="business-entity-type"
+                >
+                  Tipo de profesional o empresa
+                </label>
+                <select
+                  id="business-entity-type"
+                  className="field"
+                  value={form.entityType ?? "self_employed"}
+                  onChange={(event) =>
+                    update({
+                      entityType: event.target.value as
+                        "self_employed" | "company" | "team",
+                    })
+                  }
+                >
+                  <option value="self_employed">
+                    Autónomo / profesional independiente
+                  </option>
+                  <option value="company">Empresa</option>
+                  <option value="team">Equipo o negocio compartido</option>
+                </select>
                 <label className="nx-input-label" htmlFor="business-name">
                   Nombre de tu negocio <span>Obligatorio</span>
                 </label>
@@ -343,6 +482,114 @@ export default function OnboardingPage() {
                   espacio. No pedimos una dirección.
                 </p>
               </div>
+              <details className="nx-additional-activities nx-operating-details">
+                <summary>
+                  Zona y horario orientativo <span>Personalizar</span>
+                </summary>
+                <div className="nx-operating-content">
+                  <label className="nx-input-label" htmlFor="business-coverage">
+                    Zonas de cobertura <span>Opcional</span>
+                  </label>
+                  <input
+                    className="field"
+                    id="business-coverage"
+                    maxLength={160}
+                    value={form.coverage ?? ""}
+                    onChange={(event) =>
+                      update({ coverage: event.target.value })
+                    }
+                    placeholder="Ej. Barcelona y alrededores, toda España u online"
+                  />
+                  <p className="nx-fineprint">
+                    La ubicación precisa no es necesaria. Esta zona no se
+                    publica ni se geolocaliza.
+                  </p>
+                  <fieldset className="nx-schedule-fieldset">
+                    <legend>Días de trabajo de ejemplo</legend>
+                    <div className="nx-day-picker">
+                      {[
+                        [1, "Lunes", "L"],
+                        [2, "Martes", "M"],
+                        [3, "Miércoles", "X"],
+                        [4, "Jueves", "J"],
+                        [5, "Viernes", "V"],
+                        [6, "Sábado", "S"],
+                        [7, "Domingo", "D"],
+                      ].map(([value, label, short]) => (
+                        <button
+                          type="button"
+                          key={value}
+                          aria-label={String(label)}
+                          aria-pressed={schedule.days.includes(Number(value))}
+                          onClick={() =>
+                            update({
+                              availability: {
+                                ...schedule,
+                                days: schedule.days.includes(Number(value))
+                                  ? schedule.days.filter((day) => day !== value)
+                                  : [...schedule.days, Number(value)].sort(),
+                              },
+                            })
+                          }
+                        >
+                          {short}
+                        </button>
+                      ))}
+                    </div>
+                  </fieldset>
+                  <div className="nx-schedule-times">
+                    <div>
+                      <label
+                        className="nx-input-label"
+                        htmlFor="business-opens"
+                      >
+                        Apertura
+                      </label>
+                      <input
+                        className="field"
+                        type="time"
+                        id="business-opens"
+                        value={schedule.opens}
+                        onChange={(event) =>
+                          update({
+                            availability: {
+                              ...schedule,
+                              opens: event.target.value,
+                            },
+                          })
+                        }
+                      />
+                    </div>
+                    <div>
+                      <label
+                        className="nx-input-label"
+                        htmlFor="business-closes"
+                      >
+                        Cierre
+                      </label>
+                      <input
+                        className="field"
+                        type="time"
+                        id="business-closes"
+                        value={schedule.closes}
+                        onChange={(event) =>
+                          update({
+                            availability: {
+                              ...schedule,
+                              closes: event.target.value,
+                            },
+                          })
+                        }
+                      />
+                    </div>
+                  </div>
+                  <p className="nx-fineprint">
+                    Sólo una preferencia local. No comprueba disponibilidad ni
+                    habilita reservas reales. Los turnos partidos o nocturnos se
+                    diseñarán en el módulo de agenda.
+                  </p>
+                </div>
+              </details>
               <label className="nx-public-preference">
                 <input
                   type="checkbox"
@@ -387,6 +634,50 @@ export default function OnboardingPage() {
                 </div>
                 <CheckCircle2 className="nx-review-check" size={24} />
               </div>
+              <dl className="nx-business-review-details">
+                <div>
+                  <dt>Tipo</dt>
+                  <dd>
+                    {form.entityType === "company"
+                      ? "Empresa"
+                      : form.entityType === "team"
+                        ? "Equipo"
+                        : "Autónomo / profesional"}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Oferta</dt>
+                  <dd>
+                    {form.offering === "both"
+                      ? "Servicios y productos"
+                      : form.offering === "products"
+                        ? "Productos"
+                        : "Servicios"}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Actividades adicionales</dt>
+                  <dd>
+                    {extraActivities.length
+                      ? extraActivities
+                          .map((id) => sectorById(id).label)
+                          .join(", ")
+                      : "Ninguna"}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Cobertura</dt>
+                  <dd>{form.coverage?.trim() || form.city}</dd>
+                </div>
+                <div>
+                  <dt>Horario de ejemplo</dt>
+                  <dd>
+                    {schedule.days.length
+                      ? `${schedule.days.length} días · ${schedule.opens}–${schedule.closes}`
+                      : "Sin horario definido"}
+                  </dd>
+                </div>
+              </dl>
               <div className="nx-review-label">
                 <h3>Tu caja de herramientas</h3>
                 <span>{form.modules.length} módulos</span>
@@ -464,7 +755,7 @@ export default function OnboardingPage() {
               <i />
               <i />
               <i />
-              <span>Tu espacio en Nexo</span>
+              <span>Tu espacio en AutonoService</span>
             </div>
             <div className="nx-preview-content">
               <span className="nx-preview-avatar">

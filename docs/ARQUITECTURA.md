@@ -1,82 +1,195 @@
-# Arquitectura técnica — propuesta evolutiva
+# Arquitectura de AutonoService
 
-## Stack propuesto
-- Next.js App Router + TypeScript + interfaz responsive.
-- Supabase/PostgreSQL con Auth y Row Level Security; Supabase Storage para medios cuando proceda.
-- Despliegue web; observabilidad y errores en fases posteriores.
-- Servicios de mapas/geocodificación como adaptadores reemplazables, no embebidos en el núcleo.
-- Integración de pagos solo al validar modelos y requisitos de marketplace.
+## Estado y criterio de evolución
 
-## Bloques lógicos
+La referencia de producto es [ESPECIFICACION_MAESTRA.md](ESPECIFICACION_MAESTRA.md). Este documento separa el prototipo existente de las decisiones propuestas para producción. La revisión actual sigue en Hito 0: no hay autenticación real, autorización de servidor, RLS, base de datos de producción ni licencia comercial verificada.
+
+El checkout actual es una aplicación Next.js con TypeScript estricto. Se conservarán sus rutas, modelos de demostración y componentes; la propuesta de monorepositorio no obliga a moverlos durante la revisión visual. No se construirán una aplicación por sector ni otra aplicación para AutonoSuite.
+
+## Una identidad, contextos diferentes
 
 ```text
-Identidad global de usuario (Auth)
-    ├── Membresías a varias organizaciones -> espacio empresa
-    ├── Relaciones verificadas con organizaciones -> espacio cliente
-    └── Preferencias personales / privacidad
-
-Organización (tenant)
-    ├── Sedes / ubicación o zona de servicio
-    ├── Actividades y plantillas de sector (una o varias)
-    ├── Registro de módulos activados + configuración por módulo
-    ├── Miembros / roles / permisos
-    ├── Clientes / servicios / recursos
-    ├── Dominios: citas, pedidos, presupuestos, proyectos, alquileres...
-    └── Perfil público opcional para directorio
-
-Composición visual de UI
-    ├── Módulos registrados por código estable
-    ├── Navegación condicional por capacidades reales
-    └── Formularios y flujos por dominio operativo
+Identidad global de persona
+├── Perfil personal y preferencias
+├── Relaciones verificadas como Cliente
+│   └── Sus reservas, pedidos, documentos y conversaciones autorizados
+└── Membresías a empresas
+    ├── Organización A: propietaria o empleada, según su membresía
+    └── Organización B: permisos independientes
 ```
 
-## Tablas base — primer diseño lógico, no migraciones de producción
-- `profiles(user_id PK, display_name, preferences)`
-- `organizations(id PK, name, slug, visibility, created_by, ...)`
-- `organization_members(id PK, organization_id FK, user_id FK, role, status)`
-- `branches(id PK, organization_id FK, public_address?, timezone, mode, location_precision, ...)`
-- `sector_templates(id PK, label, family, version)`
-- `organization_sectors(organization_id FK, sector_id FK)`
-- `module_definitions(id PK, version, capabilities, status)`
-- `organization_modules(organization_id FK, module_id FK, enabled, settings_json)`
-- `contacts(id PK, organization_id FK, ..., linked_user_id NULLABLE)`
-- `client_links(id PK, organization_id FK, contact_id FK, user_id FK, verification_method, verified_at)`
-- `services(id PK, organization_id FK, branch_id?, capacity_policy, pricing_policy, ...)`
-- `resources(id PK, organization_id FK, branch_id FK, type, availability_policy)`
-- `bookings(id PK, organization_id FK, client_link_id?, service_id FK, resource_id?, status, start_at, end_at, ...)`
-- `quotes`, `projects`, `orders`, `deliverables`, `rentals`, etc. en esquemas lógicos propios y con `organization_id`.
+`Mi negocio / Modo cliente` cambia el contexto de trabajo, no la identidad ni los permisos. La preferencia de última experiencia se almacena por persona/dispositivo; una empresa activa siempre se resuelve entre sus membresías vigentes. No se acepta un `organization_id` enviado por el cliente como prueba de acceso. Si una empresa ya no está disponible, se limpia su selección y se ofrece otra membresía o el modo Cliente.
 
-Los identificadores y asociaciones anteriores son una propuesta, NO un diseño SQL listo para producción. Añadir migraciones revisadas, índices, restricciones, borrado, retención, auditoría y pruebas antes de activarlas.
+### Entidades propuestas para el Hito 1
 
-## Principios de aislamiento
-- Toda fila privada operativa pertenece a una organización. La pertenencia se valida en una función de autorización del servidor y en políticas RLS.
-- Un usuario puede gestionar varias empresas y ser cliente en otras. El selector de empresa no cambia sus permisos efectivos.
-- Las claves públicas de Supabase nunca omiten RLS. Claves de servicio solo en backend seguro, nunca en el navegador.
-- Los usuarios y contactos no se fusionan automáticamente porque coincida un nombre o correo no verificado.
-- Un cliente solo consulta lo suyo cuando se autentica o presenta un token de invitación limitado, de un solo propósito y con caducidad.
-- Los enlaces de archivos privados usan URLs firmadas de corta duración y comprobación de propiedad.
-- Concurrencia en reservas: transacción y reglas atómicas para evitar doble reserva, control de zona horaria/DST y restricciones específicas según recurso o capacidad.
-- Historial/auditoría para cambios de estado relevantes y acciones administrativas.
-- Accesos públicos limitados a negocios que hayan elegido visibilidad y a campos explícitamente publicados.
-- Ubicación exacta de un profesional a domicilio: no publicar salvo opt-in claro; usar áreas de cobertura.
+| Entidad | Responsabilidad |
+| --- | --- |
+| `user`, `profile` | Identidad global y preferencias personales |
+| `organization` | Negocio, sin confundirlo con una persona o un sector |
+| `membership` | Usuario, organización, estado y rol contextual |
+| `branch` | Sede, zona, modalidad y zona horaria |
+| `sector_template`, `organization_sector` | Actividad principal/adicional y recomendaciones versionadas |
+| `module_definition`, `organization_module` | Catálogo, estado, habilitación y ajustes por organización |
+| `customer_relationship`, `client_link` | Contacto privado del negocio y vínculo verificado con una persona |
+| `public_business_profile` | Campos explícitamente publicables y consentimiento |
+| `conversation`, `conversation_participant`, `attachment` | Participantes y archivos autorizados, separados del contenido público |
+| `license`, `entitlement` | Derechos adquiridos por versión, plataforma, titular y alcance |
 
-## Organización del código (objetivo)
+Es una propuesta de dominio, no migraciones SQL aplicadas. Las operaciones específicas conservan sus propias entidades: citas, reservas de capacidad, pedidos, presupuestos, proyectos, alquileres, estancias y entregas.
+
+### Autorización prevista
+
+- El servidor resuelve identidad, membresía, rol y capacidad para cada operación; PostgreSQL/RLS protege las filas privadas de la organización.
+- Los roles iniciales propuestos son propietario, administrador y empleado con capacidades acotadas. No se concede acceso global a datos personales por ser empleado.
+- Cliente accede exclusivamente a sus relaciones verificadas y sus operaciones autorizadas. Un negocio no obtiene su historial con otros negocios.
+- Las coincidencias de nombre, teléfono o correo no verificado no fusionan identidades o contactos.
+- Los archivos privados se sirven tras verificar participantes/propiedad, mediante enlaces firmados de duración limitada. Las galerías públicas no se alimentan de los adjuntos de chat.
+- Los accesos de soporte requieren finalidad, privilegio mínimo y auditoría; no existe un rol con acceso indiscriminado por conveniencia de UI.
+- Las pruebas cruzadas deben intentar leer y modificar datos de otra organización, cambiar IDs, reutilizar enlaces de documentos, elevar roles y usar membresías revocadas.
+
+**Nada de esto se considera implementado por la navegación demo.** Los parámetros de URL, los toggles locales y los menús ocultos no son controles de seguridad.
+
+## Composición por sectores y dominios
+
+El catálogo actual contiene 28 plantillas y 25 módulos. Se conserva para compatibilidad; el catálogo funcional de 24 áreas de la especificación maestra es el objetivo de producto, no una equivalencia uno a uno ni una obligación de cambiar todos los identificadores ahora.
+
+Una definición de módulo deberá declarar identificador estable, versión, estado, capacidades, requisitos, incompatibilidades justificadas y alcance offline/online. La plantilla recomienda una composición: no contiene todo el comportamiento del módulo ni decide permisos por sí sola. Las actividades adicionales agregan recomendaciones y se deduplican; el usuario puede revisarlas.
+
+Estados de capacidad: `planned`, `preview`, `beta`, `stable`, además de una marca de revisión regulatoria cuando proceda. La habilitación por negocio, la autorización del miembro, la licencia y la disponibilidad del servicio online son condiciones distintas.
+
+| Dominio | Reglas que no deben mezclarse |
+| --- | --- |
+| Citas | Duración, profesional, descansos, zona horaria y prevención de solapes |
+| Capacidad | Mesas, plazas, grupos y simultaneidad |
+| Pedidos/encargos | Personalización, preparación, recogida o envío |
+| Presupuestos | Versiones, vigencia y aceptación |
+| Proyectos/trabajos | Hitos, tareas, asignados y entregables |
+| Alquiler | Activo, intervalo, devolución y disponibilidad |
+| Alojamiento | Noches, unidad, check-in y políticas |
+| Membresías | Créditos, renovación y condiciones |
+
+No se introduce una tabla o megaformulario universal `transactions` que reemplace estos dominios. Los eventos compartidos contienen referencias y contratos estables sin borrar sus reglas específicas.
+
+## AutonoSuite: permisos y derechos por versión
+
+Cliente es gratuito y no está sujeto a un permiso premium. AutonoSuite mejora las funciones profesionales dentro de la misma aplicación.
+
+Modelo propuesto de derecho adquirido:
+
 ```text
-src/app/                # Rutas y vistas
-src/components/         # Elementos UI reutilizables
-src/lib/catalog.ts      # Catálogo tipado y plantillas sectoriales
-src/lib/demo.ts         # Solo almacenamiento demo
-src/features/<dominio>/ # Lógica y componentes por dominio (Hitos 1+)
-src/server/             # Autorización, servicios backend, integración DB (Hitos 1+)
-supabase/migrations/    # Migraciones revisadas (Hitos 1+)
+License
+  id, holder_type, holder_id
+  product = AutonoSuite
+  edition_version, acquired_at, purchase_channel
+  covered_capability_versions[], supported_platforms[]
+  receipt_reference, verification_status
+
+Capability decision
+  actor + organization + membership permission
+  + module enabled + module compatibility
+  + acquired entitlement when required
+  + online service policy when the action needs infrastructure
 ```
 
-## Estados de capacidad (evitan confusión)
-- `planned`: idea/catálogo, no activable en producción.
-- `preview`: solo UI demostrativa, sin operaciones reales.
-- `beta`: función usable con límites y seguimiento.
-- `stable`: aprobada y soportada.
-- `regulated`: requiere evaluación y controles adicionales.
+No basta con un `isPremium` editable en el navegador. El Hito 0 puede mostrar comparaciones o estados de ejemplo, pero no crear una prueba de compra. La titularidad de la licencia —persona o negocio, dispositivos y transferencias— y la matriz exacta de funciones/límites deben cerrarse antes de vender.
 
-## Secuencia de arquitectura
-Hito 0 UI demo -> Hito 1 auth y organizaciones + permisos -> Hito 2 reservas/CRM -> Hito 3 presupuesto/proyecto -> Hito 4 cuenta cliente global verificada -> Hito 5 segundo/tercer sector -> Hito 6 directorio -> Hito 7 mapa. No introducir complejidad antes de que la necesite el producto.
+La licencia perpetua conserva las capacidades locales de la versión adquirida. No se aplicará una caducidad artificial a esas capacidades por rechazar una actualización mayor. Una actualización opcional puede añadir derechos; no revoca los anteriores. Los permisos de empresa y el acceso a datos de terceros siguen sujetos a membresías vigentes aunque exista una licencia.
+
+La sincronización, almacenamiento remoto, reservas públicas y servicios de IA requieren una política aparte, con cuotas y condiciones sostenibles. No se promete infraestructura ilimitada con el pago único. La compatibilidad técnica, soporte y correcciones de seguridad tienen una política explícita independiente del derecho a utilizar las capacidades locales adquiridas.
+
+### Canales de compra: decisión pendiente de validación
+
+| Canal | Consideración antes de implementar |
+| --- | --- |
+| Web | Proveedor, recibos, restauración, impuestos, reembolsos y verificación de derechos |
+| iOS | Revisar las reglas de compras integradas para funciones digitales, las excepciones y las condiciones por región antes de diseñar botones, enlaces o desbloqueos externos |
+| Android | Revisar Google Play Billing, excepciones y condiciones regionales para funciones digitales; no asumir que una compra web se pueda promover o restaurar de cualquier forma |
+| Servicios físicos contratados a negocios | Tratar su contratación/pago como un dominio comercial distinto de la compra de una función digital de AutonoSuite |
+
+Los precios 99 € y 39 € son provisionales. El prototipo no implementa cobros. No se define todavía un mecanismo real común de licencias entre web, iOS y Android: requiere lectura de las políticas vigentes, selección de canales y revisión de casos concretos.
+
+Fuentes oficiales a revisar al diseñar el canal real: [Apple App Review Guidelines, compras integradas](https://developer.apple.com/app-store/review/guidelines/#in-app-purchase), [política de pagos de Google Play](https://support.google.com/googleplay/android-developer/answer/9858738) y [documentación de Google Play Billing](https://developer.android.com/google/play/billing). La lectura directa de las páginas de políticas comerciales de Apple y Google quedó bloqueada con 403 por la red de esta instancia. Por eso sus condiciones actuales no se consideran verificadas. Se consultaron fuentes técnicas oficiales de Expo mediante su repositorio público, detalladas en `MOVIL_Y_PRUEBAS.md`. Los enlaces de políticas no equivalen a aprobación de las tiendas ni a una revisión legal de la implementación.
+
+## Arquitectura multiplataforma propuesta
+
+```text
+apps/
+  web/                  # Next.js, App Router y UI web
+  mobile/               # React Native + Expo para iOS y Android
+packages/
+  domain/               # Entidades, reglas y casos de uso sin DOM ni SDK de proveedor
+  contracts/            # Tipos y contratos de API/eventos
+  validation/           # Validadores compartidos y esquemas versionados
+  catalog/              # Sectores, módulos, recomendaciones y compatibilidad
+  permissions/          # Cálculo de capacidades; el servidor vuelve a verificarlo
+  design-tokens/        # Color, tipografía, espacio y movimiento, sin imponer CSS a native
+  storage/              # Puertos e interfaces; adaptadores por plataforma
+  sync/                 # Protocolos/outbox, idempotencia y resolución de conflictos
+```
+
+Esta estructura es una propuesta de evolución. Hoy el código sigue bajo `src/`; no existe aún una aplicación Expo lista para Expo Go. La extracción se hará cuando exista un consumidor móvil verificable, conservando imports públicos y pruebas de las reglas.
+
+| Función | Adaptador web | Adaptador móvil previsto |
+| --- | --- | --- |
+| Rutas | Next.js | Expo Router |
+| Datos locales estructurados | IndexedDB, según evaluación | SQLite |
+| Secretos/credenciales | Cookies seguras/flujo de sesión revisado | Almacenamiento seguro nativo |
+| Archivos | File API y almacenamiento local elegido | File system y selectores nativos |
+| Autenticación conectada | Adaptador Supabase para web, con servidor | Adaptador móvil y enlaces de retorno |
+| Ubicación opcional | Geolocation API con consentimiento | Permisos y API nativa de ubicación |
+| Notificaciones | Adaptador web cuando se habilite | Permisos y proveedor push revisado |
+
+No se comparte directamente CSS, `next/link`, acceso a `window` o componentes DOM con React Native. Se comparten reglas, tipos, validaciones, contratos y tokens; cada plataforma conserva componentes accesibles adecuados.
+
+## Evaluación local-first
+
+### Datos y operaciones offline
+
+Los casos locales elegibles incluyen clientes del contexto autorizado, proyectos, trabajos, borradores de presupuestos, agenda personal/local, documentos e informes básicos. La primera carga de esta web necesita el servidor: guardar en `localStorage` no garantiza arranque offline ni una PWA instalable.
+
+Modelo propuesto para sincronización: IDs estables, `organization_id`, revisión, versión de esquema, fecha informativa de edición y tombstones de borrado. Los relojes del dispositivo no son una autoridad para resolver conflictos ni disponibilidad.
+
+- Las escrituras locales pasan por un repositorio/adaptador y una outbox con identificador idempotente.
+- La sincronización compara la revisión base y los permisos vigentes. Los reintentos no duplican pedidos o solicitudes.
+- Cambios en campos independientes pueden combinarse si el dominio lo permite. Conflictos sobre el mismo campo o documento se muestran para revisión; no se aplica una regla global de «última escritura gana» a todo.
+- Reservas, numeración fiscal, licencias y otras operaciones de autoridad requieren validación online de su dominio. Un borrador offline conserva estado pendiente; nunca confirma una reserva ni emite una factura real.
+- Los adjuntos tienen manifiesto, tamaño y checksum, cuotas y reanudación. La subida no se considera terminada hasta su validación por el servicio.
+- La revocación remota de membresías no puede conocerse instantáneamente sin conexión. Se definirá una política de caché, comprobación al reconectar y protección local proporcional al riesgo antes de prometer acceso offline a datos privados.
+
+### Conflictos, copias y migraciones
+
+| Área | Política a implementar y probar antes de producción |
+| --- | --- |
+| Conflictos | Revisión base, comparación por dominio, estado visible y elección explícita cuando no sea posible fusionar |
+| Copias | Exportación consistente de datos/adjuntos con manifiesto, versión y checksum; cifrado y recuperación revisados para datos privados |
+| Restauración | Validar integridad/esquema antes de importar; vista de resumen y recuperación comprobada en una copia |
+| Migración | Incremental, transaccional cuando el motor lo permita, con copia previa y pruebas desde versiones soportadas |
+| Compatibilidad | Conservar exportación y lectura de versiones compatibles; no prometer abrir esquemas nuevos desde clientes antiguos sin migrador |
+| Borrado | Tombstones y plazos de retención; diferenciar borrado local, borrado sincronizado y copias retenidas por obligaciones aplicables |
+| Cuotas | Medir límites del dispositivo, almacenamiento remoto y costes; comunicar errores sin pérdida silenciosa |
+
+La licencia de una versión anterior no se revoca para forzar migraciones comerciales. Una incompatibilidad de esquema debe explicarse y ofrecer recuperación/exportación o una versión compatible; no destruir datos como respuesta a un conflicto de versión.
+
+## Modelo demo existente y compatibilidad
+
+- `src/lib/catalog.ts`: plantillas y módulos tipados; sus recomendaciones no otorgan acceso.
+- `src/lib/demo.ts`: configuración local validada, Clientes obligatorio, sin cobros/facturación operativos.
+- `src/features/business-profile/`: cuatro perfiles ficticios, catálogo compartido, fotos pequeñas y solicitudes de ejemplo.
+- `src/features/messaging/`: hilos y archivos locales de demostración. Su existencia no garantiza entrega entre usuarios; las pruebas de esta revisión deben completar la verificación.
+- Las rutas de empresa, Cliente y directorio son vistas de la misma web. La URL no verifica una identidad.
+
+Las claves internas antiguas que empiezan por `nexo-demo-` se mantienen para no borrar la configuración y los favoritos existentes al cambiar la marca. No son nombres comerciales. Una futura migración de claves deberá leer las antiguas, validar, escribir la versión nueva y comprobar el resultado antes de retirar las anteriores.
+
+Las fotos del perfil son contenido de presentación. Los adjuntos de chat representan entregas privadas y no se publican automáticamente en el perfil. El prototipo puede usar URLs de objeto durante la sesión; si se pierden los bytes al recargar debe mostrarlo y deshabilitar la descarga. Nada de esto garantiza confidencialidad de producción.
+
+## Seguridad y verificaciones antes de conectar servicios
+
+1. Modelar amenazas y límites por dominio, incluidos sectores regulados.
+2. Probar servidor y RLS con dos empresas y dos usuarios, cambios de rol y archivos cruzados.
+3. Verificar consentimiento para perfil público, zonas y datos precisos; la búsqueda por ciudad no requiere ubicación del cliente.
+4. Probar concurrencia/idempotencia y zonas horarias en reservas y pedidos.
+5. Probar migraciones, copias, restauración y eliminación.
+6. Verificar licencias/recibos por canal y derechos de versiones anteriores antes de activar premium real.
+7. Validar normativa española antes de facturación o una revisión fiscal automatizada; definir límites de cualquier orientación.
+
+La aprobación visual del Hito 0 no sustituye estas pruebas ni autoriza automáticamente el siguiente hito.

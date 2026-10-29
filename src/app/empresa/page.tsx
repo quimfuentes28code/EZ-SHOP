@@ -3,31 +3,27 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
-  Activity,
-  ArrowDownLeft,
   ArrowRight,
   ArrowUpRight,
-  Bell,
   Blocks,
   CalendarDays,
   Camera,
-  Check,
   ChevronDown,
-  ChevronLeft,
   ChevronRight,
   CircleHelp,
-  Compass,
   FileText,
   FolderKanban,
-  GalleryHorizontalEnd,
+  ImagePlus,
   LayoutDashboard,
   Menu,
+  MessageCircle,
   Package,
   Search,
   Settings2,
   ShieldCheck,
   ShoppingBag,
-  Sparkles,
+  Store,
+  Crown,
   UsersRound,
   X,
   type LucideIcon,
@@ -36,6 +32,13 @@ import { Brand } from "@/components/brand";
 import { Modal } from "@/components/modal";
 import { ModulePicker } from "@/components/module-picker";
 import { ModulePreview } from "@/components/module-preview";
+import { BusinessProfileEditor } from "@/features/business-profile/components";
+import {
+  DEMO_REQUEST_EVENT,
+  getBusinessIdForSector,
+  getDemoRequests,
+  type DemoRequest,
+} from "@/features/business-profile/model";
 import { MODULES, sectorById, type ModuleId } from "@/lib/catalog";
 import {
   DEFAULT_CONFIG,
@@ -44,9 +47,15 @@ import {
   saveDemoConfig,
   type DemoConfig,
 } from "@/lib/demo";
+import {
+  ExperienceSwitcher,
+  OrganizationSwitcher,
+} from "@/components/experience-switcher";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { ORGANIZATION_EVENT, loadActiveOrganization } from "@/lib/experience";
 import "./workspace.css";
 
-type View = "summary" | "modules" | ModuleId;
+type View = "summary" | "modules" | "profile" | ModuleId;
 const icons: Partial<Record<ModuleId, LucideIcon>> = {
   customers: UsersRound,
   staff: UsersRound,
@@ -58,13 +67,10 @@ const icons: Partial<Record<ModuleId, LucideIcon>> = {
   orders: ShoppingBag,
   quotes: FileText,
   projects: FolderKanban,
-  galleries: GalleryHorizontalEnd,
 };
-const dayLabels = [
-  "Lunes, 2 de noviembre",
-  "Martes, 3 de noviembre",
-  "Miércoles, 4 de noviembre",
-];
+// Public photos and products live in the profile; private deliveries live in chat.
+const profileModules = new Set<ModuleId>(["services", "products"]);
+const chatModules = new Set<ModuleId>(["galleries", "communications"]);
 
 export default function BusinessPage() {
   const [config, setConfig] = useState<DemoConfig>(DEFAULT_CONFIG);
@@ -72,13 +78,28 @@ export default function BusinessPage() {
   const [query, setQuery] = useState("");
   const [mobileNav, setMobileNav] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const [notification, setNotification] = useState(false);
   const [help, setHelp] = useState(false);
   const [status, setStatus] = useState("");
-  const [day, setDay] = useState(0);
-  const [period, setPeriod] = useState<"week" | "month">("week");
+  const [requests, setRequests] = useState<DemoRequest[]>([]);
   useEffect(() => {
     setConfig(loadDemoConfig());
+    const initial = new URLSearchParams(window.location.search).get("vista");
+    if (initial === "perfil") setView("profile");
+    if (initial === "modulos") setView("modules");
+    const refresh = () => setRequests(getDemoRequests());
+    const reloadBusiness = () => {
+      setConfig(loadDemoConfig());
+      setView("summary");
+    };
+    window.addEventListener(ORGANIZATION_EVENT, reloadBusiness);
+    refresh();
+    window.addEventListener(DEMO_REQUEST_EVENT, refresh);
+    window.addEventListener("storage", refresh);
+    return () => {
+      window.removeEventListener(ORGANIZATION_EVENT, reloadBusiness);
+      window.removeEventListener(DEMO_REQUEST_EVENT, refresh);
+      window.removeEventListener("storage", refresh);
+    };
   }, []);
   useEffect(() => {
     const media = window.matchMedia("(max-width: 700px)");
@@ -90,6 +111,10 @@ export default function BusinessPage() {
     media.addEventListener("change", sync);
     return () => media.removeEventListener("change", sync);
   }, []);
+  const closeMenu = () => {
+    setMobileNav(false);
+    document.querySelector<HTMLElement>(".mobile-menu")?.focus();
+  };
   useEffect(() => {
     if (!mobileNav) return;
     const sidebar = document.getElementById("business-navigation");
@@ -103,8 +128,8 @@ export default function BusinessPage() {
         document.querySelector<HTMLElement>(".mobile-menu")?.focus();
       }
       if (event.key !== "Tab" || !focusable?.length) return;
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
+      const first = focusable[0],
+        last = focusable[focusable.length - 1];
       if (event.shiftKey && document.activeElement === first) {
         event.preventDefault();
         last.focus();
@@ -123,14 +148,24 @@ export default function BusinessPage() {
     };
   }, [mobileNav]);
   const current =
-    view !== "summary" && view !== "modules" && !config.modules.includes(view)
+    view !== "summary" &&
+    view !== "modules" &&
+    view !== "profile" &&
+    !config.modules.includes(view)
       ? "summary"
       : view;
+  const businessId = getBusinessIdForSector(config.sectorId);
+  const chatHref = `/mensajes?como=empresa&negocio=${businessId}`;
+  const publicHref = `/negocio/${businessId}`;
   const sector = sectorById(config.sectorId);
   const go = (next: View) => {
     setView(next);
     setQuery("");
     setMobileNav(false);
+    if (isMobile)
+      requestAnimationFrame(() =>
+        document.getElementById("workspace-title")?.focus(),
+      );
   };
   const updateModules = (modules: ModuleId[]) => {
     const updated = normalizeDemoConfig({ ...config, modules });
@@ -141,25 +176,54 @@ export default function BusinessPage() {
         : "Cambios aplicados temporalmente. El navegador no permite guardarlos.",
     );
   };
-  const primary = config.modules.includes("projects")
-    ? "projects"
-    : config.modules.includes("orders")
-      ? "orders"
-      : config.modules.includes("bookings")
-        ? "bookings"
-        : "customers";
-  const primaryLabel = MODULES[primary].label;
-  const operational = config.modules.filter((id) => id !== "customers");
-  const projects = config.modules.includes("projects");
-  const appointments =
-    config.modules.includes("bookings") || config.modules.includes("capacity");
-  const quotes = config.modules.includes("quotes");
+  const updateProfileIdentity = (patch: Partial<DemoConfig>) => {
+    const updated = normalizeDemoConfig({ ...config, ...patch });
+    const saved = saveDemoConfig(updated);
+    setConfig(updated);
+    return saved;
+  };
+  const optionalModules = config.modules.filter(
+    (id) =>
+      id !== "customers" && !profileModules.has(id) && !chatModules.has(id),
+  );
+  const ownRequests = requests.filter(
+    (request) => request.businessId === businessId,
+  );
   const title =
     current === "summary"
-      ? "Resumen general"
+      ? "Inicio"
       : current === "modules"
         ? "Tus módulos"
-        : MODULES[current].label;
+        : current === "profile"
+          ? "Mi perfil de negocio"
+          : MODULES[current].label;
+  const conversations =
+    businessId === "photo"
+      ? [
+          {
+            id: "lumen-alex",
+            initials: "AL",
+            name: "Alex López",
+            subject: "Sesión de retrato",
+            detail: "Habla de la sesión y comparte los archivos aquí.",
+          },
+          {
+            id: "lumen-clara",
+            initials: "CT",
+            name: "Clara Torres",
+            subject: "Fotografía de producto",
+            detail: "Una conversación para todo el trabajo.",
+          },
+        ]
+      : [
+          {
+            id: `${businessId === "beauty" ? "barberia" : businessId === "bakery" ? "dulce" : "taller"}-alex`,
+            initials: "AL",
+            name: "Alex López",
+            subject: "Consulta de ejemplo",
+            detail: "Responde preguntas y comparte información.",
+          },
+        ];
 
   return (
     <div className="workspace-shell">
@@ -170,7 +234,7 @@ export default function BusinessPage() {
         <button
           className="sidebar-scrim"
           aria-label="Cerrar menú"
-          onClick={() => setMobileNav(false)}
+          onClick={closeMenu}
         />
       )}
       <aside
@@ -184,84 +248,75 @@ export default function BusinessPage() {
           <button
             className="icon-button sidebar-close"
             aria-label="Cerrar menú"
-            onClick={() => setMobileNav(false)}
+            onClick={closeMenu}
           >
             <X size={17} />
           </button>
         </div>
-        <Link className="business-switcher" href="/onboarding">
-          <span className="business-monogram">
-            {config.name.substring(0, 1)}
-          </span>
-          <span>
-            <strong>{config.name}</strong>
-            <small>Espacio de empresa</small>
-          </span>
-          <ChevronDown size={14} />
-        </Link>
-        <span className="workspace-nav-label">WORKSPACE</span>
+        <OrganizationSwitcher name={config.name} />
         <nav aria-label="Módulos del negocio">
-          <button
-            className={`workspace-nav-item ${current === "summary" ? "is-active" : ""}`}
+          <span className="workspace-nav-label">LO ESENCIAL</span>
+          <NavButton
+            active={current === "summary"}
             onClick={() => go("summary")}
-          >
-            <LayoutDashboard size={17} />
-            Resumen general
-            <span className="active-dot" />
-          </button>
-          {config.modules.map((id) => {
-            const Icon = icons[id] ?? Blocks;
-            return (
-              <button
-                key={id}
-                aria-label={MODULES[id].label}
-                className={`workspace-nav-item ${current === id ? "is-active" : ""}`}
-                onClick={() => go(id)}
-              >
-                <Icon size={17} />
-                {MODULES[id].label}
-                {id === "projects" && <span className="nav-count">8</span>}
-              </button>
-            );
-          })}
+            icon={LayoutDashboard}
+            label="Inicio"
+          />
+          <Link className="workspace-nav-item" href={chatHref}>
+            <MessageCircle size={18} />
+            Mensajes<span className="nav-hint">Archivos</span>
+          </Link>
+          <NavButton
+            active={current === "customers"}
+            onClick={() => go("customers")}
+            icon={UsersRound}
+            label="Clientes"
+          />
+          <NavButton
+            active={current === "profile"}
+            onClick={() => go("profile")}
+            icon={Store}
+            label="Mi perfil"
+          />
+          {optionalModules.length > 0 && (
+            <div className="optional-navigation">
+              <span className="workspace-nav-label">TUS HERRAMIENTAS</span>
+              {optionalModules.map((id) => (
+                <NavButton
+                  key={id}
+                  active={current === id}
+                  onClick={() => go(id)}
+                  icon={icons[id] ?? Blocks}
+                  label={MODULES[id].label}
+                />
+              ))}
+            </div>
+          )}
         </nav>
-        <div className="workspace-navigation-extra">
-          <span className="workspace-nav-label">TU ESPACIO</span>
+        <div className="workspace-sidebar-bottom">
+          <Link className="workspace-nav-item" href="/mi-plan">
+            <Crown size={18} />
+            Mi plan<span className="nav-hint">Gratis</span>
+          </Link>
           <button
-            aria-label="Módulos"
             className={`workspace-nav-item ${current === "modules" ? "is-active" : ""}`}
+            aria-label="Módulos"
             onClick={() => go("modules")}
           >
-            <Blocks size={17} />
-            Módulos<span className="nav-new">NEW</span>
+            <Settings2 size={18} />
+            Personalizar herramientas
           </button>
-          <Link className="workspace-nav-item" href="/onboarding">
-            <Settings2 size={17} />
-            Configuración
-          </Link>
-        </div>
-        <div className="workspace-sidebar-bottom">
-          <div className="sidebar-promo">
-            <span>
-              <Sparkles size={16} /> Crece a tu manera
-            </span>
-            <p>Tu próximo paso empieza con las herramientas adecuadas.</p>
-            <button onClick={() => go("modules")}>
-              Explorar módulos <ArrowUpRight size={13} />
-            </button>
-          </div>
           <button className="workspace-nav-item" onClick={() => setHelp(true)}>
-            <CircleHelp size={17} />
-            Ayuda y primeros pasos
-            <ArrowUpRight size={13} />
+            <CircleHelp size={18} />
+            Cómo funciona
           </button>
           <Link href="/cliente" className="account-switch">
             <span className="avatar avatar-person">AL</span>
             <span>
-              <strong>Alex López</strong>
-              <small>Ver mi espacio cliente</small>
+              <strong>Modo cliente</strong>
+              <small>Explorar la otra experiencia</small>
             </span>
-            <ArrowRight size={14} />
+            <ArrowRight size={15} />
           </Link>
         </div>
       </aside>
@@ -275,590 +330,270 @@ export default function BusinessPage() {
               aria-controls="business-navigation"
               onClick={() => setMobileNav(true)}
             >
-              <Menu size={18} />
+              <Menu size={20} />
             </button>
-            <span>Mi espacio</span>
-            <ChevronRight size={12} />
+            <span>Mi negocio</span>
+            <ChevronRight size={13} />
             <strong>{title}</strong>
           </div>
-          <div className="workspace-toolbar">
-            <Link className="workspace-explore" href="/explorar">
-              <Compass size={15} />
-              Explorar Nexo
-              <ArrowUpRight size={11} />
+          <div className="workspace-header-actions">
+            <ExperienceSwitcher />
+            <ThemeToggle />
+            <Link
+              href={publicHref}
+              className="button secondary small"
+              aria-label="Ver perfil como cliente"
+            >
+              <Store size={15} />
+              <span>Ver perfil</span>
+              <ArrowUpRight size={14} />
             </Link>
-            <span className="toolbar-divider" />
-            <button
-              className="icon-button notification-button"
-              aria-label="Notificaciones de demostración"
-              aria-expanded={notification}
-              onClick={() => setNotification(!notification)}
-            >
-              <Bell size={17} />
-              <i />
-            </button>
-            <span
-              className="avatar avatar-person"
-              aria-label="Alex López, usuario ficticio"
-            >
-              AL
-            </span>
           </div>
-          {notification && (
-            <section className="notification-popover">
-              <div>
-                <strong>Tu actividad, al día</strong>
-                <button
-                  className="icon-button"
-                  aria-label="Cerrar notificaciones"
-                  onClick={() => setNotification(false)}
-                >
-                  <X size={14} />
-                </button>
-              </div>
-              <p>
-                <span className="notification-dot" /> Una nueva solicitud de
-                ejemplo espera tu revisión.
-              </p>
-              <p>
-                <Check size={13} /> Tu espacio demo está preparado.
-              </p>
-              <small>Notificaciones ficticias · No se envían mensajes</small>
-            </section>
-          )}
         </header>
         <main className="workspace-content" id="workspace-content">
           <div className="workspace-page-heading">
             <div>
-              <div className="workspace-overline">
-                <span className="live-dot" /> TU NEGOCIO, CONECTADO{" "}
-                <span className="workspace-sample-label">Datos de ejemplo</span>
-              </div>
-              <h1>
-                {current === "summary" ? (
-                  <>
-                    Todo en orden.
-                    <br className="mobile-only" /> Hola, Alex{" "}
-                    <span className="greeting-spark" aria-hidden="true">
-                      ✳
-                    </span>
-                  </>
-                ) : (
-                  title
-                )}
+              <span className="eyebrow">ESPACIO DE NEGOCIO · DEMO</span>
+              <h1 id="workspace-title" tabIndex={-1}>
+                {current === "summary" ? "Tu negocio, más sencillo." : title}
               </h1>
               <p>
                 {current === "summary"
-                  ? "Un vistazo a lo que está pasando en tu negocio."
+                  ? "Habla con tus clientes, comparte tu trabajo y enseña lo que haces."
                   : current === "modules"
-                    ? `Un espacio a medida para ${sector.label.toLocaleLowerCase("es")}.`
-                    : MODULES[current].desc}
+                    ? "Activa sólo las herramientas que vayas a usar."
+                    : current === "profile"
+                      ? "Las fotos, servicios y productos que verán tus clientes."
+                      : MODULES[current].desc}
               </p>
             </div>
-            <div className="workspace-heading-action">
-              {current === "summary" ? (
-                <button
-                  className="button secondary"
-                  onClick={() => go("modules")}
-                >
-                  <Settings2 size={14} />
-                  Personalizar panel
-                </button>
-              ) : (
-                <button
-                  className="button secondary"
-                  onClick={() => go("summary")}
-                >
-                  <ArrowDownLeft size={14} />
-                  Volver al resumen
-                </button>
-              )}
-            </div>
+            {current !== "summary" && (
+              <button
+                className="button secondary small"
+                onClick={() => go("summary")}
+              >
+                Volver a inicio <ArrowRight size={14} />
+              </button>
+            )}
           </div>
           {current === "summary" ? (
             <>
-              <section className="welcome-banner">
-                <div className="welcome-symbol">
-                  <Camera size={25} strokeWidth={1.2} />
-                </div>
-                <div>
-                  <span>TU ESPACIO, A TU MANERA</span>
-                  <h2>{config.name}, todo empieza aquí.</h2>
-                  <p>
-                    {config.modules.length} módulos conectados para que te
-                    centres en lo que mejor haces.
-                  </p>
-                </div>
-                <button
-                  className="button primary small"
-                  onClick={() => go(primary)}
-                >
-                  Ver {primaryLabel.toLocaleLowerCase("es")}{" "}
-                  <ArrowUpRight size={14} />
-                </button>
-                <div className="banner-rings" aria-hidden="true">
-                  <i />
-                  <i />
-                  <i />
-                </div>
-              </section>
               <section
-                className="workspace-metrics"
-                aria-label="Indicadores ficticios del negocio"
+                className="essential-actions"
+                aria-label="Acciones principales"
               >
-                <Metric
-                  label="Clientes conectados"
-                  value="128"
-                  change="+8 este mes"
-                  icon={UsersRound}
-                  onClick={() => go("customers")}
-                  color="lime"
-                />
-                <Metric
-                  label={
-                    projects
-                      ? "Proyectos en marcha"
-                      : config.modules.includes("orders")
-                        ? "Pedidos en marcha"
-                        : "Módulos conectados"
-                  }
-                  value={
-                    projects
-                      ? "08"
-                      : config.modules.includes("orders")
-                        ? "12"
-                        : String(config.modules.length).padStart(2, "0")
-                  }
-                  change={
-                    projects ? "3 en fase de entrega" : "Tu espacio a medida"
-                  }
-                  icon={projects ? FolderKanban : Blocks}
-                  onClick={() =>
-                    go(
-                      projects
-                        ? "projects"
-                        : config.modules.includes("orders")
-                          ? "orders"
-                          : "modules",
-                    )
-                  }
-                  color="violet"
-                />
-                <Metric
-                  label={
-                    quotes ? "Presupuestos abiertos" : "Relaciones activas"
-                  }
-                  value={quotes ? "06" : "18"}
-                  change={quotes ? "2 por revisar" : "Datos de demostración"}
-                  icon={quotes ? FileText : Activity}
-                  onClick={() => go(quotes ? "quotes" : "customers")}
-                  color="orange"
-                />
-                <Metric
-                  label={
-                    appointments
-                      ? "Próximas reservas"
-                      : "Herramientas disponibles"
-                  }
-                  value={appointments ? "12" : "23"}
-                  change={
-                    appointments ? "4 esta semana" : "Combina y personaliza"
-                  }
-                  icon={CalendarDays}
-                  onClick={() =>
-                    go(
-                      appointments
-                        ? config.modules.includes("bookings")
-                          ? "bookings"
-                          : "capacity"
-                        : "modules",
-                    )
-                  }
-                  color="blue"
-                />
+                <Link href={chatHref}>
+                  <span className="essential-icon">
+                    <MessageCircle size={25} />
+                  </span>
+                  <h2>Hablar con un cliente</h2>
+                  <p>Mensajes y archivos en la misma conversación.</p>
+                  <span className="essential-link">
+                    Abrir mensajes <ArrowRight size={15} />
+                  </span>
+                </Link>
+                <button onClick={() => go("profile")}>
+                  <span className="essential-icon lavender">
+                    <ImagePlus size={25} />
+                  </span>
+                  <h2>Preparar mi perfil</h2>
+                  <p>Añade fotos, presenta tu negocio y crea tu catálogo.</p>
+                  <span className="essential-link">
+                    Editar mi perfil <ArrowRight size={15} />
+                  </span>
+                </button>
+                <Link href={publicHref}>
+                  <span className="essential-icon peach">
+                    <Store size={25} />
+                  </span>
+                  <h2>Ver lo que ve el cliente</h2>
+                  <p>
+                    Revisa tu perfil, tus productos y las opciones de reserva.
+                  </p>
+                  <span className="essential-link">
+                    Abrir mi negocio <ArrowUpRight size={15} />
+                  </span>
+                </Link>
               </section>
-              <div className="workspace-dashboard-grid">
-                <section className="workspace-card activity-card">
-                  <div className="workspace-card-header">
+              <div className="business-home-columns">
+                <section className="business-home-card">
+                  <div className="business-section-title">
                     <div>
-                      <h2>El pulso de tu negocio</h2>
-                      <p>Actividad ilustrativa · No son ingresos</p>
+                      <h2>Conversaciones</h2>
+                      <p>Un espacio privado para cada relación.</p>
                     </div>
-                    <div
-                      className="chart-period"
-                      aria-label="Periodo del gráfico"
-                    >
-                      <button
-                        className={period === "week" ? "active" : ""}
-                        aria-pressed={period === "week"}
-                        onClick={() => setPeriod("week")}
-                      >
-                        Semana
-                      </button>
-                      <button
-                        className={period === "month" ? "active" : ""}
-                        aria-pressed={period === "month"}
-                        onClick={() => setPeriod("month")}
-                      >
-                        Mes
-                      </button>
-                    </div>
+                    <Link href={chatHref} className="inline-link">
+                      Ver mensajes <ArrowUpRight size={15} />
+                    </Link>
                   </div>
-                  <div className="activity-total">
-                    <strong>{period === "week" ? "42" : "168"}</strong>
-                    <span>
-                      interacciones de ejemplo <small>↗ 18,2 %</small>
-                    </span>
+                  <div className="home-conversations">
+                    {conversations.map((conversation) => (
+                      <Link
+                        key={conversation.id}
+                        href={`${chatHref}&conversacion=${conversation.id}`}
+                      >
+                        <span className="conversation-avatar">
+                          {conversation.initials}
+                        </span>
+                        <span>
+                          <strong>
+                            {conversation.name}
+                            <small>{conversation.subject}</small>
+                          </strong>
+                          <p>{conversation.detail}</p>
+                        </span>
+                        <ChevronRight size={17} />
+                      </Link>
+                    ))}
                   </div>
-                  <ActivityChart period={period} />
-                  <div className="chart-footer">
+                  <div className="home-privacy">
+                    <ShieldCheck size={15} />
                     <span>
-                      <i /> Contactos
+                      Las entregas se comparten en el chat. Las fotos del perfil
+                      se muestran aparte.
                     </span>
-                    <span>
-                      <i /> Acciones
-                    </span>
-                    <small>
-                      {period === "week"
-                        ? "2–8 noviembre 2026"
-                        : "Noviembre 2026"}{" "}
-                      · Muestra
-                    </small>
                   </div>
                 </section>
-                <section className="workspace-card agenda-card">
-                  <div className="workspace-card-header">
-                    <h2>{appointments ? "En tu agenda" : "Tu próximo paso"}</h2>
-                    {appointments ? (
-                      <button
-                        className="plain-link"
-                        onClick={() =>
-                          go(
-                            config.modules.includes("bookings")
-                              ? "bookings"
-                              : "capacity",
-                          )
-                        }
-                      >
-                        Ver todo <ArrowUpRight size={12} />
-                      </button>
-                    ) : (
-                      <Blocks size={17} />
-                    )}
+                <section className="business-home-card home-profile-card">
+                  <div className="profile-cover-preview">
+                    <span>
+                      {businessId === "photo" ? (
+                        <Camera size={35} />
+                      ) : (
+                        <Store size={35} />
+                      )}
+                    </span>
+                    <i />
+                    <i />
                   </div>
-                  {appointments ? (
-                    <>
-                      <div className="agenda-date">
-                        <CalendarDays size={13} />
-                        <span>{dayLabels[day]}</span>
-                        <div>
-                          <button
-                            className="icon-button"
-                            aria-label="Día anterior"
-                            disabled={day === 0}
-                            onClick={() => setDay(day - 1)}
-                          >
-                            <ChevronLeft size={13} />
-                          </button>
-                          <button
-                            className="icon-button"
-                            aria-label="Día siguiente"
-                            disabled={day === 2}
-                            onClick={() => setDay(day + 1)}
-                          >
-                            <ChevronRight size={13} />
-                          </button>
-                        </div>
-                      </div>
-                      {(config.sectorId === "photo"
-                        ? [
-                            {
-                              time: "09:30",
-                              duration: "60 min",
-                              title: "Sesión de marca personal",
-                              name: "Laura Martínez",
-                              color: "lime",
-                            },
-                            {
-                              time: "12:00",
-                              duration: "45 min",
-                              title: "Reunión de proyecto",
-                              name: "Equipo NOVA",
-                              color: "violet",
-                            },
-                            {
-                              time: "16:30",
-                              duration: "90 min",
-                              title: "Fotografía de producto",
-                              name: "Clara Torres",
-                              color: "orange",
-                            },
-                          ]
-                        : [
-                            {
-                              time: "09:30",
-                              duration: "45 min",
-                              title: "Primera atención",
-                              name: "Laura Martínez",
-                              color: "lime",
-                            },
-                            {
-                              time: "12:00",
-                              duration: "60 min",
-                              title: "Servicio de ejemplo",
-                              name: "Clara Torres",
-                              color: "violet",
-                            },
-                            {
-                              time: "16:30",
-                              duration: "30 min",
-                              title: "Seguimiento de solicitud",
-                              name: "Alex Ruiz",
-                              color: "orange",
-                            },
-                          ]
-                      )
-                        .slice(day === 2 ? 1 : 0, day === 1 ? 2 : 3)
-                        .map((item) => (
-                          <button
-                            className="agenda-item"
-                            key={item.time}
-                            onClick={() =>
-                              go(
-                                config.modules.includes("bookings")
-                                  ? "bookings"
-                                  : "capacity",
-                              )
-                            }
-                          >
-                            <span className="agenda-time">
-                              {item.time}
-                              <small>{item.duration}</small>
-                            </span>
-                            <i className={item.color} />
-                            <span>
-                              <strong>{item.title}</strong>
-                              <small>{item.name}</small>
-                            </span>
-                            <ChevronRight size={13} />
-                          </button>
-                        ))}
-                      <div className="agenda-footer">
-                        <span className="live-dot" /> Semana de ejemplo · Sin
-                        reservas reales
-                      </div>
-                    </>
-                  ) : (
-                    <div className="next-step-content">
-                      <span>
-                        <Sparkles size={27} />
-                      </span>
-                      <h3>Tu negocio no tiene por qué funcionar con citas.</h3>
-                      <p>
-                        Explora los módulos que encajan con tus operaciones.
-                      </p>
+                  <div>
+                    <span className="tag">Perfil de demostración</span>
+                    <h2>{config.name}</h2>
+                    <p>
+                      {sector.label} · {config.city || "Sin zona"}
+                    </p>
+                    <div className="profile-shortcuts">
                       <button
                         className="button secondary small"
-                        onClick={() => go("modules")}
+                        onClick={() => go("profile")}
                       >
-                        Descubrir herramientas <ArrowRight size={14} />
+                        Editar perfil
                       </button>
+                      <Link href={publicHref} className="inline-link">
+                        Vista cliente <ArrowUpRight size={15} />
+                      </Link>
                     </div>
-                  )}
+                  </div>
                 </section>
               </div>
-              <div className="workspace-bottom-grid">
-                <section className="workspace-card projects-card">
-                  <div className="workspace-card-header">
+              <section className="business-home-card requests-card">
+                <div className="business-section-title">
+                  <div>
+                    <h2>Solicitudes de ejemplo</h2>
+                    <p>
+                      Revisa aquí las pruebas que prepares desde tu perfil de
+                      negocio.
+                    </p>
+                  </div>
+                  <span className="tag">{ownRequests.length} locales</span>
+                </div>
+                {ownRequests.length ? (
+                  <div className="home-request-list">
+                    {ownRequests.slice(0, 4).map((request) => (
+                      <article key={request.id}>
+                        <CalendarDays size={20} />
+                        <div>
+                          <h3>{request.itemTitle}</h3>
+                          <p>
+                            {request.date} · {request.time} · Alex López,
+                            cliente ficticio
+                          </p>
+                        </div>
+                        <span className="tag">No enviada</span>
+                      </article>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="home-requests-empty">
+                    <CalendarDays size={24} />
                     <div>
-                      <h2>
-                        {projects
-                          ? "Proyectos en movimiento"
-                          : "Tus herramientas, conectadas"}
-                      </h2>
+                      <strong>Todavía no has probado ninguna reserva.</strong>
                       <p>
-                        {projects
-                          ? "Cada detalle, un paso más cerca."
-                          : "Accede a lo que necesitas para tu actividad."}
+                        Abre tu perfil como cliente y prepara una solicitud de
+                        ejemplo.
                       </p>
                     </div>
-                    <button className="plain-link" onClick={() => go(primary)}>
-                      Ver {primaryLabel.toLocaleLowerCase("es")}{" "}
-                      <ArrowUpRight size={12} />
-                    </button>
+                    <Link className="button secondary small" href={publicHref}>
+                      Probar recorrido <ArrowRight size={14} />
+                    </Link>
                   </div>
-                  {projects ? (
-                    <div className="project-table-wrap">
-                      <table className="project-table">
-                        <thead>
-                          <tr>
-                            <th>PROYECTO</th>
-                            <th>ESTADO</th>
-                            <th>PROGRESO</th>
-                            <th>ENTREGA</th>
-                            <th>
-                              <span className="sr-only">Detalles</span>
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {[
-                            {
-                              title: "Identidad de marca · NOVA",
-                              client: "NOVA Clothing",
-                              status: "En edición",
-                              progress: 65,
-                              color: "violet",
-                              date: "06 nov.",
-                            },
-                            {
-                              title: "Retratos para un nuevo comienzo",
-                              client: "Laura Martínez",
-                              status: "En revisión",
-                              progress: 85,
-                              color: "orange",
-                              date: "09 nov.",
-                            },
-                            {
-                              title: "Campaña de temporada",
-                              client: "Estudio Olive",
-                              status: "Planificación",
-                              progress: 25,
-                              color: "lime",
-                              date: "12 nov.",
-                            },
-                          ].map((project, i) => (
-                            <tr key={project.title}>
-                              <td>
-                                <span
-                                  className={`project-icon ${project.color}`}
-                                >
-                                  <Camera size={17} />
-                                </span>
-                                <span>
-                                  <strong>{project.title}</strong>
-                                  <small>{project.client}</small>
-                                </span>
-                              </td>
-                              <td>
-                                <span
-                                  className={`status ${i === 0 ? "blue" : i === 1 ? "warning" : ""}`}
-                                >
-                                  <i />
-                                  {project.status}
-                                </span>
-                              </td>
-                              <td>
-                                <div className="project-progress">
-                                  <span>
-                                    <i
-                                      style={{ width: `${project.progress}%` }}
-                                    />
-                                  </span>
-                                  <small>{project.progress}%</small>
-                                </div>
-                              </td>
-                              <td>{project.date}</td>
-                              <td>
-                                <button
-                                  className="icon-button"
-                                  aria-label={`Ver ${project.title}`}
-                                  onClick={() => go("projects")}
-                                >
-                                  <ChevronRight size={14} />
-                                </button>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  ) : (
-                    <div className="connected-modules">
-                      {(operational.length
-                        ? operational
-                        : ["customers" as const]
-                      )
-                        .slice(0, 4)
-                        .map((id) => {
-                          const Icon = icons[id] ?? Blocks;
-                          return (
-                            <button key={id} onClick={() => go(id)}>
-                              <Icon size={20} />
-                              <span>
-                                <strong>{MODULES[id].label}</strong>
-                                <small>{MODULES[id].desc}</small>
-                              </span>
-                              <ArrowUpRight size={14} />
-                            </button>
-                          );
-                        })}
-                    </div>
-                  )}
-                </section>
-                <section className="workspace-card quick-card">
-                  <div className="workspace-card-header">
-                    <h2>Hazlo tuyo</h2>
-                    <Sparkles size={16} />
-                  </div>
-                  <div className="quick-art" aria-hidden="true">
-                    <span>
-                      <Blocks size={24} />
-                    </span>
-                    <i />
-                    <i />
-                    <i />
-                    <i />
-                  </div>
-                  <h3>
-                    Tu negocio evoluciona.
-                    <br />
-                    Tu espacio también.
-                  </h3>
-                  <p>
-                    Activa nuevas herramientas cuando las necesites. Sin empezar
-                    de cero.
-                  </p>
-                  <button onClick={() => go("modules")}>
-                    Personalizar mis módulos <ArrowRight size={14} />
-                  </button>
-                </section>
-              </div>
+                )}
+              </section>
             </>
+          ) : current === "profile" ? (
+            <BusinessProfileEditor
+              config={config}
+              onConfigChange={updateProfileIdentity}
+            />
           ) : current === "modules" ? (
             <section className="workspace-module-settings">
-              <div className="module-settings-banner">
-                <span className="module-banner-icon">
-                  <Blocks size={25} />
-                </span>
+              <div className="simple-module-notice">
+                <Blocks size={22} />
                 <div>
-                  <h2>Lo que necesitas. Nada de más.</h2>
+                  <h2>Un panel con lo que necesitas</h2>
                   <p>
-                    Activa una herramienta y aparecerá en tu menú. Clientes
-                    siempre viene incluido.
+                    Mensajes, clientes y tu perfil están siempre a mano. El
+                    resto depende de tu actividad.
                   </p>
                 </div>
                 <Link href="/onboarding" className="button secondary small">
-                  Cambiar de sector <ArrowUpRight size={14} />
+                  Cambiar actividad
                 </Link>
               </div>
-              <div className="workspace-storage-status" role="status">
+              <p className="workspace-storage-status" role="status">
                 {status ||
                   "Los cambios se guardan automáticamente sólo en este navegador."}
-              </div>
+              </p>
               <ModulePicker
                 modules={config.modules}
                 onChange={updateModules}
                 sectorId={config.sectorId}
               />
+              <div className="profile-module-shortcuts">
+                <button
+                  className="button secondary"
+                  onClick={() => go("profile")}
+                >
+                  <Store size={16} />
+                  Fotos, servicios y productos
+                </button>
+                <Link href={chatHref} className="button secondary">
+                  <MessageCircle size={16} />
+                  Conversaciones y archivos
+                </Link>
+              </div>
             </section>
+          ) : profileModules.has(current) ? (
+            <BusinessProfileEditor
+              config={config}
+              onConfigChange={updateProfileIdentity}
+            />
+          ) : chatModules.has(current) ? (
+            <div className="empty-state">
+              <MessageCircle size={28} />
+              <h2>Todo el trabajo, en la conversación.</h2>
+              <p>Comparte archivos con el cliente desde sus mensajes.</p>
+              <Link href={chatHref} className="button primary">
+                Abrir mensajes <ArrowRight size={15} />
+              </Link>
+            </div>
           ) : (
             <>
               <label className="module-search">
-                <Search size={16} />
+                <Search size={17} />
                 <input
                   aria-label="Buscar en este módulo"
-                  placeholder={`Buscar en ${MODULES[current].label.toLocaleLowerCase("es")}…`}
+                  placeholder={`Buscar en ${MODULES[current].label.toLowerCase()}…`}
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
                 />
@@ -872,39 +607,44 @@ export default function BusinessPage() {
             </>
           )}
           <footer className="workspace-footer">
+            <ShieldCheck size={14} />
             <span>
-              <ShieldCheck size={12} /> Espacio de demostración · Todos los
-              datos son ficticios
-            </span>
-            <span>
-              Hecho para tu forma de trabajar{" "}
-              <span className="footer-asterisk">✳</span>
+              Demostración local. Sin mensajes, reservas ni publicaciones
+              enviadas a personas reales.
             </span>
           </footer>
         </main>
       </div>
       {help && (
-        <Modal
-          title="Bienvenido a tu espacio Nexo"
-          onClose={() => setHelp(false)}
-        >
-          <p>
-            Esta es una demo visual del Hito 0. Puedes explorar los módulos,
-            cambiar de sector y ver la cuenta de cliente.
-          </p>
+        <Modal title="Cuatro cosas para empezar" onClose={() => setHelp(false)}>
+          <ol className="simple-help">
+            <li>
+              <strong>Mensajes:</strong> habla con el cliente y adjunta archivos
+              de prueba.
+            </li>
+            <li>
+              <strong>Mi perfil:</strong> prepara tu presentación, fotos,
+              servicios y productos.
+            </li>
+            <li>
+              <strong>Vista cliente:</strong> revisa lo que verá el cliente y
+              prueba una solicitud de reserva.
+            </li>
+            <li>
+              <strong>Herramientas:</strong> activa sólo lo que encaje con tu
+              negocio.
+            </li>
+          </ol>
           <div className="notice">
-            <ShieldCheck size={20} />
+            <ShieldCheck size={18} />
             <p>
-              No hay cuentas, cobros ni reservas reales. La configuración de tu
-              empresa sólo se guarda en este navegador.
+              Todo se demuestra en este navegador. No hay cuentas reales ni
+              información publicada en Internet.
             </p>
           </div>
           <div className="modal-actions">
-            <Link className="button secondary" href="/onboarding">
-              Configurar negocio
-            </Link>
             <button className="button primary" onClick={() => setHelp(false)}>
-              Entendido <Check size={14} />
+              Entendido
             </button>
           </div>
         </Modal>
@@ -913,85 +653,26 @@ export default function BusinessPage() {
   );
 }
 
-function Metric({
-  label,
-  value,
-  change,
-  icon: Icon,
+function NavButton({
+  active,
   onClick,
-  color,
+  icon: Icon,
+  label,
 }: {
-  label: string;
-  value: string;
-  change: string;
-  icon: LucideIcon;
+  active: boolean;
   onClick: () => void;
-  color: string;
+  icon: LucideIcon;
+  label: string;
 }) {
   return (
-    <button className="workspace-metric" onClick={onClick}>
-      <div>
-        <span className={`metric-symbol ${color}`}>
-          <Icon size={17} />
-        </span>
-        <ArrowUpRight size={14} />
-      </div>
-      <span className="metric-label">{label}</span>
-      <strong>{value}</strong>
-      <small>
-        <span>↗</span>
-        {change}
-      </small>
-    </button>
-  );
-}
-
-function ActivityChart({ period }: { period: "week" | "month" }) {
-  const contacts =
-    period === "week"
-      ? [9, 17, 12, 23, 16, 27, 21]
-      : [15, 22, 18, 29, 25, 33, 31];
-  const actions =
-    period === "week"
-      ? [5, 10, 8, 14, 11, 19, 15]
-      : [10, 15, 12, 20, 18, 26, 23];
-  const labels =
-    period === "week"
-      ? ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"]
-      : ["1–4", "5–8", "9–12", "13–16", "17–20", "21–24", "25–30"];
-  return (
-    <div
-      className="activity-chart"
-      role="img"
-      aria-label={`Gráfico de demostración: ${period === "week" ? "42 interacciones semanales" : "168 interacciones mensuales"}. Contactos y acciones ilustrativos.`}
+    <button
+      className={`workspace-nav-item ${active ? "is-active" : ""}`}
+      aria-label={label}
+      aria-current={active ? "page" : undefined}
+      onClick={onClick}
     >
-      <div className="chart-y-axis">
-        <span>40</span>
-        <span>30</span>
-        <span>20</span>
-        <span>10</span>
-        <span>0</span>
-      </div>
-      <div className="chart-plot">
-        <div className="chart-grid-lines">
-          <i />
-          <i />
-          <i />
-          <i />
-          <i />
-        </div>
-        <div className="chart-bar-groups">
-          {contacts.map((value, i) => (
-            <div className="chart-bar-group" key={labels[i]}>
-              <div>
-                <span style={{ height: `${value * 2.8}%` }} />
-                <span style={{ height: `${actions[i] * 2.8}%` }} />
-              </div>
-              <small>{labels[i]}</small>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
+      <Icon size={18} />
+      {label}
+    </button>
   );
 }
