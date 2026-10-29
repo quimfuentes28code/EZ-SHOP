@@ -80,16 +80,17 @@ export function RealExperience({accountType}:{accountType:"business"|"customer"}
    return ()=>{active=false;subscription.unsubscribe();};
  },[db]);
 
- // Account type lives in an immutable database row, never in editable user_metadata.
+ // Workspace memberships live in protected database rows, never editable user_metadata.
+// One authenticated user can have both Empresa and Cliente memberships.
  useEffect(()=>{
    if(!db||!session?.user?.id){setAccountRole(undefined);return;}
    let active=true;
    setAccountRole(undefined);
-   db.from("account_types").select("account_type").eq("user_id",session.user.id).maybeSingle()
+   db.from("account_types").select("account_type").eq("user_id",session.user.id)
      .then(({data,error})=>{
        if(!active)return;
        if(error){setNotice("No se pudo comprobar el tipo de cuenta. Revisa la configuración de Supabase.");setAccountRole(undefined);return;}
-       setAccountRole((data?.account_type as "business"|"customer"|undefined)||null);
+       setAccountRole(data?.some(row=>row.account_type===accountType)?accountType:null);
      });
    return ()=>{active=false;};
  },[db,session?.user?.id]);
@@ -223,7 +224,7 @@ export function RealExperience({accountType}:{accountType:"business"|"customer"}
   if(error)throw error;
   setAccountRole(accountType);
   setTab(accountType==="business"?"inicio":"explorar");
-  setNotice("Tu cuenta anterior ha quedado registrada como "+(accountType==="business"?"Empresa":"Cliente")+". No podrás cambiar su tipo.");
+  setNotice("Espacio "+(accountType==="business"?"Empresa":"Cliente")+" activado en tu cuenta. Ahora puedes utilizar ambos espacios con el mismo correo.");
  })};
  const business=orgs.find(o=>o.id===selectedOrg);
  const ownerRequests=requests.filter(r=>r.organization_id===selectedOrg);
@@ -236,8 +237,8 @@ export function RealExperience({accountType}:{accountType:"business"|"customer"}
    {!db ? <section className="live-card"><h2>Falta conectar el backend</h2><p>El desarrollo ya está preparado, pero no existe todavía un proyecto Supabase configurado para esta publicación.</p><p>Conecta Supabase y configura las variables públicas de entorno. Nunca pongas una clave secreta en la web.</p><a href="https://supabase.com/dashboard/projects" target="_blank" rel="noreferrer" className="button primary">Crear proyecto Supabase</a></section>
    : !ready ? <p>Comprobando sesión...</p>
    : !session ? <section className="live-card live-auth">
-      <h2>{accountType==="business"?"Crear cuenta Empresa":"Crear cuenta Cliente"}</h2>
-      <p className="live-muted">Esta cuenta será exclusivamente de {accountType==="business"?"Empresa":"Cliente"}. Para utilizar el otro espacio necesitarás otra cuenta con un correo diferente.</p>
+      <h2>{accountType==="business"?"Cuenta Empresa":"Cuenta Cliente"}</h2>
+      <p className="live-muted">Puedes usar el mismo correo electrónico para Empresa y Cliente. Si ya tienes una cuenta, pulsa «Acceder» y utiliza tu contraseña habitual para activar este espacio.</p>
       <div className="live-tabs"><button className={mode==="signup"?"active":""} onClick={()=>setMode("signup")}>Crear cuenta</button><button className={mode==="login"?"active":""} onClick={()=>setMode("login")}>Acceder</button></div>
       <form onSubmit={auth} className="live-form">
        {mode==="signup" && <><label>Nombre<input required maxLength={80} value={form.first} onChange={e=>setFormField("first",e.target.value)} autoComplete="given-name"/></label>
@@ -247,19 +248,22 @@ export function RealExperience({accountType}:{accountType:"business"|"customer"}
        <label>Correo electrónico<input type="email" required value={form.email} onChange={e=>setFormField("email",e.target.value)} autoComplete="email"/></label>
        <label>Contraseña<input type="password" required minLength={10} value={form.password} onChange={e=>setFormField("password",e.target.value)} autoComplete={mode==="signup"?"new-password":"current-password"}/></label>
        <button type="submit" className="button primary" disabled={busy}>{busy?"Procesando...":mode==="signup"?"Crear mi cuenta":"Entrar"}</button>
-      </form><p className="live-muted">¿Has elegido el espacio equivocado? <Link href="/">Volver a elegir tipo de cuenta</Link>.</p>
+      </form><p className="live-muted">{mode==="signup"?"¿Ya tienes una cuenta Empresa o Cliente? Inicia sesión con ese mismo correo para activar este espacio.":"Después de entrar, podrás activar este espacio sin volver a registrarte."} <Link href="/">Volver al inicio</Link>.</p>
    </section>
    : accountRole === undefined ? <p role="status">Comprobando permisos de la cuenta...</p>
    : accountRole === null ? <section className="live-card live-auth">
-      <h2>Completa tu tipo de cuenta</h2>
-      <p>Esta cuenta se creó antes de separar las experiencias. Puedes asignarla una sola vez como <strong>{accountType==="business"?"Empresa":"Cliente"}</strong>. No podrás cambiarla después ni usar ambas experiencias desde este correo. <strong>Si creaste negocios con esta cuenta antes del cambio, debes elegir Empresa para conservar el acceso a ellos.</strong></p>
-      <button className="button primary" type="button" disabled={busy} onClick={enrollExisting}>Confirmar cuenta {accountType==="business"?"Empresa":"Cliente"}</button>
-      <button className="button secondary" type="button" disabled={busy} onClick={logout}>Usar otra cuenta</button>
+      <h2>Activar espacio {accountType==="business"?"Empresa":"Cliente"}</h2>
+      <p>Ya tienes una cuenta con <strong>{session.user.email}</strong>. Puedes activar también el espacio <strong>{accountType==="business"?"Empresa":"Cliente"}</strong> utilizando este mismo correo y contraseña.</p>
+      <p className="live-muted">Los negocios y el CRM seguirán asociados a tu espacio Empresa. En Cliente podrás explorar servicios, hacer solicitudes y consultar tu actividad personal. No perderás lo que ya tienes creado.</p>
+      <div className="live-session-actions">
+        <button className="button primary" type="button" disabled={busy} onClick={enrollExisting}>Activar {accountType==="business"?"Empresa":"Cliente"} con esta cuenta</button>
+        <button className="button secondary" type="button" disabled={busy} onClick={logout}>Usar otro correo</button>
+      </div>
      </section>
    : accountRole !== accountType ? <section className="live-card live-auth">
-      <h2>Esta cuenta pertenece a {accountRole==="business"?"Empresa":"Cliente"}</h2>
-      <p>El espacio {accountType==="business"?"Empresa":"Cliente"} necesita una cuenta independiente. Cierra sesión y accede con el correo de ese tipo de cuenta.</p>
-      <button className="button primary" type="button" onClick={logout} disabled={busy}>Cerrar sesión para entrar con otra cuenta</button>
+      <h2>Activa tu espacio {accountType==="business"?"Empresa":"Cliente"}</h2>
+      <p>Con la misma identidad puedes utilizar ambos espacios. Si todavía no has habilitado este, vuelve a acceder para activarlo.</p>
+      <button className="button primary" type="button" onClick={()=>{setAccountRole(null);}} disabled={busy}>Continuar</button>
      </section>
    : <><div className="live-signed"><span>Sesión de <strong>{session.user.email}</strong></span><div className="live-session-actions"><button type="button" className="button secondary small" onClick={refresh} disabled={busy}>Actualizar datos</button><button className="button secondary small" disabled={busy} onClick={logout}>Cerrar sesión</button></div></div>
       <nav className="live-tabs" aria-label="Espacios conectados">
