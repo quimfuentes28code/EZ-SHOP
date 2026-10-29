@@ -6,6 +6,7 @@ import { ThemeToggle } from "./theme-toggle";
 export function SiteChrome({ children }: { children: React.ReactNode }) {
   const path = usePathname();
   if (path === "/empresa") return <>{children}</>;
+  const realAccountArea = path === "/real" || path.startsWith("/registro/empresa") || path.startsWith("/registro/cliente");
   return (
     <>
       <a className="skip-link" href="#main-content">
@@ -24,7 +25,7 @@ export function SiteChrome({ children }: { children: React.ReactNode }) {
       <footer className="site-footer container">
         <Brand />
         <p>Tu negocio. Más fácil.</p>
-        <span>Hito 0 · Prototipo con datos ficticios</span>
+        <span>{realAccountArea ? "Cuentas conectadas · Herramientas en desarrollo" : "Pantallas de demostración y funcionalidades en desarrollo"}</span>
       </footer>
     </>
   );
