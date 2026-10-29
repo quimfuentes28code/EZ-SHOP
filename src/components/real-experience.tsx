@@ -283,6 +283,41 @@ export function RealExperience({accountType}:{accountType:"business"|"customer"}
          onNavigate={setTab}
         />}
        {accountType==="business" && tab==="herramientas" && <BusinessTools onNavigate={setTab}/>}
+       {accountType==="business" && tab==="negocio" && <section className="live-card business-live-profile">
+        <h2>Perfil de {business?.name||"tu negocio"}</h2>
+        <p className="live-muted">Estos datos se guardan en tu negocio. Cuando lo publiques, tus clientes podrán ver su nombre, sector, localidad y descripción.</p>
+        {business ? <>
+          <form className="live-form live-columns" onSubmit={saveCompany}>
+            <label>Nombre comercial<input required minLength={2} maxLength={120} value={companyDraft.name} onChange={e=>setCompanyDraft(v=>({...v,name:e.target.value}))}/></label>
+            <label>Sector<input required maxLength={80} value={companyDraft.category} onChange={e=>setCompanyDraft(v=>({...v,category:e.target.value}))}/></label>
+            <label>Localidad<input maxLength={100} value={companyDraft.city} onChange={e=>setCompanyDraft(v=>({...v,city:e.target.value}))}/></label>
+            <label className="business-live-full">Descripción del negocio<textarea rows={5} maxLength={1200} value={companyDraft.description} onChange={e=>setCompanyDraft(v=>({...v,description:e.target.value}))} placeholder="Describe qué haces, tus especialidades y a quién ayudas."/></label>
+            <button className="button primary" disabled={busy}>Guardar cambios</button>
+          </form>
+          <div className="business-live-publication">
+            <div><strong>{business.published?"Visible en Explorar":"Perfil privado"}</strong><p>La visibilidad de la ficha pública no afecta a los datos privados de clientes y solicitudes.</p></div>
+            <button className="button secondary" type="button" disabled={busy} onClick={()=>togglePublish(business)}>{business.published?"Ocultar negocio":"Publicar negocio"}</button>
+          </div>
+        </>:<button type="button" className="button primary" onClick={()=>setTab("gestion")}>Registrar mi negocio</button>}
+       </section>}
+       {accountType==="business" && tab==="clientes" && <section className="live-card">
+         <h2>Clientes de {business?.name||"tu negocio"}</h2>
+         <p className="live-muted">Contactos reales vinculados a las solicitudes recibidas por este negocio. Los clientes de otras empresas permanecen privados.</p>
+         {contacts.length===0?<div className="business-live-empty"><UsersRound size={25}/><strong>Todavía no hay clientes vinculados</strong><p>Aparecerán aquí automáticamente cuando una cuenta Cliente solicite uno de tus servicios.</p></div>:contacts.map(c=><article className="business-live-contact" key={c.customer_id}>
+            <div className="business-live-contact-avatar">{c.display_name.slice(0,1).toUpperCase()}</div>
+            <div><strong>{c.display_name}</strong><p>{c.email}</p><p>{c.phone||"Sin teléfono"} · {c.city||"Sin localidad"}</p></div>
+         </article>)}
+       </section>}
+       {accountType==="business" && tab==="solicitudes-empresa" && <section className="live-card">
+         <h2>Solicitudes recibidas</h2>
+         <p className="live-muted">Solicitudes reales de {business?.name||"tu negocio"}. Puedes actualizar su estado y el cliente lo verá en su cuenta.</p>
+         {ownerRequests.length===0?<div className="business-live-empty"><ClipboardList size={25}/><strong>Aún no hay solicitudes</strong><p>Cuando un cliente solicite un servicio, lo verás aquí.</p></div>:ownerRequests.map(r=><div key={r.id} className="live-row">
+            <div><strong>{r.customer_name}</strong><p>{r.notes||"Sin comentarios"}</p><small>{r.requested_date||"Fecha sin concretar"}</small></div>
+            <select aria-label={"Cambiar estado de solicitud de "+r.customer_name} value={r.status} disabled={busy} onChange={e=>changeStatus(r,e.target.value)}>
+               <option value="new">Nueva</option><option value="accepted">Aceptada</option><option value="rejected">Rechazada</option><option value="completed">Completada</option>
+            </select>
+          </div>)}
+       </section>}
        {accountType==="business" && tab==="gestion" && <div className="live-grid">
        <section className="live-card"><h2>Mis negocios</h2>
         {orgs.length ? <><label>Empresa activa<select value={selectedOrg} onChange={e=>setSelectedOrg(e.target.value)}>{orgs.map(org=><option key={org.id} value={org.id}>{org.name}</option>)}</select></label>
