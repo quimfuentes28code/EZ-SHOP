@@ -25,7 +25,7 @@ const categoryTheme=(str:string)=>{
         /belleza|peluq|barber|estética/.test(q)?"beauty":
         /restau|comida|pasteler|panad/.test(q)?"food":"general";
 };
-const categoryMatches=(category:string,choice:string)=>{
+const categoryMatches=(category:string,choice:string):boolean=>{
  const s=category.toLowerCase();
  return choice==="Todos"||
  (choice==="Fotografía"&&/fot|vide|creativ|diseñ/.test(s))||
