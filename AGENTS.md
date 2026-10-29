@@ -1,22 +1,29 @@
-# Instrucciones persistentes para Codex: Nexo (nombre provisional)
+# Instrucciones persistentes para Codex: AutonoService
 
-## Visión
-Una plataforma multiempresa con módulos reutilizables para muchos sectores y una identidad global de cliente. Cada negocio recibe un panel privado, puede configurar sus módulos y, en fases futuras, aparecer en un directorio de descubrimiento.
+## Referencia principal
+
+Lee `README.md`, `docs/ESPECIFICACION_MAESTRA.md` y todos los documentos de `docs/` antes de desarrollar. La especificación maestra aportada por el propietario sustituye las decisiones de marca, alcance y roadmap anteriores que entren en conflicto con ella.
+
+AutonoService — **Tu negocio. Más fácil.** — es una única aplicación con experiencia profesional y experiencia **Cliente**, gratuita. **AutonoSuite** — **Todo el potencial de tu negocio.** — es una mejora premium de gestión dentro de la misma aplicación, sin otra cuenta ni instalación. No se utilizarán nombres comerciales que añadan Business a la marca ni presenten Cliente como producto independiente. Los nombres internos descriptivos y las claves heredadas de almacenamiento pueden conservarse por compatibilidad.
 
 ## Reglas obligatorias
-1. NO construir una aplicación distinta por cada sector. Reutilizar módulos y composiciones; los sectores son plantillas de configuración.
-2. NO asumir que todo negocio funciona mediante citas: contemplar citas, reservas con capacidad, encargos, presupuestos, proyectos, ventas, alquileres, alojamientos y otros tipos de operación.
-3. NO construir un megaformulario o tabla `transactions` con lógica indiscriminada para todos los tipos de operación. Cada dominio podrá contar con tablas y reglas propias y eventos compartidos.
-4. Modelar en el futuro `user`, `organization`, `membership`, `branch`, `sector`, `module`, `organization_module`, `customer_relationship` y entidades operativas específicas. Un usuario puede pertenecer a múltiples negocios y ser cliente en otros.
-5. Separación estricta por organización: roles y permisos verificados EN SERVIDOR y con Row Level Security en base de datos. Ocultar botones no basta. Nunca confiar en `organization_id` enviado por el cliente sin verificar permisos.
-6. Un cliente global NO concede a todas las empresas visibilidad de su historial. Cada empresa accede exclusivamente a relaciones y datos autorizados en su contexto.
-7. Los flujos regulados (salud, finanzas, etc.) requieren una revisión específica; no crear módulos clínicos ni financieros operativos por defecto.
-8. Diferenciar el perfil público de negocio de los datos internos. Las ubicaciones y la visibilidad pública requieren consentimiento y control explícito.
-9. Para el Hito 0: UI demo con datos ficticios, sin autenticación real, sin cobros, sin reservas enviadas y sin datos sensibles. Etiquetar claramente toda simulación.
-10. Código TypeScript estricto, componentes accesibles, responsive, con separación de dominio / UI / acceso a datos. Nada de secretos en el repositorio.
-11. Antes de introducir dependencias, consultar documentación reciente y explicar por qué se necesitan.
-12. Ejecutar `npm install`, `npm run typecheck`, `npm run build` donde el entorno lo permita y corregir errores antes de declarar el hito terminado.
-13. No avanzar a un hito posterior sin revisión humana explícita. Registrar decisiones y cambios en `docs/`.
 
-## Primer encargo
-Revisar y perfeccionar las pantallas existentes (landing, onboarding, panel negocio, panel cliente y directorio demo), asegurar que compilan, y proponer backlog priorizado. No conectar Supabase todavía ni inventar datos reales.
+1. NO construir una aplicación distinta por sector. Reutilizar módulos y composiciones; los sectores son plantillas de configuración, con adaptadores especializados sólo cuando las reglas lo justifiquen.
+2. NO asumir que todo negocio funciona mediante citas: contemplar reservas de capacidad, encargos, presupuestos, proyectos, ventas, alquileres, alojamientos y otras operaciones.
+3. NO construir un megaformulario o tabla `transactions` con lógica indiscriminada para todos los tipos de operación. Cada dominio conserva entidades y reglas propias y puede compartir contratos/eventos.
+4. Diseñar una identidad global de persona, organizaciones, membresías, sedes, sectores, módulos, configuración por empresa y relaciones verificadas de cliente. Una persona puede ser profesional, empleada y cliente de diferentes negocios simultáneamente.
+5. Separación estricta por organización: roles y permisos verificados EN SERVIDOR y con Row Level Security en producción. Ocultar botones no basta. Nunca confiar en `organization_id`, perspectiva o rol enviado por el cliente sin comprobar acceso.
+6. Una identidad global de Cliente NO concede a todas las empresas visibilidad de su historial. Cada empresa accede exclusivamente a relaciones y datos autorizados en su contexto. Los archivos privados requieren participantes y propiedad comprobados.
+7. Salud, finanzas y otros dominios regulados requieren evaluación específica; no crear módulos clínicos, fiscales o financieros operativos por defecto. La facturación real exige normativa española aplicable y la orientación fiscal debe definir sus límites.
+8. Separar perfil/fotos públicas de datos internos y adjuntos privados. Ubicación, cobertura y visibilidad pública requieren consentimiento y control explícito; el cliente debe poder buscar por ciudad sin compartir ubicación precisa.
+9. En Hito 0 usar datos ficticios, sin autenticación real, pagos, reservas enviadas ni información sensible. Etiquetar claramente la simulación. Los selectores visuales, el almacenamiento local y los prototipos de licencias no constituyen seguridad o autorización de producción.
+10. TypeScript estricto, componentes accesibles y responsive, temas claro/oscuro y separación entre dominio, UI y adaptadores. No incluir secretos en el repositorio. Evitar dependencias de DOM/Next.js en reglas destinadas a compartirse con React Native.
+11. Antes de introducir dependencias, consultar documentación reciente y explicar por qué se necesitan. Preferir las herramientas existentes y el lockfile.
+12. Ejecutar instalación apropiada al lockfile (`npm ci` o `npm install` cuando se actualice), `npm run typecheck`, `npm test` y `npm run build`; usar las E2E relevantes cuando se modifiquen recorridos. Corregir errores y distinguir pruebas pasadas, fallidas y no ejecutadas.
+13. No avanzar a un hito posterior sin revisión humana explícita. Registrar decisiones y cambios en `docs/`; no sobrescribir funciones existentes sin revisar sus dependencias.
+14. AutonoSuite es una mejora profesional de precio provisional, no una segunda aplicación ni premium de Cliente. Diseñar derechos por versión/canal; una licencia perpetua no promete infraestructura online ilimitada. No implementar compras reales antes de revisar políticas vigentes de cada plataforma.
+15. Evaluar local-first con políticas explícitas de conflictos, copias, migraciones y servicios online. No describir la demo de `localStorage` como una solución offline completa o sincronizada.
+
+## Encargo actual
+
+Hito 0: inspeccionar y conservar lo existente, actualizar marca y documentación, diseñar la entrada AutonoService/Cliente, onboarding de ambas experiencias, selector Mi negocio/Modo cliente, paneles y Mi plan. Mantener las interacciones demo de perfiles, catálogo, mensajes y solicitudes. Definir arquitectura web/iOS/Android y explicar cómo revisar el prototipo en iPhone. No conectar todavía Supabase ni implementar marketplace completo, pagos, autenticación real o todos los módulos empresariales.

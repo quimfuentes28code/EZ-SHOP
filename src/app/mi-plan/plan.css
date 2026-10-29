@@ -1,0 +1,297 @@
+.plan-page {
+  padding-top: 35px;
+}
+.plan-heading {
+  margin: 38px 0 30px;
+}
+.plan-heading .eyebrow {
+  font-size: 9px;
+}
+.plan-heading h1 {
+  font-size: 42px;
+  margin: 15px 0 12px;
+}
+.plan-heading p {
+  font-size: 14px;
+  color: var(--muted);
+}
+.plan-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 23px;
+}
+.plan-card {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+  padding: 31px;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.plan-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 23px;
+}
+.plan-symbol {
+  display: grid;
+  place-items: center;
+  color: var(--accent);
+  background: var(--accent-dim);
+  border: 1px solid var(--border);
+  width: 50px;
+  height: 50px;
+  border-radius: 12px;
+}
+.plan-card h2 {
+  font-size: 26px;
+  margin-bottom: 15px;
+}
+.plan-card > p {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.8;
+}
+.plan-price {
+  font-size: 36px;
+  letter-spacing: -1px;
+  font-weight: 500;
+  line-height: 1.3;
+}
+.plan-price > span {
+  font-size: 10px;
+  color: var(--muted);
+  display: block;
+  letter-spacing: 0;
+  margin-top: 5px;
+}
+.plan-card ul {
+  list-style: none;
+  padding: 0;
+  margin: 25px 0;
+  display: grid;
+  gap: 14px;
+}
+.plan-card li {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 12px;
+}
+.plan-card li svg {
+  color: var(--accent);
+}
+.plan-current {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--accent);
+  border: 1px solid var(--border);
+  padding: 13px;
+  border-radius: 8px;
+  margin-top: auto;
+}
+.plan-card small {
+  font-size: 10px;
+  color: var(--muted);
+  line-height: 1.8;
+  margin-top: 15px;
+}
+.suite-card {
+  border-color: color-mix(in srgb, var(--accent) 50%, var(--border));
+  background: linear-gradient(140deg, var(--accent-dim), var(--surface) 70%);
+}
+.suite-card .eyebrow {
+  font-size: 8px;
+  margin-bottom: 13px;
+}
+.suite-pill {
+  font-size: 8px;
+  letter-spacing: 0.8px;
+  color: var(--accent);
+}
+.suite-card .button {
+  margin-top: auto;
+  justify-content: space-between;
+  font-size: 12px;
+}
+.suite-payment-note {
+  font-size: 10px;
+  display: block;
+  text-align: center;
+  font-weight: 500;
+  margin-top: 13px;
+}
+.plan-rules {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 30px;
+  margin: 45px 0;
+}
+.plan-rules svg {
+  color: var(--accent);
+  margin-bottom: 18px;
+}
+.plan-rules h3 {
+  font-size: 17px;
+  line-height: 1.4;
+}
+.plan-rules p {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.9;
+}
+.plan-permissions {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 26px;
+  background: var(--surface);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: center;
+}
+.plan-permissions h2 {
+  font-size: 21px;
+  margin: 0 0 10px;
+}
+.plan-permissions p {
+  font-size: 12px;
+  color: var(--muted);
+  max-width: 620px;
+  margin: 0;
+}
+.plan-comparison {
+  width: 100%;
+  border-top: 1px solid var(--border);
+  padding-top: 24px;
+}
+.plan-preview-switch {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.plan-preview-switch input {
+  accent-color: var(--accent);
+}
+.plan-comparison ul {
+  list-style: none;
+  padding: 0;
+  margin: 22px 0 0;
+}
+.plan-comparison li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  border-top: 1px solid var(--border);
+  padding: 13px 0;
+  font-size: 12px;
+}
+.plan-comparison li small {
+  color: var(--muted);
+  font-size: 9px;
+  display: block;
+  margin-top: 4px;
+}
+.plan-comparison li > span:last-child {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 10px;
+  white-space: nowrap;
+  color: var(--accent);
+}
+.plan-legal-note {
+  color: var(--muted);
+  font-size: 11px;
+  margin-top: 25px;
+  max-width: 1000px;
+  line-height: 1.9;
+}
+@media (max-width: 700px) {
+  .plan-page {
+    padding-top: 25px;
+  }
+  .plan-heading {
+    margin: 29px 0 25px;
+  }
+  .plan-heading h1 {
+    font-size: 34px;
+  }
+  .plan-heading .eyebrow {
+    font-size: 7px;
+  }
+  .plan-heading p {
+    font-size: 12px;
+  }
+  .plan-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .plan-card {
+    padding: 25px;
+  }
+  .plan-card h2 {
+    font-size: 24px;
+  }
+  .plan-card-top .tag {
+    font-size: 8px;
+  }
+  .plan-card li {
+    font-size: 11px;
+    gap: 8px;
+  }
+  .suite-card .button {
+    font-size: 11px;
+    padding: 11px 13px;
+  }
+  .plan-rules {
+    grid-template-columns: 1fr;
+    gap: 20px;
+    margin-top: 32px;
+  }
+  .plan-rules article {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 15px;
+  }
+  .plan-rules h3 {
+    font-size: 17px;
+  }
+  .plan-permissions {
+    padding: 21px;
+  }
+  .plan-permissions h2 {
+    font-size: 19px;
+  }
+  .plan-permissions p {
+    font-size: 11px;
+  }
+  .plan-preview-switch {
+    font-size: 11px;
+    align-items: flex-start;
+    line-height: 1.8;
+  }
+  .plan-preview-switch input {
+    margin-top: 4px;
+  }
+  .plan-comparison li {
+    font-size: 11px;
+    gap: 12px;
+  }
+  .plan-comparison li > span:last-child {
+    font-size: 9px;
+    white-space: normal;
+    max-width: 110px;
+  }
+  .plan-legal-note {
+    font-size: 10px;
+  }
+}

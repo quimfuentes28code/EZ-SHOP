@@ -1,9 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // The current Hito 0 prototype uses prerendered routes and client-side demo data.
-  // Revisit this setting before adding Next.js server routes or SSR features.
+  // Hito 0 runs entirely in the browser; static export keeps Cloudflare deployment simple.
+  // Revisit this before adding SSR, API routes, or other server-side functionality.
   output: "export",
+  allowedDevOrigins: ["127.0.0.1"],
+  agentRules: false,
 };
 
 export default nextConfig;
