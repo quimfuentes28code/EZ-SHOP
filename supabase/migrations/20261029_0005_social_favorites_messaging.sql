@@ -32,7 +32,7 @@ create table if not exists public.conversation_messages (
 -- authenticated profile rather than trusting an arbitrary browser-supplied name.
 create or replace function public.autonoservice_conversation_init()
 returns trigger language plpgsql security definer set search_path=''
-as $
+as $$
 declare
   p record;
 begin
@@ -51,7 +51,7 @@ begin
     200
   );
   return new;
-end; $;
+end; $$;
 drop trigger if exists autonoservice_conversation_before_insert on public.conversations;
 create trigger autonoservice_conversation_before_insert
 before insert on public.conversations for each row
