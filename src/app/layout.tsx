@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { SiteChrome } from "@/components/site-chrome";
 import "./globals.css";
+import "./visual-identity.css";
 
 export const metadata: Metadata = {
   title: "AutonoService — Tu negocio. Más fácil.",
@@ -13,7 +14,7 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="es">
+    <html lang="es" data-theme="light">
       <body>
         <SiteChrome>{children}</SiteChrome>
       </body>
