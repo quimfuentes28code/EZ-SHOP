@@ -52,6 +52,32 @@ export function CustomerSocial({userId,email,onLogout}:{userId:string;email:stri
  const [query,setQuery]=useState("");
  const [city,setCity]=useState("");
  const [detail,setDetail]=useState<string|null>(null);
+ // Static Cloudflare export: the complete company profile is a client-side
+ // view addressed by /cliente?negocio=<uuid>, not a demo-only dynamic route.
+ useEffect(()=>{
+   const sync=()=>{
+     const value=new URLSearchParams(window.location.search).get("negocio");
+     setDetail(value&&/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(value)?value:null);
+   };
+   sync();
+   window.addEventListener("popstate",sync);
+   return ()=>window.removeEventListener("popstate",sync);
+ },[]);
+ function openBusinessProfile(id:string){
+   setDetail(id);setChosenService(null);
+   const url=new URL(window.location.href);
+   url.searchParams.set("negocio",id);
+   window.history.pushState(null,"",url);
+ }
+ function closeBusinessProfile(){
+   setDetail(null);setChosenService(null);
+   const url=new URL(window.location.href);
+   url.searchParams.delete("negocio");
+   window.history.pushState(null,"",url);
+ }
+ function selectTab(next:Tab){
+   closeBusinessProfile();setTab(next);
+ }
  const [targetChatOrg,setTargetChatOrg]=useState<string|null>(null);
  const [chosenService,setChosenService]=useState<string|null>(null);
  const [requestDate,setRequestDate]=useState("");
@@ -59,6 +85,13 @@ export function CustomerSocial({userId,email,onLogout}:{userId:string;email:stri
  const [busy,setBusy]=useState(false);
  const [notice,setNotice]=useState("");
  const [reload,setReload]=useState(0);
+ useEffect(()=>{
+   // An editor in another browser may publish or change the cover while this
+   // customer session is already open.
+   const reloadOnFocus=()=>setReload(n=>n+1);
+   window.addEventListener("focus",reloadOnFocus);
+   return ()=>window.removeEventListener("focus",reloadOnFocus);
+ },[]);
  const refresh=()=>setReload(v=>v+1);
  const displayName=profile.first_name.trim()||email.split("@")[0]||"Hola";
  const initials=(profile.first_name.slice(0,1)+profile.last_name.slice(0,1)).toUpperCase()||"AS";
@@ -82,14 +115,20 @@ export function CustomerSocial({userId,email,onLogout}:{userId:string;email:stri
    ]).then(([o,s,r,f,p,postResult,locationResult])=>{
      if(!active)return;
      const error=o.error||s.error||r.error||f.error||p.error||postResult.error||locationResult.error;
-     if(error){setNotice("No se han podido cargar algunos datos: "+error.message);return;}
-     setOrganizations((o.data||[]) as Organization[]);
-     setServices((s.data||[]) as Service[]);
-     setPosts((postResult.data||[]) as BusinessPost[]);
-     setLocations((locationResult.data||[]) as PublicLocation[]);
-     setRequests((r.data||[]) as Request[]);
-     setFavorites((f.data||[]).map(x=>x.organization_id as string));
-     if(p.data)setProfile(p.data as Profile);
+     if(o.error){
+       setNotice("No se ha podido cargar el directorio: "+o.error.message);
+     }else{
+       setOrganizations((o.data||[]) as Organization[]);
+     }
+     const secondaryErrors=[s.error,r.error,f.error,p.error,postResult.error,locationResult.error].filter(Boolean);
+     if(secondaryErrors.length)setNotice("Alguna función secundaria no pudo cargarse: "+secondaryErrors.map(e=>e!.message).join("; "));
+
+     if(!s.error)setServices((s.data||[]) as Service[]);
+     if(!postResult.error)setPosts((postResult.data||[]) as BusinessPost[]);
+     if(!locationResult.error)setLocations((locationResult.data||[]) as PublicLocation[]);
+     if(!r.error)setRequests((r.data||[]) as Request[]);
+     if(!f.error)setFavorites((f.data||[]).map(x=>x.organization_id as string));
+     if(!p.error&&p.data)setProfile(p.data as Profile);
    });
    return ()=>{active=false;};
  },[db,userId,reload]);
@@ -140,13 +179,13 @@ export function CustomerSocial({userId,email,onLogout}:{userId:string;email:stri
        notes:requestNotes.trim(),requested_date:requestDate||null
      });
      if(error)throw error;
-     setChosenService(null);setDetail(null);setRequestNotes("");setRequestDate("");
+     setChosenService(null);closeBusinessProfile();setRequestNotes("");setRequestDate("");
      setTab("actividad");refresh();
      setNotice("Solicitud enviada. El negocio podrá consultarla desde su área Empresa.");
    });
  }
  function openMessages(id:string){
-   setTargetChatOrg(id);setDetail(null);setTab("mensajes");
+   setTargetChatOrg(id);closeBusinessProfile();setTab("mensajes");
  }
  const nav=[
   {id:"explorar" as Tab,label:"Explorar",Icon:Compass},
@@ -162,7 +201,7 @@ export function CustomerSocial({userId,email,onLogout}:{userId:string;email:stri
   const followed=favorites.includes(org.id);
   return <article className="as-social-business-card">
      <button type="button" className={`as-social-business-art ${categoryTheme(org.category)}`}
-      onClick={()=>{setDetail(org.id);setChosenService(null);}} aria-label={"Ver negocio "+org.name}>
+      onClick={()=>openBusinessProfile(org.id)} aria-label={"Ver negocio "+org.name}>
       <span className="as-social-art-label">{org.category}</span>
       {org.cover_url?<img className="as-social-cover-image" src={org.cover_url} alt={"Portada de "+org.name}/>:<span className="as-social-art-monogram">{org.name.slice(0,1).toUpperCase()}</span>}
       <span className="as-social-art-end"><MapPin size={13}/>{org.city||"Servicio sin localidad"}</span>
@@ -178,7 +217,7 @@ export function CustomerSocial({userId,email,onLogout}:{userId:string;email:stri
       <p>{org.tagline||org.description||"Descubre los servicios que ofrece este negocio."}</p>
       <div className="as-social-tags">{offers.slice(0,3).map(s=><span key={s.id}>{s.title}</span>)}</div>
       <div className="as-social-business-actions">
-       <button className="button primary small" type="button" onClick={()=>{setDetail(org.id);setChosenService(null);}}>Ver perfil <ArrowRight size={14}/></button>
+       <button className="button primary small" type="button" onClick={()=>openBusinessProfile(org.id)}>Ver perfil <ArrowRight size={14}/></button>
        <button className="button secondary small" type="button" onClick={()=>openMessages(org.id)}><MessageCircle size={14}/> Mensaje</button>
       </div>
      </div>
@@ -196,11 +235,11 @@ export function CustomerSocial({userId,email,onLogout}:{userId:string;email:stri
       </div>
     </div>
     <nav className="as-social-client-tabs" aria-label="Navegación Cliente">
-      {nav.map(({id,label,Icon})=><button key={id} type="button" onClick={()=>{setTab(id);setDetail(null);}} className={tab===id?"is-active":""}>
+      {nav.map(({id,label,Icon})=><button key={id} type="button" onClick={()=>selectTab(id)} className={tab===id?"is-active":""}>
         <Icon size={17}/><span>{label}</span>
       </button>)}
     </nav>
-    <main className="as-social-client-content">
+    {!detail&&<main className="as-social-client-content">
     {tab==="explorar" && <>
       <section className="as-social-hero">
         <div><span className="eyebrow"><Sparkles size={12}/> TU CIUDAD, TUS SERVICIOS</span>
@@ -233,7 +272,7 @@ export function CustomerSocial({userId,email,onLogout}:{userId:string;email:stri
   <BusinessMap height={470} points={locations
     .filter(l=>l.latitude!==null&&l.longitude!==null&&organizations.some(o=>o.id===l.organization_id))
     .map(l=>({id:l.organization_id,name:orgName(l.organization_id)+" · "+l.name,latitude:l.latitude as number,longitude:l.longitude as number}))}
-    onSelect={id=>{setDetail(id);setChosenService(null);}}/>
+    onSelect={id=>openBusinessProfile(id)}/>
   <p className="live-muted">Utiliza el buscador de Explorar si un negocio no ha publicado su ubicación. El mapa no solicita tu ubicación personal.</p>
  </>}
  {tab==="novedades"&&<>
@@ -244,7 +283,7 @@ export function CustomerSocial({userId,email,onLogout}:{userId:string;email:stri
     ?<div className="as-social-empty-large"><Sparkles size={26}/><h3>Todavía no tienes novedades</h3><p>Guarda un negocio en favoritos y verás sus publicaciones aquí.</p>
       <button className="button primary" type="button" onClick={()=>setTab("explorar")}>Descubrir negocios</button></div>
     :<div className="as-social-news-feed">{posts.filter(p=>favorites.includes(p.organization_id)).map(post=><article key={post.id} className="as-social-news-post">
-      <button type="button" className="as-social-news-author" onClick={()=>{setDetail(post.organization_id);setChosenService(null);}}>
+      <button type="button" className="as-social-news-author" onClick={()=>openBusinessProfile(post.organization_id)}>
        {organizations.find(o=>o.id===post.organization_id)?.avatar_url
          ?<img src={organizations.find(o=>o.id===post.organization_id)?.avatar_url} alt=""/>
          :<span>{orgName(post.organization_id).slice(0,1)}</span>}
@@ -297,12 +336,19 @@ export function CustomerSocial({userId,email,onLogout}:{userId:string;email:stri
         <button type="submit" disabled={busy} className="button primary"><Settings2 size={15}/> Guardar perfil</button>
       </form></div>
     </>}
-    </main>
+    </main>}
+    {detail&&!selectedOrganization&&<section className="as-social-empty-large">
+       <h2>Este perfil no está disponible públicamente</h2>
+       <p>Puede que el negocio todavía sea privado o se haya retirado del directorio. Para ver la portada y los servicios, su propietario debe publicar el perfil.</p>
+       <button type="button" className="button primary" onClick={closeBusinessProfile}>Volver a Explorar</button>
+     </section>}
+    {detail&&selectedOrganization&&<div className="as-social-full-profile">
+      <div className="as-social-profile-back">
+        <button type="button" className="button secondary" onClick={closeBusinessProfile}>← Volver a Explorar</button>
+        <span>Perfil público completo</span>
+      </div>
+      <section className="as-social-public-profile" aria-label={"Perfil de "+selectedOrganization.name}>
 
-    {detail&&selectedOrganization&&<div className="as-social-modal-backdrop" onClick={()=>{setDetail(null);setChosenService(null);}}>
-      <section className="as-social-public-profile" role="dialog" aria-modal="true" aria-label={"Perfil de "+selectedOrganization.name}
-       onClick={e=>e.stopPropagation()}>
-        <button type="button" className="as-social-modal-close" onClick={()=>{setDetail(null);setChosenService(null);}} aria-label="Cerrar perfil">×</button>
         <div className={`as-social-profile-cover ${categoryTheme(selectedOrganization.category)}`} style={{backgroundColor:selectedOrganization.cover_url?undefined:selectedOrganization.accent_color}}>
           <span>{selectedOrganization.category}</span>{selectedOrganization.cover_url?<img className="as-social-public-cover-image" src={selectedOrganization.cover_url} alt={"Portada de "+selectedOrganization.name}/>:<strong>{selectedOrganization.name.slice(0,1).toUpperCase()}</strong>}
         </div>
@@ -311,6 +357,15 @@ export function CustomerSocial({userId,email,onLogout}:{userId:string;email:stri
           <h2>{selectedOrganization.avatar_url&&<img className="as-social-public-avatar" src={selectedOrganization.avatar_url} alt=""/>}{selectedOrganization.name}</h2>{selectedOrganization.tagline&&<p className="as-social-business-tagline">{selectedOrganization.tagline}</p>}
           <p className="as-social-location"><MapPin size={15}/>{selectedOrganization.city||"Localidad no indicada"}</p>
           <p>{selectedOrganization.description||"Este negocio todavía no ha añadido su presentación."}</p>
+          <div className="as-social-profile-share">
+            <button type="button" className="button secondary small" onClick={()=>{
+              const url=new URL(window.location.href);
+              url.searchParams.set("negocio",selectedOrganization.id);
+              void navigator.clipboard?.writeText(url.toString())
+                .then(()=>setNotice("Enlace de perfil copiado."))
+                .catch(()=>setNotice("No se pudo copiar el enlace en este navegador."));
+            }}>Compartir perfil</button>
+          </div>
           <div className="as-social-business-actions">
            <button type="button" className="button secondary" onClick={()=>toggleFavorite(selectedOrganization.id)}>
             <Heart size={15} fill={favorites.includes(selectedOrganization.id)?"currentColor":"none"}/>{favorites.includes(selectedOrganization.id)?"Guardado":"Guardar"}
