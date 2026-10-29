@@ -206,3 +206,12 @@
 .as-social-public-location strong{font-size:12px;}
 .as-social-public-location p{font-size:11px;color:var(--muted);}
 @media(max-width:620px){.social-business-upload-actions{margin:17px 0 0;}.as-social-public-location{align-items:flex-start;flex-direction:column;}.as-social-news-post{padding:13px;}}
+
+
+/* Protected chat attachments and unread indicators */
+.as-social-compose-fields{display:grid;gap:8px;flex:1;min-width:0;}
+.as-social-compose-fields textarea{width:100%;resize:vertical;}
+.as-social-attach-button{display:flex;align-items:center;gap:6px;color:var(--accent);font-size:11px;cursor:pointer;max-width:100%;overflow:hidden;text-overflow:ellipsis;}
+.as-social-attach-button input{display:none;}
+.as-social-file-button{display:flex;align-items:center;gap:8px;color:var(--accent);background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:9px 12px;cursor:pointer;font-size:11px;max-width:100%;overflow-wrap:anywhere;margin-top:7px;}
+.as-social-unread-count{color:var(--accent);font-weight:700;margin-left:5px;}
