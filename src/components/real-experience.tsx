@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, UserRound, ArrowLeft, UsersRound } from "lucide-react";
+import { LayoutDashboard, UserRound, ArrowLeft, UsersRound, Settings2, ShoppingBag, ClipboardList, Blocks } from "lucide-react";
+import { BusinessHome, BusinessTools, type BusinessArea } from "@/components/business-home";
 import { Brand } from "@/components/brand";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useEffect, useState, type FormEvent } from "react";
@@ -31,12 +32,13 @@ export function RealExperience({accountType}:{accountType:"business"|"customer"}
  const [ready,setReady]=useState(false);
  const [accountRole,setAccountRole]=useState<"business"|"customer"|null|undefined>(undefined);
  const [mode,setMode]=useState<"login"|"signup">("signup");
- const [tab,setTab]=useState<"perfil"|"empresa"|"explorar"|"solicitudes">(accountType==="business"?"empresa":"explorar");
+ const [tab,setTab]=useState<BusinessArea|"explorar"|"solicitudes">(accountType==="business"?"inicio":"explorar");
  const [form,setForm]=useState({first:"",last:"",email:"",password:"",phone:"",city:""});
  const [profile,setProfile]=useState<Profile>(emptyProfile);
  const [businessName,setBusinessName]=useState("");
  const [businessCategory,setBusinessCategory]=useState("Servicios profesionales");
  const [businessCity,setBusinessCity]=useState("");
+ const [companyDraft,setCompanyDraft]=useState({name:"",category:"",city:"",description:""});
  const [orgs,setOrgs]=useState<Organization[]>([]);
  const [publicOrgs,setPublicOrgs]=useState<Organization[]>([]);
  const [selectedOrg,setSelectedOrg]=useState("");
@@ -63,6 +65,10 @@ export function RealExperience({accountType}:{accountType:"business"|"customer"}
    }
  },[ready,pathname,router,registrationPath,homePath,session,accountRole,accountType]);
  const refresh=()=>setReload(v=>v+1);
+ useEffect(()=>{
+   const org=orgs.find(o=>o.id===selectedOrg);
+   if(org) setCompanyDraft({name:org.name,category:org.category,city:org.city,description:org.description});
+ },[orgs,selectedOrg]);
 
  useEffect(()=>{
    if(!db){setReady(true);return;}
@@ -172,7 +178,17 @@ export function RealExperience({accountType}:{accountType:"business"|"customer"}
  })};
  const addOrg=(e:FormEvent)=>{e.preventDefault();if(!db||!session)return;void work(async()=>{
    const {error}=await db.from("organizations").insert({owner_id:session.user.id,name:businessName.trim(),category:businessCategory,city:businessCity.trim()});
-   if(error)throw error;setBusinessName("");refresh();setTab("empresa");setNotice("Negocio creado en privado. Puedes publicarlo cuando añadas tus servicios.");
+   if(error)throw error;setBusinessName("");refresh();setTab("inicio");setNotice("Negocio creado. Ya puedes completar el perfil y añadir servicios.");
+ })};
+ const saveCompany=(e:FormEvent)=>{e.preventDefault();if(!db||!selectedOrg)return;void work(async()=>{
+    if(companyDraft.name.trim().length<2)throw Error("El nombre comercial debe tener al menos 2 caracteres.");
+    const {data,error}=await db.from("organizations").update({
+      name:companyDraft.name.trim(),category:companyDraft.category.trim()||"Otros",
+      city:companyDraft.city.trim(),description:companyDraft.description.trim()
+    }).eq("id",selectedOrg).select("id").maybeSingle();
+    if(error)throw error;
+    if(!data)throw Error("No se pudo guardar el perfil. Comprueba que eres el propietario.");
+    refresh();setNotice("Perfil comercial guardado.");
  })};
  const togglePublish=(org:Organization)=>{if(!db)return;void work(async()=>{
    const {error}=await db.from("organizations").update({published:!org.published}).eq("id",org.id);
@@ -206,7 +222,7 @@ export function RealExperience({accountType}:{accountType:"business"|"customer"}
   const {error}=await db.from("account_types").insert({user_id:session.user.id,account_type:accountType});
   if(error)throw error;
   setAccountRole(accountType);
-  setTab(accountType==="business"?"empresa":"explorar");
+  setTab(accountType==="business"?"inicio":"explorar");
   setNotice("Tu cuenta anterior ha quedado registrada como "+(accountType==="business"?"Empresa":"Cliente")+". No podrás cambiar su tipo.");
  })};
  const business=orgs.find(o=>o.id===selectedOrg);
@@ -247,7 +263,7 @@ export function RealExperience({accountType}:{accountType:"business"|"customer"}
      </section>
    : <><div className="live-signed"><span>Sesión de <strong>{session.user.email}</strong></span><div className="live-session-actions"><button type="button" className="button secondary small" onClick={refresh} disabled={busy}>Actualizar datos</button><button className="button secondary small" disabled={busy} onClick={logout}>Cerrar sesión</button></div></div>
       <nav className="live-tabs" aria-label="Espacios conectados">
-       {(accountType==="business"?([["empresa","Mi negocio"],["perfil","Mis datos"]] as const):([["explorar","Explorar"],["solicitudes","Mis solicitudes"],["perfil","Mis datos"]] as const)).map(([id,label])=><button key={id} className={tab===id?"active":""} onClick={()=>setTab(id)}>{label}</button>)}
+       {(accountType==="business"?([["inicio","Inicio"],["negocio","Perfil público"],["gestion","Servicios"],["clientes","Clientes"],["solicitudes-empresa","Solicitudes"],["herramientas","Herramientas"],["perfil","Mi cuenta"]] as const):([["explorar","Explorar"],["solicitudes","Mis solicitudes"],["perfil","Mis datos"]] as const)).map(([id,label])=><button key={id} className={tab===id?"active":""} onClick={()=>setTab(id)}>{label}</button>)}
       </nav>
       {tab==="perfil" && <section className="live-card"><h2>{accountType==="business"?"Mis datos personales":"Mis datos de Cliente"}</h2><p className="live-muted">{accountType==="business"?"Estos son tus datos de contacto como propietario. Los datos comerciales se gestionan dentro de Mi negocio.":"Tu nombre, apellidos, correo, teléfono y ciudad se compartirán con el negocio únicamente cuando confirmes una solicitud."}</p>
        <form className="live-form live-columns" onSubmit={saveProfile}>
@@ -258,7 +274,51 @@ export function RealExperience({accountType}:{accountType:"business"|"customer"}
         <button className="button primary" disabled={busy}>Guardar mis datos</button>
        </form><p className="live-muted">Email verificado en tu cuenta: {session.user.email}. Los datos fiscales se solicitarán cuando haya facturación real.</p>
       </section>}
-      {accountType==="business" && tab==="empresa" && <div className="live-grid">
+      {accountType==="business" && tab==="inicio" && <BusinessHome
+         organization={business||null}
+         serviceCount={services.length}
+         customerCount={contacts.length}
+         requestCount={ownerRequests.length}
+         pendingCount={ownerRequests.filter(r=>r.status==="new").length}
+         onNavigate={setTab}
+        />}
+       {accountType==="business" && tab==="herramientas" && <BusinessTools onNavigate={setTab}/>}
+       {accountType==="business" && tab==="negocio" && <section className="live-card business-live-profile">
+        <h2>Perfil de {business?.name||"tu negocio"}</h2>
+        <p className="live-muted">Estos datos se guardan en tu negocio. Cuando lo publiques, tus clientes podrán ver su nombre, sector, localidad y descripción.</p>
+        {business ? <>
+          <form className="live-form live-columns" onSubmit={saveCompany}>
+            <label>Nombre comercial<input required minLength={2} maxLength={120} value={companyDraft.name} onChange={e=>setCompanyDraft(v=>({...v,name:e.target.value}))}/></label>
+            <label>Sector<input required maxLength={80} value={companyDraft.category} onChange={e=>setCompanyDraft(v=>({...v,category:e.target.value}))}/></label>
+            <label>Localidad<input maxLength={100} value={companyDraft.city} onChange={e=>setCompanyDraft(v=>({...v,city:e.target.value}))}/></label>
+            <label className="business-live-full">Descripción del negocio<textarea rows={5} maxLength={1200} value={companyDraft.description} onChange={e=>setCompanyDraft(v=>({...v,description:e.target.value}))} placeholder="Describe qué haces, tus especialidades y a quién ayudas."/></label>
+            <button className="button primary" disabled={busy}>Guardar cambios</button>
+          </form>
+          <div className="business-live-publication">
+            <div><strong>{business.published?"Visible en Explorar":"Perfil privado"}</strong><p>La visibilidad de la ficha pública no afecta a los datos privados de clientes y solicitudes.</p></div>
+            <button className="button secondary" type="button" disabled={busy} onClick={()=>togglePublish(business)}>{business.published?"Ocultar negocio":"Publicar negocio"}</button>
+          </div>
+        </>:<button type="button" className="button primary" onClick={()=>setTab("gestion")}>Registrar mi negocio</button>}
+       </section>}
+       {accountType==="business" && tab==="clientes" && <section className="live-card">
+         <h2>Clientes de {business?.name||"tu negocio"}</h2>
+         <p className="live-muted">Contactos reales vinculados a las solicitudes recibidas por este negocio. Los clientes de otras empresas permanecen privados.</p>
+         {contacts.length===0?<div className="business-live-empty"><UsersRound size={25}/><strong>Todavía no hay clientes vinculados</strong><p>Aparecerán aquí automáticamente cuando una cuenta Cliente solicite uno de tus servicios.</p></div>:contacts.map(c=><article className="business-live-contact" key={c.customer_id}>
+            <div className="business-live-contact-avatar">{c.display_name.slice(0,1).toUpperCase()}</div>
+            <div><strong>{c.display_name}</strong><p>{c.email}</p><p>{c.phone||"Sin teléfono"} · {c.city||"Sin localidad"}</p></div>
+         </article>)}
+       </section>}
+       {accountType==="business" && tab==="solicitudes-empresa" && <section className="live-card">
+         <h2>Solicitudes recibidas</h2>
+         <p className="live-muted">Solicitudes reales de {business?.name||"tu negocio"}. Puedes actualizar su estado y el cliente lo verá en su cuenta.</p>
+         {ownerRequests.length===0?<div className="business-live-empty"><ClipboardList size={25}/><strong>Aún no hay solicitudes</strong><p>Cuando un cliente solicite un servicio, lo verás aquí.</p></div>:ownerRequests.map(r=><div key={r.id} className="live-row">
+            <div><strong>{r.customer_name}</strong><p>{r.notes||"Sin comentarios"}</p><small>{r.requested_date||"Fecha sin concretar"}</small></div>
+            <select aria-label={"Cambiar estado de solicitud de "+r.customer_name} value={r.status} disabled={busy} onChange={e=>changeStatus(r,e.target.value)}>
+               <option value="new">Nueva</option><option value="accepted">Aceptada</option><option value="rejected">Rechazada</option><option value="completed">Completada</option>
+            </select>
+          </div>)}
+       </section>}
+       {accountType==="business" && tab==="gestion" && <div className="live-grid">
        <section className="live-card"><h2>Mis negocios</h2>
         {orgs.length ? <><label>Empresa activa<select value={selectedOrg} onChange={e=>setSelectedOrg(e.target.value)}>{orgs.map(org=><option key={org.id} value={org.id}>{org.name}</option>)}</select></label>
         {business && <div className="live-manage"><p><strong>{business.name}</strong> · {business.city || "Sin ciudad"}</p><p>{business.published?"Visible en Explorar":"Perfil privado"}</p>
@@ -268,11 +328,11 @@ export function RealExperience({accountType}:{accountType:"business"|"customer"}
         <label>Precio (€) — opcional<input type="number" min="0" step="0.01" value={servicePrice} onChange={e=>setServicePrice(e.target.value)} placeholder="Consultar"/></label>
         <button className="button primary" disabled={busy}>Guardar servicio</button></form>
         {services.map(s=><div key={s.id} className="live-row"><strong>{s.title}</strong><span>{money(s.price_eur)}</span></div>)}</> : <p className="live-muted">Todavía no tienes negocios registrados.</p>}
-        <h3>Registrar otro negocio</h3><form className="live-form" onSubmit={addOrg}>
+        <details className="business-live-add-another" open={orgs.length===0}><summary>{orgs.length?"Añadir otro negocio":"Registrar mi primer negocio"}</summary><form className="live-form" onSubmit={addOrg}>
         <label>Nombre comercial<input value={businessName} onChange={e=>setBusinessName(e.target.value)} required minLength={2} maxLength={120}/></label>
         <label>Sector<input value={businessCategory} onChange={e=>setBusinessCategory(e.target.value)} maxLength={80} required/></label>
         <label>Ciudad<input value={businessCity} onChange={e=>setBusinessCity(e.target.value)} maxLength={100}/></label>
-        <button className="button primary" disabled={busy}>Crear negocio</button></form>
+        <button className="button primary" disabled={busy}>Crear negocio</button></form></details>
        </section>
        <section className="live-card"><h2>CRM · Clientes reales</h2>
         <p className="live-muted">Aquí aparecen únicamente los clientes que han enviado una solicitud a este negocio.</p>
@@ -301,13 +361,24 @@ export function RealExperience({accountType}:{accountType:"business"|"customer"}
      <aside className="workspace-sidebar" aria-label="Navegación de Empresa">
        <div className="workspace-logo"><Brand /></div>
        <div className="live-sidebar-heading">TU NEGOCIO</div>
+       {orgs.length>0 && <label className="business-live-sidebar-select">Empresa activa
+         <select value={selectedOrg} onChange={e=>setSelectedOrg(e.target.value)}>
+           {orgs.map(o=><option key={o.id} value={o.id}>{o.name}</option>)}
+         </select>
+       </label>}
        <nav className="live-sidebar-nav" aria-label="Módulos disponibles">
-         <button type="button" className={`workspace-nav-item ${tab==="empresa"?"is-active":""}`} onClick={()=>setTab("empresa")}>
-           <LayoutDashboard size={18}/> Mi negocio
-         </button>
-         <button type="button" className={`workspace-nav-item ${tab==="perfil"?"is-active":""}`} onClick={()=>setTab("perfil")}>
-           <UserRound size={18}/> Mi perfil
-         </button>
+         {([
+           ["inicio","Inicio",LayoutDashboard],
+           ["negocio","Perfil público",Settings2],
+           ["gestion","Servicios",ShoppingBag],
+           ["clientes","Clientes",UsersRound],
+           ["solicitudes-empresa","Solicitudes",ClipboardList],
+           ["herramientas","Herramientas",Blocks],
+           ["perfil","Mi cuenta",UserRound]
+          ] as const).map(([area,label,Icon])=><button key={area} type="button"
+             className={`workspace-nav-item ${tab===area?"is-active":""}`} onClick={()=>setTab(area)}>
+             <Icon size={18}/>{label}
+           </button>)}
        </nav>
        <div className="live-sidebar-bottom">
          <Link className="workspace-nav-item" href="/"><ArrowLeft size={18}/> Página inicial</Link>
@@ -316,7 +387,7 @@ export function RealExperience({accountType}:{accountType:"business"|"customer"}
      </aside>
      <div className="workspace-body live-workspace-body">
        <header className="workspace-topbar live-workspace-topbar">
-         <div className="workspace-breadcrumb"><strong>AutonoService</strong><span> / Mi negocio</span></div>
+         <div className="workspace-breadcrumb"><strong>{business?.name||"AutonoService"}</strong><span> / {tab==="inicio"?"Inicio":tab==="negocio"?"Perfil público":tab==="gestion"?"Servicios":tab==="clientes"?"Clientes":tab==="solicitudes-empresa"?"Solicitudes":tab==="herramientas"?"Herramientas":"Mi cuenta"}</span></div>
          <ThemeToggle/>
        </header>
        {content}
