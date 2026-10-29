@@ -48,7 +48,6 @@ create table if not exists public.service_requests (
   customer_name text not null default '',
   customer_email text not null default '',
   customer_phone text not null default '',
-  customer_city text not null default '',
   notes text not null default '' check (length(notes)<=2000),
   requested_date date,
   status text not null default 'new' check (status in ('new','accepted','rejected','completed')),
@@ -63,7 +62,6 @@ create table if not exists public.organization_customers (
   display_name text not null,
   email text not null,
   phone text not null default '',
-  city text not null default '',
   first_contact_at timestamptz not null default now(),
   last_contact_at timestamptz not null default now(),
   primary key(organization_id, customer_id)
@@ -107,14 +105,13 @@ begin
     join public.organization_services s on s.organization_id=o.id
     where o.id=new.organization_id and s.id=new.service_id and o.published and s.active
   ) then raise exception 'Service is not available'; end if;
-  select first_name, last_name, phone, city into p from public.person_profiles where user_id=new.customer_id;
+  select first_name, last_name, phone into p from public.person_profiles where user_id=new.customer_id;
   select email into verified_email from auth.users where id=new.customer_id;
   if p is null then raise exception 'Complete your profile before requesting a service'; end if;
   if btrim(coalesce(p.first_name,''))='' then raise exception 'First name required'; end if;
   new.customer_name := left(btrim(concat_ws(' ',p.first_name,p.last_name)),200);
   new.customer_email := left(coalesce(verified_email,''),320);
   new.customer_phone := left(coalesce(p.phone,''),40);
-  new.customer_city := left(coalesce(p.city,''),100);
   return new;
 end; $$;
 
@@ -127,14 +124,13 @@ returns trigger language plpgsql security definer set search_path = ''
 as $$
 begin
   insert into public.organization_customers
-    (organization_id,customer_id,display_name,email,phone,city)
+    (organization_id,customer_id,display_name,email,phone)
   values
-    (new.organization_id,new.customer_id,new.customer_name,new.customer_email,new.customer_phone,new.customer_city)
+    (new.organization_id,new.customer_id,new.customer_name,new.customer_email,new.customer_phone)
   on conflict (organization_id,customer_id) do update set
     display_name=excluded.display_name,
     email=excluded.email,
     phone=excluded.phone,
-    city=excluded.city,
     last_contact_at=now();
   return new;
 end; $$;
