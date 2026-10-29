@@ -24,7 +24,7 @@ declare global{interface Window{autonoLeaflet?:LeafletLibrary;autonoLeafletPromi
 function loadMapLibrary():Promise<LeafletLibrary>{
  if(window.autonoLeaflet)return Promise.resolve(window.autonoLeaflet);
  if(!window.autonoLeafletPromise){
-  window.autonoLeafletPromise=new Promise((resolve,reject)=>{
+  window.autonoLeafletPromise=new Promise<LeafletLibrary>((resolve,reject)=>{
    const css=document.createElement("link");
    css.rel="stylesheet";
    css.href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
@@ -40,7 +40,7 @@ function loadMapLibrary():Promise<LeafletLibrary>{
    document.head.appendChild(script);
   }).catch(error=>{window.autonoLeafletPromise=undefined;throw error});
  }
- return window.autonoLeafletPromise;
+ return window.autonoLeafletPromise!;
 }
 
 export function BusinessMap({
