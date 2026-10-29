@@ -42,7 +42,7 @@ export function SocialInbox({
    if(!db){setError("No existe conexión con Supabase.");return;}
    let active=true;
    const base=db.from("conversations").select("id,organization_id,customer_id,customer_display_name,created_at").order("created_at",{ascending:false});
-   (role==="business"?base.eq("organization_id",organizationId||"00000000-0000-0000-0000-000000000000"):base.eq("customer_id",userId))
+   (role==="business"?base:base.eq("customer_id",userId))
       .then(({data,error})=>{
         if(!active)return;
         if(error){setError(error.message);return;}
@@ -111,7 +111,7 @@ export function SocialInbox({
  const isActive=(t:Conversation)=>t.id===selected;
  return <section className="as-social-inbox" aria-label="Mensajes reales">
    <div className="as-social-inbox-intro">
-     <div><span className="eyebrow">CONVERSACIONES</span><h2>Mensajes</h2><p>Las conversaciones se actualizan automáticamente. Elige el negocio correcto si administras varias empresas anteriores.</p></div>
+     <div><span className="eyebrow">CONVERSACIONES</span><h2>Mensajes</h2><p>Mensajes de todos tus negocios y sedes, reunidos en una sola bandeja. Se actualizan automáticamente.</p></div>
      <button type="button" className="button secondary" onClick={refresh}><RefreshCw size={15}/> Actualizar</button>
    </div>
    <div className="as-social-chat-grid">
@@ -121,7 +121,7 @@ export function SocialInbox({
        className={isActive(thread)?"as-social-thread is-active":"as-social-thread"}
        onClick={()=>{setSelected(thread.id);setError("");}}>
          <span className="as-social-thread-avatar"><MessageCircle size={17}/></span>
-         <span><strong>{role==="business"?thread.customer_display_name||"Cliente":
+         <span><strong>{role==="business"?(thread.customer_display_name||"Cliente")+" · "+(organizations.find(o=>o.id===thread.organization_id)?.name||"Negocio"):
             organizations.find(o=>o.id===thread.organization_id)?.name||"Negocio"}</strong><small>Conversación privada</small></span>
        </button>)}
       {newTarget&&<button type="button" className="as-social-thread is-active" onClick={()=>setSelected("")}>
