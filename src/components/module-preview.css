@@ -106,7 +106,7 @@
   border-bottom: 0;
 }
 .nvm-table tbody tr:hover {
-  background: #c5f27704;
+  background: #c7a07504;
 }
 .nvm-row-name {
   display: flex;
@@ -132,9 +132,9 @@
 .nvm-record-icon {
   width: 35px;
   height: 35px;
-  background: #c5f27712;
+  background: #c7a07512;
   color: #c6d8ab;
-  border: 1px solid #c5f27715;
+  border: 1px solid #c7a07515;
   border-radius: 9px;
   display: grid;
   place-items: center;
@@ -166,7 +166,7 @@
 }
 .nvm-row-detail:hover {
   color: var(--accent);
-  background: #c5f2770a;
+  background: #c7a0750a;
 }
 .nvm-list-bottom {
   display: flex;
@@ -492,7 +492,7 @@
   background: #20271d;
   opacity: 0.5;
   z-index: -1;
-  box-shadow: 0 10px 50px #c5f27708;
+  box-shadow: 0 10px 50px #c7a07508;
 }
 .nvm-future-window > div {
   display: flex;
@@ -521,7 +521,7 @@
 }
 .nvm-future-window section .nvm-skeleton-short {
   width: 42%;
-  background: #c5f27777;
+  background: #c7a07577;
 }
 .nvm-future-window section .nvm-skeleton-medium {
   width: 70%;
