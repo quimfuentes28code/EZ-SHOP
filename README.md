@@ -2,11 +2,11 @@
 
 **Tu negocio. Más fácil.**
 
-Una aplicación modular con dos experiencias bajo una identidad global: **AutonoService**, para autónomos y empresas, y **Cliente**, completamente gratuita para consumidores. **AutonoSuite** es la mejora premium de gestión dentro de AutonoService: **Todo el potencial de tu negocio.**
+Una aplicación modular con dos tipos de cuenta independientes: **AutonoService**, para autónomos y empresas, y **Cliente**, completamente gratuita para consumidores. **AutonoSuite** es la mejora premium de gestión dentro de AutonoService: **Todo el potencial de tu negocio.**
 
-**Estado: Hito 0, arquitectura y prototipos para revisión.** No hay autenticación, pagos, base de datos de producción ni reservas/mensajes enviados a otro usuario. Las pantallas de perfiles, catálogo y solicitudes utilizan datos ficticios locales. La marca, los accesos y los nuevos prototipos están implementados. Se han verificado la instalación desde el lockfile, TypeScript, 48 pruebas unitarias y la compilación; las 27 pruebas de navegador han pasado. Los resultados actuales se registran en [NOTAS_PRUEBAS.md](docs/NOTAS_PRUEBAS.md).
+**Estado: Hito 1 en desarrollo.** Hay autenticación y solicitudes conectadas mediante Supabase; las vistas históricas del Hito 0 siguen siendo demostraciones. No hay pagos, facturas ni mapa real. Las pantallas de perfiles, catálogo y solicitudes utilizan datos ficticios locales. La marca, los accesos y los nuevos prototipos están implementados. Se han verificado la instalación desde el lockfile, TypeScript, 48 pruebas unitarias y la compilación; las 27 pruebas de navegador han pasado. Los resultados actuales se registran en [NOTAS_PRUEBAS.md](docs/NOTAS_PRUEBAS.md).
 
-La referencia principal del producto es [ESPECIFICACION_MAESTRA.md](docs/ESPECIFICACION_MAESTRA.md). Lee también [AGENTS.md](AGENTS.md) y el resto de `docs/` antes de desarrollar.
+El registro real está separado en [Empresa](/registro/empresa) y [Cliente](/registro/cliente); véase [la decisión de cuentas separadas](docs/REGISTRO_SEPARADO_EMPRESA_CLIENTE.md). La referencia principal del producto es [ESPECIFICACION_MAESTRA.md](docs/ESPECIFICACION_MAESTRA.md). Lee también [AGENTS.md](AGENTS.md) y el resto de `docs/` antes de desarrollar.
 
 ## Identidad visual
 
@@ -61,7 +61,7 @@ Consulta la IPv4 del ordenador con `ipconfig` y abre en Safari esa IP con el pue
 | `/mensajes` | Conversaciones y archivos locales desde ambas perspectivas demo |
 | `/mi-plan` | Comparación profesional gratis/AutonoSuite sin cobros |
 
-El selector **Mi negocio / Modo cliente** cambia de experiencia y recuerda la última elección sin crear otra cuenta. La selección de empresa es una demostración, no una membresía verificada.
+El selector **Mi negocio / Modo cliente** solo cambia entre vistas antiguas de demostración; no cambia el tipo de una cuenta real. La selección de empresa es una demostración, no una membresía verificada.
 
 Recorrido de interacción: editar el perfil del negocio → consultar el mismo catálogo como Cliente → preparar una solicitud de ejemplo → verla en Mi actividad. Los productos se consultan por mensaje; no existe checkout. Las fotos de presentación del negocio están separadas de los adjuntos privados de una conversación.
 

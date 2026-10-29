@@ -1,11 +1,11 @@
 # AutonoService — Especificación maestra
 
-Este documento recoge la referencia principal de producto aportada por el propietario. Sustituye decisiones comerciales y de roadmap anteriores que entren en conflicto con ella; conserva los módulos, la identidad global y las interacciones ya definidas. Las listas de funcionalidades describen el destino del producto, no una orden de implementarlas todas en el Hito 0.
+Este documento recoge la referencia principal de producto aportada por el propietario. **Decisión actualizada:** registro Empresa y Cliente separado según [REGISTRO_SEPARADO_EMPRESA_CLIENTE.md](REGISTRO_SEPARADO_EMPRESA_CLIENTE.md); dicha decisión prevalece sobre antiguas referencias a identidad unificada o cambio de rol desde una cuenta. Sustituye decisiones comerciales y de roadmap anteriores que entren en conflicto con ella; conserva los módulos, la identidad global y las interacciones ya definidas. Las listas de funcionalidades describen el destino del producto, no una orden de implementarlas todas en el Hito 0.
 
 ## 1. Identidad y marca
 
 - **AutonoService** — **Tu negocio. Más fácil.** Es la marca principal y la experiencia profesional gratuita.
-- **Cliente** es la experiencia de consumidor, completamente gratuita, dentro de la misma aplicación.
+- **Cliente** es la experiencia de consumidor, completamente gratuita, dentro de la misma plataforma, pero con registro y cuenta independientes.
 - **AutonoSuite** — **Todo el potencial de tu negocio.** Es la mejora premium de la gestión profesional dentro de AutonoService.
 
 No se usarán nombres comerciales que añadan «Business» a la marca principal ni presenten Cliente como otra aplicación. AutonoSuite no requiere instalar una segunda aplicación ni crear otra cuenta. Los identificadores internos `business`, `customer` o `premium` pueden seguir siendo descriptivos.
@@ -19,7 +19,7 @@ La primera entrada presenta el logotipo y la pregunta **¿Cómo quieres utilizar
 | **AutonoService**, icono de negocio | Gestiona tu negocio, organiza tus clientes, simplifica tus tareas y consigue nuevas oportunidades. | Gratis · Mejora disponible con AutonoSuite | Onboarding empresarial |
 | **Cliente**, icono de persona | Descubre negocios cercanos, reserva servicios y gestiona todas tus contrataciones desde un solo lugar. | Completamente gratis | Onboarding personal |
 
-Existe una identidad global: una persona puede usar ambas experiencias, ser cliente de un negocio y administrar otro. El selector muestra **Mi negocio / Modo cliente** y permite elegir empresa cuando haya varias membresías. La última experiencia se recuerda sin impedir el cambio. En el Hito 0 se demuestra la navegación; todavía no se registra una cuenta real ni se verifica una membresía.
+La decisión actual es utilizar **dos tipos de cuenta independientes**: Empresa y Cliente. Los botones de la portada llevan al registro específico de cada uno. Para utilizar ambos espacios, la persona necesita dos cuentas con correos diferentes. El selector «Mi negocio / Modo cliente» pertenece exclusivamente a las pantallas antiguas de demostración y no cambia el tipo de una cuenta autenticada.
 
 ## 3. Experiencia profesional y catálogo funcional previsto
 
@@ -149,9 +149,9 @@ Las fotos de presentación del negocio se distinguen de archivos privados de con
 
 Ningún negocio podrá consultar datos privados o contrataciones del cliente con otros negocios. No se incorporarán publicidad invasiva ni mensajes comerciales no solicitados.
 
-## 10. Identidad global, roles y permisos
+## 10. Cuentas independientes, roles y permisos
 
-Una persona puede ser cliente, propietaria de una o varias empresas, empleada de una o varias, y profesional y cliente a la vez. Sus roles son contextuales, no excluyentes.
+Cada cuenta real tiene un tipo fijo: Cliente o Empresa. Una persona puede disponer de ambas, pero con correos, identificadores y sesiones independientes. Dentro de una cuenta Empresa podrán existir en el futuro permisos específicos de propietario y empleados; no se confunden con el tipo Cliente.
 
 Las membresías y los permisos se comprueban en servidor y mediante RLS; ocultar botones o cambiar un identificador en la URL no autoriza acceso. Los datos y archivos privados pertenecen al contexto de empresa y a participantes verificados. Los contactos de empresas distintas no se fusionan por coincidencias de nombre o correo no verificado.
 
