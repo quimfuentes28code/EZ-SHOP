@@ -227,3 +227,34 @@
 .as-location-map-canvas .leaflet-control-attribution{font-size:10px;}
 .as-location-map-empty{border:1px solid var(--border);background:var(--surface-2);color:var(--muted);padding:13px;border-radius:10px;font-size:12px;}
 .as-location-map-credit{font-size:10px;color:var(--muted);}
+
+
+/* Real client-facing business profiles: a complete page, not a narrow dialog */
+.as-social-full-profile{width:100%;margin:0 auto 35px;max-width:1140px;animation:as-public-enter .16s ease-out;}
+.as-social-profile-back{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin:6px 0 19px;}
+.as-social-profile-back>span{font-size:12px;color:var(--muted);}
+.as-social-full-profile .as-social-public-profile{width:100%;border:1px solid var(--border);border-radius:20px;box-shadow:none;overflow:hidden;background:var(--surface);}
+.as-social-full-profile .as-social-profile-cover{height:clamp(215px,33vw,400px);position:relative;}
+.as-social-full-profile .as-social-profile-cover>strong{font-size:clamp(150px,20vw,300px);}
+.as-social-full-profile .as-social-public-body{padding:clamp(22px,4vw,52px);}
+.as-social-full-profile .as-social-public-body>h2{font-size:clamp(26px,4vw,43px);display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.as-social-full-profile .as-social-public-avatar{width:56px;height:56px;border-radius:15px;margin:0;}
+.as-social-full-profile .as-social-public-locations,
+.as-social-full-profile .as-social-public-posts{padding-top:9px;margin-top:28px;}
+.as-social-full-profile .as-social-public-posts .as-social-news-post{max-width:750px;}
+.as-social-full-profile .as-social-service-row{padding:19px 0;}
+.as-social-profile-share{margin:13px 0;}
+.business-profile-publication-state{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;border:1px solid var(--border);border-radius:14px;padding:17px;background:var(--surface-2);}
+.business-profile-publication-state>div:first-child{min-width:210px;flex:1;}
+.business-profile-publication-state strong{font-size:14px;display:block;}
+.business-profile-publication-state p{color:var(--muted);font-size:12px;line-height:1.6;margin:6px 0 0;}
+.business-profile-publication-actions{display:flex;gap:9px;flex-wrap:wrap;align-items:center;}
+.business-profile-publication-actions .button{font-size:12px;}
+@keyframes as-public-enter{from{opacity:.65;transform:translateY(5px)}to{opacity:1;transform:none}}
+@media(max-width:650px){
+ .as-social-full-profile .as-social-public-profile{border-radius:14px;}
+ .as-social-full-profile .as-social-public-body{padding:22px 18px 30px;}
+ .as-social-full-profile .as-social-profile-cover{height:205px;}
+ .as-social-profile-back{margin-bottom:13px;}
+ .business-profile-publication-actions{width:100%;}
+}
