@@ -1,6 +1,6 @@
 # AutonoService — Especificación maestra
 
-Este documento recoge la referencia principal de producto aportada por el propietario. **Decisión actualizada:** registro Empresa y Cliente separado según [REGISTRO_SEPARADO_EMPRESA_CLIENTE.md](REGISTRO_SEPARADO_EMPRESA_CLIENTE.md); dicha decisión prevalece sobre antiguas referencias a identidad unificada o cambio de rol desde una cuenta. Sustituye decisiones comerciales y de roadmap anteriores que entren en conflicto con ella; conserva los módulos, la identidad global y las interacciones ya definidas. Las listas de funcionalidades describen el destino del producto, no una orden de implementarlas todas en el Hito 0.
+Este documento recoge la referencia principal de producto aportada por el propietario. **Decisión vigente:** una identidad y un mismo correo permiten activar dos espacios, Empresa y Cliente, con permisos y pantallas independientes. Consulta [CUENTA_UNICA_DOS_ESPACIOS.md](CUENTA_UNICA_DOS_ESPACIOS.md), que prevalece sobre la decisión de correos separados. Sustituye decisiones comerciales y de roadmap anteriores que entren en conflicto con ella; conserva los módulos, la identidad global y las interacciones ya definidas. Las listas de funcionalidades describen el destino del producto, no una orden de implementarlas todas en el Hito 0.
 
 ## 1. Identidad y marca
 
@@ -19,7 +19,7 @@ La primera entrada presenta el logotipo y la pregunta **¿Cómo quieres utilizar
 | **AutonoService**, icono de negocio | Gestiona tu negocio, organiza tus clientes, simplifica tus tareas y consigue nuevas oportunidades. | Gratis · Mejora disponible con AutonoSuite | Onboarding empresarial |
 | **Cliente**, icono de persona | Descubre negocios cercanos, reserva servicios y gestiona todas tus contrataciones desde un solo lugar. | Completamente gratis | Onboarding personal |
 
-La decisión actual es utilizar **dos tipos de cuenta independientes**: Empresa y Cliente. Los botones de la portada llevan al registro específico de cada uno. Para utilizar ambos espacios, la persona necesita dos cuentas con correos diferentes. El selector «Mi negocio / Modo cliente» pertenece exclusivamente a las pantallas antiguas de demostración y no cambia el tipo de una cuenta autenticada.
+Una identidad verificada puede activar **dos espacios de uso diferenciados**, Empresa y Cliente, con el mismo correo y contraseña. Los botones de la portada abren el acceso específico y permiten activar el segundo espacio sin duplicar cuentas.
 
 ## 3. Experiencia profesional y catálogo funcional previsto
 
@@ -151,7 +151,7 @@ Ningún negocio podrá consultar datos privados o contrataciones del cliente con
 
 ## 10. Cuentas independientes, roles y permisos
 
-Cada cuenta real tiene un tipo fijo: Cliente o Empresa. Una persona puede disponer de ambas, pero con correos, identificadores y sesiones independientes. Dentro de una cuenta Empresa podrán existir en el futuro permisos específicos de propietario y empleados; no se confunden con el tipo Cliente.
+Una cuenta de autenticación puede tener habilitadas ambas experiencias, cada una con su interfaz y permisos específicos. Los datos comerciales pertenecen a cada organización y los encargos personales al usuario. Dentro de una cuenta Empresa podrán existir en el futuro permisos específicos de propietario y empleados; no se confunden con el tipo Cliente.
 
 Las membresías y los permisos se comprueban en servidor y mediante RLS; ocultar botones o cambiar un identificador en la URL no autoriza acceso. Los datos y archivos privados pertenecen al contexto de empresa y a participantes verificados. Los contactos de empresas distintas no se fusionan por coincidencias de nombre o correo no verificado.
 

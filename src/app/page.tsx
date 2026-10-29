@@ -35,7 +35,7 @@ export default function HomePage() {
     <div className="container home">
       <section className="experience-intro">
         <span className="eyebrow">
-          <span className="intro-dot" /> DOS TIPOS DE CUENTA. TU ESPACIO.
+          <span className="intro-dot" /> UNA CUENTA. DOS ESPACIOS.
         </span>
         <h1>
           ¿Cómo quieres utilizar
@@ -145,9 +145,9 @@ export default function HomePage() {
       <div className="one-account-note">
         <Layers3 size={21} />
         <div>
-          <strong>Dos tipos de cuenta. Dos espacios independientes.</strong>
+          <strong>Dos espacios independientes. Un mismo correo.</strong>
           <p>
-            La cuenta Empresa gestiona negocios y clientes. La cuenta Cliente solicita servicios. Si quieres usar las dos, necesitas registrarlas por separado.
+            Gestiona tus negocios desde Empresa y solicita servicios desde Cliente. Puedes activar ambos espacios usando el mismo correo y contraseña.
           </p>
         </div>
       </div>

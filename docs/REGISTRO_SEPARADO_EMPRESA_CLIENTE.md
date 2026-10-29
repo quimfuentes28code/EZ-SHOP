@@ -1,5 +1,8 @@
 # Registro independiente para Empresa y Cliente (29 octubre 2026)
 
+**Actualización posterior: este diseño de correos separados ha sido sustituido por espacios Empresa y Cliente bajo una sola identidad.** Consulta [CUENTA_UNICA_DOS_ESPACIOS.md](CUENTA_UNICA_DOS_ESPACIOS.md) para la decisión vigente y la migración 0004.
+
+
 ## Nueva decisión de producto
 
 Los botones **Empezar con AutonoService** y **Empezar como Cliente** de la portada crean **cuentas independientes**, no dos roles intercambiables de una cuenta global.

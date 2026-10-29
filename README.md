@@ -2,11 +2,11 @@
 
 **Tu negocio. Más fácil.**
 
-Una aplicación modular con dos tipos de cuenta independientes: **AutonoService**, para autónomos y empresas, y **Cliente**, completamente gratuita para consumidores. **AutonoSuite** es la mejora premium de gestión dentro de AutonoService: **Todo el potencial de tu negocio.**
+Una aplicación modular con una identidad y dos espacios de uso independientes: **AutonoService**, para autónomos y empresas, y **Cliente**, completamente gratuita para consumidores. **AutonoSuite** es la mejora premium de gestión dentro de AutonoService: **Todo el potencial de tu negocio.**
 
 **Estado: Hito 1 en desarrollo.** Hay autenticación y solicitudes conectadas mediante Supabase; las vistas históricas del Hito 0 siguen siendo demostraciones. No hay pagos, facturas ni mapa real. Las pantallas de perfiles, catálogo y solicitudes utilizan datos ficticios locales. La marca, los accesos y los nuevos prototipos están implementados. Se han verificado la instalación desde el lockfile, TypeScript, 48 pruebas unitarias y la compilación; las 27 pruebas de navegador han pasado. Los resultados actuales se registran en [NOTAS_PRUEBAS.md](docs/NOTAS_PRUEBAS.md).
 
-El registro real está separado en [Empresa](/registro/empresa) y [Cliente](/registro/cliente); véase [la decisión de cuentas separadas](docs/REGISTRO_SEPARADO_EMPRESA_CLIENTE.md). La referencia principal del producto es [ESPECIFICACION_MAESTRA.md](docs/ESPECIFICACION_MAESTRA.md). Lee también [AGENTS.md](AGENTS.md) y el resto de `docs/` antes de desarrollar.
+El acceso real está separado por experiencia: [Empresa](/registro/empresa) y [Cliente](/registro/cliente), pero ambos pueden usar el mismo correo; véase [una cuenta, dos espacios](docs/CUENTA_UNICA_DOS_ESPACIOS.md). La referencia principal del producto es [ESPECIFICACION_MAESTRA.md](docs/ESPECIFICACION_MAESTRA.md). Lee también [AGENTS.md](AGENTS.md) y el resto de `docs/` antes de desarrollar.
 
 ## Identidad visual
 
