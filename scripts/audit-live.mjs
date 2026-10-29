@@ -45,13 +45,33 @@ for (const variant of ["desktop", "mobile"]) {
       if(status.startsWith("4")||status.startsWith("5"))failures++;
       if(mainText.length<30){failures++;problems.push("Empty or nearly-empty page");}
       if(problems.some(p=>p.startsWith("JavaScript:"))){failures++;}
-      if(path==="/registro/cliente"||path==="/registro/empresa"){
+      // Detect horizontal overflow (especially mobile clipping). Record
+      // measurements without treating intentional demo scroll strips as outage.
+      const layout=await page.evaluate(()=>({
+        width:innerWidth,documentWidth:document.documentElement.scrollWidth,
+        bodyWidth:document.body.scrollWidth
+      }));
+      if(layout.documentWidth>layout.width+4)problems.push("Horizontal overflow: "+JSON.stringify(layout));
+            if(path==="/registro/cliente"||path==="/registro/empresa"){
         const inputCount=await page.locator("input").count();
         if(inputCount<2){failures++;problems.push("Registration UI inputs absent; count="+inputCount);}
         const buttons=await page.getByRole("button").allTextContents().catch(()=>[]);
         captures.push({variant,path,buttons:buttons.map(x=>x.trim()).filter(Boolean).slice(0,10)});
+        const accessButton=page.getByRole("button",{name:"Acceder",exact:true});
+        if(await accessButton.isVisible()){
+          await accessButton.click();
+          const loginInputs=await page.locator("input").count();
+          const loginBody=(await page.locator("body").innerText()).slice(0,650);
+          captures.push({variant,path,mode:"access",loginInputs,hasLoginText:loginBody.includes("Iniciar sesión")||loginBody.includes("Entrar")});
+          if(loginInputs<2){failures++;problems.push("Cannot switch to login inputs");}
+          await page.getByRole("button",{name:"Crear cuenta",exact:true}).click();
+        }
       }
-      if(path==="/" && variant==="desktop"){
+      if(path==="/demo/cliente" && variant==="desktop"){
+        const experience=page.getByRole("combobox",{name:"Experiencia"});
+        if(await experience.count())captures.push({variant,path,experienceValue:await experience.inputValue()});
+      }
+            if(path==="/" && variant==="desktop"){
         const links=await page.locator("a[href]").evaluateAll(els=>els.map(el=>({
           text:el.textContent?.trim().slice(0,45),href:el.getAttribute("href")
         })).filter(x=>x.href?.includes("registro")));
