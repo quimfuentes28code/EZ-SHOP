@@ -86,7 +86,7 @@ export default function HomePage() {
           </Link>
           <Link
             className="experience-demo-link"
-            href="/empresa"
+            href="/demo/empresa"
             onClick={() => setDemoExperience("business")}
           >
             Ver el negocio de demostración <ArrowRight size={14} />
@@ -128,7 +128,7 @@ export default function HomePage() {
           </Link>
           <Link
             className="experience-demo-link"
-            href="/cliente"
+            href="/demo/cliente"
             onClick={() => setDemoExperience("customer")}
           >
             Explorar la experiencia Cliente <ArrowRight size={14} />
@@ -140,7 +140,7 @@ export default function HomePage() {
           <strong>¿Quieres ver cómo funciona antes de registrarte?</strong>
           <p>Puedes visitar las pantallas de demostración. Las cuentas reales se crean directamente desde las opciones Empresa o Cliente de arriba.</p>
         </div>
-        <Link href="/real" className="button secondary">Ver opciones de registro <ArrowRight size={15} /></Link>
+        <Link href="/real" className="button secondary">Ver tipos de cuenta <ArrowRight size={15} /></Link>
       </section>
       <div className="one-account-note">
         <Layers3 size={21} />
@@ -159,7 +159,7 @@ export default function HomePage() {
               {last === "business" ? "Mi negocio" : "Modo cliente"}
             </strong>
           </span>
-          <Link href={last === "business" ? "/empresa" : "/cliente"}>
+          <Link href={last === "business" ? "/demo/empresa" : "/demo/cliente"}>
             Continuar demostración <ArrowRight size={14} />
           </Link>
         </div>
