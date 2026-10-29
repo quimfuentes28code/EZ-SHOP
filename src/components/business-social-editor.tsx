@@ -178,7 +178,7 @@ export function BusinessSocialEditor({organizationId}:{organizationId:string}){
       {post.media_url&&post.media_kind==="image"&&<img src={post.media_url} alt="Imagen de publicación"/>}
       {post.media_url&&post.media_kind==="video"&&<video controls preload="metadata" src={post.media_url}/>}
       <div className="social-post-actions">
-       <button type="button" className="button secondary small" onClick={()=>toggle(post.id,post.published)} disabled={busy||Boolean(post.published&&post.media_url)}>{post.published?<EyeOff size={14}/>:<Eye size={14}/>} {post.published&&post.media_url?"Eliminar para retirar":"Publicar"}</button>
+       <button type="button" className="button secondary small" onClick={()=>toggle(post.id,post.published)} disabled={busy||Boolean(post.published&&post.media_url)}>{post.published?<EyeOff size={14}/>:<Eye size={14}/>} {post.published&&post.media_url?"Eliminar para retirar":post.published?"Hacer privado":"Publicar"}</button>
        <button type="button" className="button secondary small" onClick={()=>remove(post.id)} disabled={busy}><Trash2 size={14}/> Eliminar</button>
       </div>
     </article>)}
