@@ -52,6 +52,10 @@ export function ExperienceSwitcher() {
       window.removeEventListener("storage", refresh);
     };
   }, [path]);
+  // Never show the demo experience switcher on real authenticated account screens.
+  if (path === "/real" || path.startsWith("/registro/empresa") || path.startsWith("/registro/cliente")) {
+    return null;
+  }
   return (
     <div className="experience-control">
       <label className="experience-select">
