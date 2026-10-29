@@ -35,7 +35,7 @@ function loadMapLibrary():Promise<LeafletLibrary>{
    script.src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
    script.integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=";
    script.crossOrigin="anonymous";
-   script.onload=()=>window.autonoLeaflet?resolve(window.autonoLeaflet):reject(new Error("No se ha podido iniciar el mapa."));
+   script.onload=()=>{const lib=(window as Window & {L?:LeafletLibrary}).L;if(lib){window.autonoLeaflet=lib;resolve(lib);}else reject(new Error("No se ha podido iniciar el mapa."));};
    script.onerror=()=>reject(new Error("No se ha podido cargar el proveedor de mapas."));
    document.head.appendChild(script);
   }).catch(error=>{window.autonoLeafletPromise=undefined;throw error});
