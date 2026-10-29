@@ -8,6 +8,11 @@ Una aplicación modular con dos experiencias bajo una identidad global: **Autono
 
 La referencia principal del producto es [ESPECIFICACION_MAESTRA.md](docs/ESPECIFICACION_MAESTRA.md). Lee también [AGENTS.md](AGENTS.md) y el resto de `docs/` antes de desarrollar.
 
+## Identidad visual
+
+El logotipo oficial y la paleta minimalista se mantienen en [la guía de identidad](docs/IDENTIDAD_VISUAL.md).
+La aplicación utiliza fondo claro y crema de forma predeterminada, con modo oscuro opcional, y conserva la misma marca para AutonoService y Cliente.
+
 ## Abrir en VS Code con Windows
 
 1. Descarga la rama `codex/hito-0`, descomprime el ZIP y abre esa carpeta mediante **Archivo → Abrir carpeta**. Debe contener `package.json`, `package-lock.json` y `src`.
