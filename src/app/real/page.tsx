@@ -10,7 +10,7 @@ type Profile = { first_name:string; last_name:string; city:string; phone:string 
 type Organization = { id:string; owner_id?:string; name:string; category:string; city:string; description:string; published:boolean };
 type Service = { id:string; organization_id:string; title:string; description:string; price_eur:number|null; active:boolean };
 type Request = { id:string; organization_id:string; customer_id:string; service_id:string; customer_name:string; customer_email:string; customer_phone:string; notes:string; requested_date:string|null; status:string; created_at:string };
-type Contact = { customer_id:string; display_name:string; email:string; phone:string; last_contact_at:string };
+type Contact = { customer_id:string; display_name:string; email:string; phone:string; city:string; last_contact_at:string };
 const emptyProfile:Profile={first_name:"",last_name:"",city:"",phone:""};
 const errors:Record<string,string>={};
 const message=(e:unknown)=> e instanceof Error ? e.message : String(e);
@@ -81,7 +81,7 @@ export default function RealAppPage(){
   let active=true;
   Promise.all([
    db.from("organization_services").select("*").eq("organization_id",selectedOrg).order("created_at",{ascending:false}),
-   db.from("organization_customers").select("customer_id,display_name,email,phone,last_contact_at").eq("organization_id",selectedOrg).order("last_contact_at",{ascending:false}),
+   db.from("organization_customers").select("customer_id,display_name,email,phone,city,last_contact_at").eq("organization_id",selectedOrg).order("last_contact_at",{ascending:false}),
    db.from("service_requests").select("*").eq("organization_id",selectedOrg).order("created_at",{ascending:false})
   ]).then(([s,c,r])=>{
    if(!active)return;
@@ -190,11 +190,11 @@ export default function RealAppPage(){
        <button type="submit" className="button primary" disabled={busy}>{busy?"Procesando...":mode==="signup"?"Crear mi cuenta":"Entrar"}</button>
       </form><p className="live-muted">Una sola identidad: podrás solicitar servicios como Cliente y gestionar un negocio con esta misma cuenta.</p>
    </section>
-   : <><div className="live-signed"><span>Sesión de <strong>{session.user.email}</strong></span><button className="button secondary small" disabled={busy} onClick={logout}>Cerrar sesión</button></div>
+   : <><div className="live-signed"><span>Sesión de <strong>{session.user.email}</strong></span><div className="live-session-actions"><button type="button" className="button secondary small" onClick={refresh} disabled={busy}>Actualizar datos</button><button className="button secondary small" disabled={busy} onClick={logout}>Cerrar sesión</button></div></div>
       <nav className="live-tabs" aria-label="Espacios conectados">
        {([["perfil","Mis datos"],["empresa","Mi negocio"],["explorar","Explorar"],["solicitudes","Solicitudes"]] as const).map(([id,label])=><button key={id} className={tab===id?"active":""} onClick={()=>setTab(id)}>{label}</button>)}
       </nav>
-      {tab==="perfil" && <section className="live-card"><h2>Mis datos de Cliente</h2><p className="live-muted">Se compartirán con una empresa únicamente al solicitarle un servicio. No verá tus relaciones con otros negocios.</p>
+      {tab==="perfil" && <section className="live-card"><h2>Mis datos de Cliente</h2><p className="live-muted">Tu nombre, apellidos, correo, teléfono y ciudad se compartirán únicamente cuando confirmes una solicitud. Una empresa no verá tus relaciones con otros negocios.</p>
        <form className="live-form live-columns" onSubmit={saveProfile}>
         <label>Nombre<input required value={profile.first_name} onChange={e=>setProfile(x=>({...x,first_name:e.target.value}))} maxLength={80}/></label>
         <label>Apellidos<input required value={profile.last_name} onChange={e=>setProfile(x=>({...x,last_name:e.target.value}))} maxLength={100}/></label>
@@ -221,7 +221,7 @@ export default function RealAppPage(){
        </section>
        <section className="live-card"><h2>CRM · Clientes reales</h2>
         <p className="live-muted">Aquí aparecen únicamente los clientes que han enviado una solicitud a este negocio.</p>
-        {contacts.length===0?<p>Aún no hay contactos vinculados.</p>:contacts.map(c=><div className="live-row" key={c.customer_id}><div><strong>{c.display_name}</strong><p>{c.email} {c.phone? "· "+c.phone:""}</p></div></div>)}
+        {contacts.length===0?<p>Aún no hay contactos vinculados.</p>:contacts.map(c=><div className="live-row" key={c.customer_id}><div><strong>{c.display_name}</strong><p>{c.email} {c.phone? "· "+c.phone:""} {c.city?"· "+c.city:""}</p></div></div>)}
         <h3>Solicitudes recibidas</h3>
         {ownerRequests.length===0?<p className="live-muted">Sin solicitudes por ahora.</p>:ownerRequests.map(r=><div key={r.id} className="live-row"><div><strong>{r.customer_name}</strong><p>{r.notes||"Sin notas"} · {r.requested_date||"Sin fecha"}</p><small>{r.status}</small></div><select aria-label={"Estado de "+r.customer_name} value={r.status} disabled={busy} onChange={e=>changeStatus(r,e.target.value)}><option value="new">Nueva</option><option value="accepted">Aceptada</option><option value="rejected">Rechazada</option><option value="completed">Completada</option></select></div>)}
        </section>

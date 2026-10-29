@@ -11,7 +11,7 @@
 - Directorio de negocios publicados.
 - Solicitudes de servicios desde una cuenta Cliente autenticada.
 - Inserción automática de la relación cliente/negocio (CRM) mediante trigger de PostgreSQL, con un registro por empresa y cliente.
-- Consulta de solicitudes por Cliente y por dueño del negocio; gestión de estados por dueño.
+- Consulta de solicitudes por Cliente y por dueño del negocio; gestión de estados por dueño y botón manual de **Actualizar datos** mientras no esté implementada la actualización en tiempo real.
 - Separación multiempresa mediante RLS de PostgreSQL.
 - UI en ruta `/real` respetando la identidad visual existente.
 
@@ -22,7 +22,7 @@ Mapa geográfico, reservas con agenda/capacidad, trabajadores, pagos, facturas, 
 ## Activación del backend — entorno de desarrollo
 
 1. Conecta Supabase y crea un **proyecto de desarrollo** dedicado (no lo mezcles con información fiscal o personal de clientes existentes).
-2. En el panel de Supabase abre SQL Editor y aplica `supabase/migrations/20261029_0001_auth_crm_requests.sql` una sola vez.
+2. En el panel de Supabase abre SQL Editor y aplica, en este orden, `supabase/migrations/20261029_0001_auth_crm_requests.sql` y `supabase/migrations/20261029_0002_customer_city.sql` una sola vez. La segunda migración incorpora la ciudad del Cliente a la ficha CRM.
 3. En Authentication activa Email y confirmación de correo; configura el Site URL y Redirect URL de `https://<tu-dominio>/real`, además de localhost para pruebas.
 4. En Cloudflare añade estas **variables públicas** al entorno de compilación (Workers Builds / Build settings), como valores del proyecto Supabase de desarrollo:
    - `NEXT_PUBLIC_SUPABASE_URL`: Project URL.

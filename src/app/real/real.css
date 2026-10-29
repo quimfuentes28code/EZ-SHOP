@@ -36,3 +36,5 @@
 .live-disclaimer {font-size:11px;margin-top:36px;}
 .live-status {background:var(--surface-2);padding:7px 10px;border-radius:8px;font-size:11px;}
 @media (max-width:800px){.live-grid{grid-template-columns:1fr}.live-top{flex-direction:column}.live-columns{grid-template-columns:1fr}.live-card{padding:20px}.live-app{padding-top:24px}}
+
+.live-session-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
