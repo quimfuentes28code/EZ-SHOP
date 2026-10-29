@@ -215,3 +215,15 @@
 .as-social-attach-button input{display:none;}
 .as-social-file-button{display:flex;align-items:center;gap:8px;color:var(--accent);background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:9px 12px;cursor:pointer;font-size:11px;max-width:100%;overflow-wrap:anywhere;margin-top:7px;}
 .as-social-unread-count{color:var(--accent);font-weight:700;margin-left:5px;}
+
+
+/* Opt-in real interactive map */
+.as-location-map{display:grid;gap:10px;min-width:0;}
+.as-location-map-header{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;}
+.as-location-map-header strong{display:flex;align-items:center;gap:8px;font-size:13px;}
+.as-location-map-header svg{color:var(--accent);}
+.as-location-map-header small{font-size:11px;color:var(--muted);}
+.as-location-map-canvas{position:relative;z-index:0;width:100%;border:1px solid var(--border);border-radius:14px;overflow:hidden;background:#e9e4d9;}
+.as-location-map-canvas .leaflet-control-attribution{font-size:10px;}
+.as-location-map-empty{border:1px solid var(--border);background:var(--surface-2);color:var(--muted);padding:13px;border-radius:10px;font-size:12px;}
+.as-location-map-credit{font-size:10px;color:var(--muted);}
