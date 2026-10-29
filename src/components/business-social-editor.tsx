@@ -65,10 +65,26 @@ export function BusinessSocialEditor({organizationId}:{organizationId:string}){
     const url=await upload(file);
     const {error}=await db.from("organizations").update({[field]:url}).eq("id",organizationId);
     if(error)throw error;
-    setMessage(field==="avatar_url"?"Imagen de perfil actualizada.":"Portada actualizada.");
+    setMessage(
+      (field==="avatar_url"?"Imagen de perfil actualizada.":"Portada actualizada.")+
+      (company?.published?" Visible para los clientes al actualizar el directorio.":" El negocio sigue siendo privado. Pulsa «Publicar mi empresa» para verlo desde Cliente.")
+    );
     setReload(x=>x+1);
   });
  }
+ const changeVisibility=()=>{
+   if(!db||!company)return;
+   void execute(async()=>{
+     const next=!company.published;
+     const {error}=await db.from("organizations").update({published:next}).eq("id",organizationId);
+     if(error)throw error;
+     setCompany(prev=>prev?{...prev,published:next}:prev);
+     setMessage(next
+       ?"Perfil publicado. Ahora podrás verlo desde Cliente → Explorar."
+       :"Perfil privado. Ya no aparecerá en Explorar para otros clientes.");
+     setReload(x=>x+1);
+   });
+ };
  const saveIdentity=(e:FormEvent)=>{
   e.preventDefault();if(!db)return;
   void execute(async()=>{
@@ -135,6 +151,19 @@ export function BusinessSocialEditor({organizationId}:{organizationId:string}){
     <h2>Personaliza tu perfil público</h2>
     <p className="live-muted">Haz reconocible tu negocio. Los cambios se guardan en tu cuenta y las publicaciones aparecen en la experiencia Cliente cuando las publicas.</p>
   </div></div>
+  {company&&<div className="business-profile-publication-state" role="status">
+    <div><strong>{company.published?"Tu perfil es público":"Tu perfil es privado"}</strong>
+      <p>{company.published
+        ?"Los clientes pueden encontrar esta empresa, ver su portada y abrir el perfil completo."
+        :"Tus cambios están guardados, pero los clientes no pueden verlos hasta que publiques esta empresa."}</p>
+    </div>
+    <div className="business-profile-publication-actions">
+      <button className={company.published?"button secondary":"button primary"} type="button" disabled={busy} onClick={changeVisibility}>
+        {company.published?"Ocultar mi empresa":"Publicar mi empresa"}
+      </button>
+      {company.published&&<a className="button secondary" href={"/cliente?negocio="+company.id}>Ver como Cliente</a>}
+    </div>
+  </div>}
   <div className="social-business-cover" style={{backgroundColor:company?.accent_color||accent}}>
     {company?.cover_url?<img src={company.cover_url} alt={"Portada de "+company.name}/>:<div className="social-business-cover-placeholder"><Camera size={38}/><span>Tu marca, tu historia</span></div>}
     <div className="social-business-logo">
