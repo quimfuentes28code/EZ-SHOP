@@ -143,25 +143,45 @@ export function BusinessTools({onNavigate,organizationId}:{onNavigate:(area:Busi
       {saved&&<span className="live-muted">Configuración personalizada</span>}
       {notice&&<p className="live-alert" role="status">{notice}</p>}
     </div>
+    <div className="business-live-section-head"><h3>Herramientas disponibles</h3><span>Puedes usarlas ya con tu empresa</span></div>
     <div className="business-live-tool-grid">
-      {(Object.entries(MODULES) as [ModuleId,(typeof MODULES)[ModuleId]][]).map(([id,m])=>{
-        const area=working[id];
-        const Icon=icons[id]||Settings2;
-        return area?
-        <button type="button" className="business-live-tool" key={id} onClick={()=>onNavigate(area)}>
-          <Icon size={19}/><strong>{m.label}</strong><small>{m.desc}</small><em className="business-live-available">Disponible</em>
-        </button>:
-        <div className="business-live-tool is-upcoming" key={id}>
-          <Icon size={19}/><strong>{m.label}</strong><small>{m.desc}</small><em>En desarrollo</em>
-        </div>;
-      })}
+      {(Object.entries(MODULES) as [ModuleId,(typeof MODULES)[ModuleId]][])
+        .filter(([id])=>!!working[id]&&(!saved||enabled.includes(id))).map(([id,m])=>{
+          const Icon=icons[id]||Settings2;
+          return <button type="button" className="business-live-tool" key={id} onClick={()=>onNavigate(working[id]!)}>
+            <Icon size={19}/><strong>{m.label}</strong><small>{m.desc}</small><em className="business-live-available">Disponible</em>
+          </button>;
+        })}
       <button type="button" className="business-live-tool" onClick={()=>onNavigate("solicitudes-empresa")}>
-        <ClipboardList size={19}/><strong>Solicitudes</strong><small>Gestiona solicitudes de servicios de tus clientes</small><em className="business-live-available">Disponible</em>
+        <ClipboardList size={19}/><strong>Solicitudes</strong><small>Gestiona solicitudes reales de tus clientes</small><em className="business-live-available">Disponible</em>
       </button>
       <button type="button" className="business-live-tool" onClick={()=>onNavigate("negocio")}>
-        <Settings2 size={19}/><strong>Perfil comercial</strong><small>Edita tu negocio y su visibilidad pública</small><em className="business-live-available">Disponible</em>
+        <Settings2 size={19}/><strong>Perfil comercial y publicaciones</strong><small>Portada, fotos, vídeos y novedades sociales</small><em className="business-live-available">Disponible</em>
       </button>
     </div>
-    <p className="live-muted">Las herramientas marcadas «En desarrollo» todavía no ejecutan operaciones reales. La mensajería actualmente admite texto sin adjuntos.</p>
+    {saved&&<details className="business-live-tools-details"><summary>Mostrar otras herramientas disponibles</summary>
+       <div className="business-live-tool-grid">
+        {(Object.entries(MODULES) as [ModuleId,(typeof MODULES)[ModuleId]][])
+         .filter(([id])=>!!working[id]&&!enabled.includes(id)).map(([id,m])=>{
+           const Icon=icons[id]||Settings2;
+           return <button type="button" className="business-live-tool" key={id} onClick={()=>onNavigate(working[id]!)}>
+             <Icon size={19}/><strong>{m.label}</strong><small>{m.desc}</small><em className="business-live-available">Disponible</em>
+           </button>;
+         })}
+       </div>
+    </details>}
+    <details className="business-live-tools-details"><summary>Próximas herramientas (aún sin backend)</summary>
+      <p className="live-muted">No mostramos estas funciones como activas hasta que puedan guardar y consultar datos reales.</p>
+      <div className="business-live-tool-grid">
+       {(Object.entries(MODULES) as [ModuleId,(typeof MODULES)[ModuleId]][])
+        .filter(([id])=>!working[id]).map(([id,m])=>{
+           const Icon=icons[id]||Settings2;
+           return <div className="business-live-tool is-upcoming" key={id}>
+             <Icon size={19}/><strong>{m.label}</strong><small>{m.desc}</small><em>En desarrollo</em>
+           </div>;
+         })}
+      </div>
+    </details>
+    <p className="live-muted">Las herramientas marcadas «En desarrollo» todavía no ejecutan operaciones reales. La mensajería incluye adjuntos privados; las reservas automáticas y la facturación siguen pendientes.</p>
   </section>;
 }
