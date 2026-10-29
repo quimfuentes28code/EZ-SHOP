@@ -137,6 +137,13 @@ export default function HomePage() {
           </Link>
         </article>
       </section>
+      <section className="real-phase-entry" aria-label="Cuentas conectadas">
+        <div>
+          <strong>Próxima fase: cuentas reales y CRM conectado</strong>
+          <p>Regístrate, crea tu negocio y recibe solicitudes de personas registradas. La activación requiere conectar el backend seguro.</p>
+        </div>
+        <Link href="/real" className="button secondary">Acceder a la fase real <ArrowRight size={15} /></Link>
+      </section>
       <div className="one-account-note">
         <Layers3 size={21} />
         <div>
