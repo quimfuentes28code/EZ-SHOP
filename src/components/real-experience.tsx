@@ -131,7 +131,7 @@ export function RealExperience({accountType}:{accountType:"business"|"customer"}
       if(!form.first.trim()||!form.last.trim())throw Error("Escribe tu nombre y apellidos.");
       const {data,error}=await db.auth.signUp({
         email:form.email.trim(),password:form.password,
-        options:{emailRedirectTo:window.location.origin+(accountType==="business"?"/registro/empresa":"/registro/cliente"),data:{account_type:accountType,first_name:form.first.trim(),last_name:form.last.trim()}}
+        options:{emailRedirectTo:window.location.origin+(accountType==="business"?"/registro/empresa":"/registro/cliente"),data:{account_type:accountType,first_name:form.first.trim(),last_name:form.last.trim(),city:form.city.trim(),phone:form.phone.trim()}}
       });
       if(error)throw error;
       if(data.session){
