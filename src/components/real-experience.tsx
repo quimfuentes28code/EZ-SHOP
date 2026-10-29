@@ -217,7 +217,7 @@ export function RealExperience({accountType}:{accountType:"business"|"customer"}
    : accountRole === undefined ? <p role="status">Comprobando permisos de la cuenta...</p>
    : accountRole === null ? <section className="live-card live-auth">
       <h2>Completa tu tipo de cuenta</h2>
-      <p>Esta cuenta se creó antes de separar las experiencias. Puedes asignarla una sola vez como <strong>{accountType==="business"?"Empresa":"Cliente"}</strong>. No podrás cambiarla después ni usar ambas experiencias desde este correo.</p>
+      <p>Esta cuenta se creó antes de separar las experiencias. Puedes asignarla una sola vez como <strong>{accountType==="business"?"Empresa":"Cliente"}</strong>. No podrás cambiarla después ni usar ambas experiencias desde este correo. <strong>Si creaste negocios con esta cuenta antes del cambio, debes elegir Empresa para conservar el acceso a ellos.</strong></p>
       <button className="button primary" type="button" disabled={busy} onClick={enrollExisting}>Confirmar cuenta {accountType==="business"?"Empresa":"Cliente"}</button>
       <button className="button secondary" type="button" disabled={busy} onClick={logout}>Usar otra cuenta</button>
      </section>
