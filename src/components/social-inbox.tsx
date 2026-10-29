@@ -44,8 +44,15 @@ export function SocialInbox({
  useEffect(()=>{
    if(!db){setError("No existe conexión con Supabase.");return;}
    let active=true;
+   // A single login can be both Cliente and Empresa. RLS permits both sets,
+   // so a business inbox MUST explicitly limit its organization IDs.
+   // Otherwise personal Cliente threads would appear in the professional inbox.
+   const ownOrganizationIds=organizations.map(o=>o.id);
+   if(role==="business" && ownOrganizationIds.length===0){
+     setThreads([]);setSelected("");return;
+   }
    const base=db.from("conversations").select("id,organization_id,customer_id,customer_display_name,created_at").order("created_at",{ascending:false});
-   (role==="business"?base:base.eq("customer_id",userId))
+   (role==="business"?base.in("organization_id",ownOrganizationIds):base.eq("customer_id",userId))
       .then(({data,error})=>{
         if(!active)return;
         if(error){setError(error.message);return;}
@@ -56,7 +63,7 @@ export function SocialInbox({
           :next.some(t=>t.id===id)?id:(next[0]?.id||""));
       });
    return ()=>{active=false;};
- },[db,role,organizationId,userId,targetOrganizationId,refreshId]);
+ },[db,role,organizationId,userId,targetOrganizationId,refreshId,organizations]);
 
  useEffect(()=>{
    if(!db||!selected){setMessages([]);return;}

@@ -81,6 +81,7 @@ export function BusinessSocialEditor({organizationId}:{organizationId:string}){
  const publish=(e:FormEvent)=>{
   e.preventDefault();if(!db)return;
   void execute(async()=>{
+    if(!postPublished&&media)throw Error("Los archivos se guardan en un contenedor público. Guarda el borrador solo con texto o publica la foto cuando esté lista.");
     let url="",kind:null|"image"|"video"=null;
     if(media){url=await upload(media);kind=media.type.startsWith("video/")?"video":"image";}
     if(!body.trim()&&!url)throw Error("Escribe una publicación o añade una foto o vídeo.");
@@ -94,6 +95,10 @@ export function BusinessSocialEditor({organizationId}:{organizationId:string}){
  };
  async function toggle(id:string,published:boolean){
   if(!db)return;
+  if(published&&posts.find(p=>p.id===id)?.media_url){
+    setMessage("Para retirar una foto o vídeo publicado, elimina la publicación. Cambiar su estado no revoca la URL pública.");
+    return;
+  }
   void execute(async()=>{
     const {error}=await db.from("business_posts").update({published:!published}).eq("id",id).eq("organization_id",organizationId);
     if(error)throw error;setReload(x=>x+1);
@@ -103,8 +108,26 @@ export function BusinessSocialEditor({organizationId}:{organizationId:string}){
   if(!db)return;
   if(!window.confirm("¿Eliminar esta publicación de forma permanente?"))return;
   void execute(async()=>{
+    const post=posts.find(p=>p.id===id);
     const {error}=await db.from("business_posts").delete().eq("id",id).eq("organization_id",organizationId);
-    if(error)throw error;setReload(x=>x+1);
+    if(error)throw error;
+    let cleanupError="";
+    if(post?.media_url){
+      try{
+        const url=new URL(post.media_url);
+        const prefix="/storage/v1/object/public/"+mediaBucket+"/";
+        const start=url.pathname.indexOf(prefix);
+        if(start>=0){
+          const path=decodeURIComponent(url.pathname.slice(start+prefix.length));
+          if(path.startsWith(organizationId+"/")){
+            const {error:removeError}=await db.storage.from(mediaBucket).remove([path]);
+            if(removeError)cleanupError=removeError.message;
+          }
+        }
+      }catch(e){cleanupError=e instanceof Error?e.message:"No se pudo limpiar el archivo.";}
+    }
+    setReload(x=>x+1);
+    setMessage(cleanupError?"La publicación se eliminó, pero su archivo requiere limpieza manual: "+cleanupError:"Publicación eliminada.");
   });
  }
  return <section className="live-card social-business-editor">
@@ -155,12 +178,12 @@ export function BusinessSocialEditor({organizationId}:{organizationId:string}){
       {post.media_url&&post.media_kind==="image"&&<img src={post.media_url} alt="Imagen de publicación"/>}
       {post.media_url&&post.media_kind==="video"&&<video controls preload="metadata" src={post.media_url}/>}
       <div className="social-post-actions">
-       <button type="button" className="button secondary small" onClick={()=>toggle(post.id,post.published)} disabled={busy}>{post.published?<EyeOff size={14}/>:<Eye size={14}/>} {post.published?"Hacer privado":"Publicar"}</button>
+       <button type="button" className="button secondary small" onClick={()=>toggle(post.id,post.published)} disabled={busy||Boolean(post.published&&post.media_url)}>{post.published?<EyeOff size={14}/>:<Eye size={14}/>} {post.published&&post.media_url?"Eliminar para retirar":post.published?"Hacer privado":"Publicar"}</button>
        <button type="button" className="button secondary small" onClick={()=>remove(post.id)} disabled={busy}><Trash2 size={14}/> Eliminar</button>
       </div>
     </article>)}
   </div>
   {message&&<p className="live-alert" role="status">{message}</p>}
-  <p className="live-muted"><ShieldCheck size={13}/> El contenido publicado será visible para otros usuarios. Utiliza solo fotografías y vídeos que tengas permiso para compartir; no publiques documentos o datos privados de clientes.</p>
+  <p className="live-muted"><ShieldCheck size={13}/> Los archivos subidos al perfil son públicos. Los borradores con fotos o vídeos se deshabilitan para proteger su privacidad; eliminar una publicación también intenta eliminar el archivo. No compartas datos privados ni imágenes sin permiso.</p>
  </section>;
 }
