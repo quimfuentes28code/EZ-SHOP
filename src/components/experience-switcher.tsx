@@ -25,11 +25,11 @@ export function ExperienceSwitcher() {
   useEffect(() => {
     const refresh = () => setMode(loadDemoExperience());
     const routeMode =
-      path.startsWith("/empresa") ||
+      path.startsWith("/demo/empresa") ||
       path === "/mi-plan" ||
       path === "/onboarding"
         ? "business"
-        : path === "/cliente" ||
+        : path === "/demo/cliente" ||
             path === "/explorar" ||
             path.startsWith("/negocio/") ||
             path === "/registro"
@@ -53,7 +53,7 @@ export function ExperienceSwitcher() {
     };
   }, [path]);
   // Never show the demo experience switcher on real authenticated account screens.
-  if (path === "/real" || path.startsWith("/registro/empresa") || path.startsWith("/registro/cliente")) {
+  if (path === "/real" || path === "/empresa" || path === "/cliente" || path.startsWith("/registro/empresa") || path.startsWith("/registro/cliente")) {
     return null;
   }
   return (
