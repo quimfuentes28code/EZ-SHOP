@@ -27,6 +27,16 @@ export function SocialInbox({
  const [refreshId,setRefreshId]=useState(0);
  
  const refresh=()=>setRefreshId(n=>n+1);
+ // The original inbox only refreshed when clicking its button. That made
+ // successfully delivered messages look lost in a second browser session.
+ // Poll private RLS-filtered threads every 6 seconds until realtime is enabled.
+ useEffect(()=>{
+   const interval=window.setInterval(()=>setRefreshId(n=>n+1),6000);
+   const onFocus=()=>setRefreshId(n=>n+1);
+   window.addEventListener("focus",onFocus);
+   return ()=>{window.clearInterval(interval);window.removeEventListener("focus",onFocus);};
+ },[]);
+
 
  useEffect(()=>{
    if(!db){setError("No existe conexión con Supabase.");return;}
@@ -101,7 +111,7 @@ export function SocialInbox({
  const isActive=(t:Conversation)=>t.id===selected;
  return <section className="as-social-inbox" aria-label="Mensajes reales">
    <div className="as-social-inbox-intro">
-     <div><span className="eyebrow">CONVERSACIONES</span><h2>Mensajes</h2><p>Habla directamente con negocios y clientes, en tu espacio privado.</p></div>
+     <div><span className="eyebrow">CONVERSACIONES</span><h2>Mensajes</h2><p>Las conversaciones se actualizan automáticamente. Elige el negocio correcto si administras varias empresas anteriores.</p></div>
      <button type="button" className="button secondary" onClick={refresh}><RefreshCw size={15}/> Actualizar</button>
    </div>
    <div className="as-social-chat-grid">
@@ -144,6 +154,6 @@ export function SocialInbox({
     </div>
    </div>
    {error&&<p className="live-alert" role="alert">{error}</p>}
-   <p className="as-social-privacy-note"><ShieldCheck size={14}/> Solo texto por ahora. Los archivos, las notificaciones inmediatas y los controles avanzados contra mensajes no solicitados llegarán después.</p>
+   <p className="as-social-privacy-note"><ShieldCheck size={14}/> Solo texto por ahora. Los mensajes se comprueban aproximadamente cada seis segundos; las notificaciones push, archivos y opciones de bloqueo todavía están pendientes.</p>
  </section>;
 }
