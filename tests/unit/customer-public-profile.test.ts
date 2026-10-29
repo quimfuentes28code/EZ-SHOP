@@ -19,7 +19,7 @@ assert.match(customer,/secondaryErrors/);
 assert.match(editor,/Tu perfil es público/);
 assert.match(editor,/Tu perfil es privado/);
 assert.match(editor,/Publicar mi empresa/);
-assert.match(editor,/organiza/ === "nothere" ? /never/ : /\.update\(\{published:next\}\)/);
+assert.match(editor,/\.update\(\{published:next\}\)/);
 assert.match(editor,/\.eq\("id",organizationId\)/);
 assert.match(editor,/\?negocio=/);
 
