@@ -5,7 +5,7 @@ import { getSupabase } from "@/lib/supabase/client";
 import { MessageCircle, Send, RefreshCw, ShieldCheck, Inbox } from "lucide-react";
 
 type Org = { id:string; name:string };
-type Conversation = { id:string; organization_id:string; customer_id:string; created_at:string };
+type Conversation = { id:string; organization_id:string; customer_id:string; customer_display_name:string; created_at:string };
 type Message = { id:string; conversation_id:string; sender_id:string; actor_role:"customer"|"business"; body:string; created_at:string };
 
 export function SocialInbox({
@@ -25,23 +25,22 @@ export function SocialInbox({
  const [error,setError]=useState("");
  const [loading,setLoading]=useState(false);
  const [refreshId,setRefreshId]=useState(0);
- const [threadLabel,setThreadLabel]=useState("");
+ 
  const refresh=()=>setRefreshId(n=>n+1);
 
  useEffect(()=>{
    if(!db){setError("No existe conexión con Supabase.");return;}
    let active=true;
-   const base=db.from("conversations").select("id,organization_id,customer_id,created_at").order("created_at",{ascending:false});
+   const base=db.from("conversations").select("id,organization_id,customer_id,customer_display_name,created_at").order("created_at",{ascending:false});
    (role==="business"?base.eq("organization_id",organizationId||"00000000-0000-0000-0000-000000000000"):base.eq("customer_id",userId))
       .then(({data,error})=>{
         if(!active)return;
         if(error){setError(error.message);return;}
         const next=(data||[]) as Conversation[];
         setThreads(next);
-        setSelected(id=>next.some(t=>t.id===id)?id:
-          role==="customer" && targetOrganizationId
+        setSelected(id=>role==="customer" && targetOrganizationId
           ?(next.find(t=>t.organization_id===targetOrganizationId)?.id||"")
-          :(next[0]?.id||""));
+          :next.some(t=>t.id===id)?id:(next[0]?.id||""));
       });
    return ()=>{active=false;};
  },[db,role,organizationId,userId,targetOrganizationId,refreshId]);
@@ -65,7 +64,7 @@ export function SocialInbox({
  const currentCompany=activeThread?.organization_id||newTarget||organizationId||"";
  const label=organizations.find(o=>o.id===currentCompany)?.name||"Conversación privada";
 
- useEffect(()=>{setThreadLabel(label);},[label]);
+ 
 
  async function send(event:FormEvent){
    event.preventDefault();
@@ -112,7 +111,7 @@ export function SocialInbox({
        className={isActive(thread)?"as-social-thread is-active":"as-social-thread"}
        onClick={()=>{setSelected(thread.id);setError("");}}>
          <span className="as-social-thread-avatar"><MessageCircle size={17}/></span>
-         <span><strong>{role==="business"?"Cliente · "+thread.customer_id.slice(0,8):
+         <span><strong>{role==="business"?thread.customer_display_name||"Cliente":
             organizations.find(o=>o.id===thread.organization_id)?.name||"Negocio"}</strong><small>Conversación privada</small></span>
        </button>)}
       {newTarget&&<button type="button" className="as-social-thread is-active" onClick={()=>setSelected("")}>
@@ -123,7 +122,7 @@ export function SocialInbox({
     <div className="as-social-chat-main">
        {(activeThread||newTarget)?<>
         <div className="as-social-chat-heading"><span className="as-social-thread-avatar"><MessageCircle size={17}/></span>
-         <div><strong>{role==="business"?"Conversación con un cliente":threadLabel}</strong>
+         <div><strong>{role==="business"?activeThread?.customer_display_name||"Conversación con un cliente":label}</strong>
           <small><ShieldCheck size={12}/> Solo participantes autorizados</small>
          </div></div>
         <div className="as-social-message-list" role="log" aria-live="polite">
