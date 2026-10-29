@@ -127,3 +127,45 @@ button.business-live-tool:hover{border-color:#c7a075;}
 @media(max-width:1050px){.business-live-tool-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
 @media(max-width:860px){.live-integrated-shell .live-app>.live-tabs{display:flex;overflow-x:auto;flex-wrap:nowrap;padding-bottom:7px;}.live-integrated-shell .live-tabs>button{white-space:nowrap;}.business-live-metrics{grid-template-columns:repeat(2,minmax(0,1fr));}}
 @media(max-width:560px){.business-live-shortcuts,.business-live-tool-grid{grid-template-columns:1fr;}.business-live-section-head{align-items:flex-start;flex-direction:column;}.business-live-welcome{padding:20px;}.business-live-metrics>div{padding:15px;}.business-live-status{font-size:11px;}}
+
+
+/* Company branches / real internal business modules */
+.live-locations,.live-workboard{display:grid;gap:19px;}
+.location-list{display:grid;gap:12px;}
+.location-card{display:flex;align-items:center;gap:15px;border:1px solid var(--border);padding:16px;border-radius:13px;background:var(--surface-2);}
+.location-avatar{width:43px;height:43px;border-radius:12px;background:var(--accent-dim);color:var(--accent);display:grid;place-items:center;flex-shrink:0;}
+.location-info{min-width:0;flex:1;}
+.location-info>strong{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13px;}
+.location-info p{display:flex;align-items:center;gap:6px;margin:6px 0;color:var(--muted);font-size:11px;}
+.location-info small{color:var(--accent);font-size:10px;}
+.location-primary{padding:4px 7px;border-radius:7px;background:var(--accent-dim);color:var(--accent);font-size:10px;}
+.location-form,.workboard-form,.business-live-module-editor{border:1px solid var(--border);border-radius:14px;padding:18px;background:var(--surface-2);}
+.location-form>h3,.workboard-form h3{font-size:17px;margin:0 0 15px;}
+.location-fields,.workboard-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px;}
+.location-fields label,.workboard-fields label{display:grid;gap:7px;font-size:12px;}
+.location-fields input:not([type=checkbox]),.location-fields select,.workboard-fields input,.workboard-fields textarea,.workboard-item select{width:100%;padding:11px;border:1px solid var(--border);border-radius:10px;background:var(--field-bg);color:var(--text);font:inherit;font-size:12px;}
+.location-wide,.workboard-wide{grid-column:1/-1;}
+.location-weekdays{display:flex;gap:8px;flex-wrap:wrap;}
+.location-weekdays label{display:flex;align-items:center;gap:6px;padding:9px 10px;border:1px solid var(--border);border-radius:9px;}
+.location-publish{display:flex!important;align-items:flex-start;gap:9px!important;line-height:1.6;font-size:12px!important;}
+.location-form .live-session-actions{display:flex;gap:10px;margin-top:19px;}
+.location-privacy{line-height:1.6;font-size:11px;}
+.workboard-tabs{display:flex;gap:8px;flex-wrap:wrap;}
+.workboard-tabs button{display:flex;gap:8px;align-items:center;border:1px solid var(--border);background:var(--surface);color:var(--text);padding:9px 12px;border-radius:10px;cursor:pointer;font-size:12px;}
+.workboard-tabs button.active{background:var(--accent-dim);color:var(--accent);border-color:#c7a075;}
+.workboard-tabs button span{font-size:10px;color:var(--muted);}
+.workboard-form{display:grid;gap:12px;}
+.workboard-form .button{justify-self:start;}
+.workboard-list{display:grid;gap:10px;}
+.workboard-item{display:flex;align-items:center;gap:16px;justify-content:space-between;border:1px solid var(--border);background:var(--surface);padding:16px;border-radius:13px;}
+.workboard-item-content{min-width:0;flex:1;}
+.workboard-item-content strong{font-size:13px;}
+.workboard-item-content p{font-size:12px;color:var(--muted);margin:6px 0;}
+.workboard-item-content small{font-size:10px;color:var(--accent);}
+.workboard-item>label{display:grid;gap:5px;font-size:11px;color:var(--muted);width:145px;}
+.business-live-module-editor{display:grid;gap:13px;margin:18px 0;}
+.business-live-module-editor>strong{font-size:13px;}
+.business-live-module-checkboxes{display:flex;flex-wrap:wrap;gap:10px;}
+.business-live-module-checkboxes label{display:flex;align-items:center;gap:7px;font-size:11px;border:1px solid var(--border);padding:8px 11px;border-radius:9px;}
+.business-live-module-editor>.button{justify-self:start;}
+@media(max-width:600px){.location-card,.workboard-item{flex-wrap:wrap;}.location-fields,.workboard-fields{grid-template-columns:1fr;}.location-wide,.workboard-wide{grid-column:auto;}.workboard-item>label{width:100%;}.business-live-module-editor{padding:13px;}}
