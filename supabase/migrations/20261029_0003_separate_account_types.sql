@@ -40,6 +40,47 @@ after insert on auth.users for each row
 execute function public.autonoservice_enroll_new_user();
 revoke all on function public.autonoservice_enroll_new_user() from public,anon,authenticated;
 
+-- The signup form captures contact information even if the account must first
+-- be confirmed by email and no browser session is available immediately.
+create or replace function public.autonoservice_new_person()
+returns trigger language plpgsql security definer set search_path = ''
+as $
+begin
+  insert into public.person_profiles(user_id,first_name,last_name,phone,city)
+  values (
+    new.id,
+    left(coalesce(new.raw_user_meta_data->>'first_name',''),80),
+    left(coalesce(new.raw_user_meta_data->>'last_name',''),100),
+    left(coalesce(new.raw_user_meta_data->>'phone',''),40),
+    left(coalesce(new.raw_user_meta_data->>'city',''),100)
+  )
+  on conflict (user_id) do nothing;
+  return new;
+end; $;
+revoke all on function public.autonoservice_new_person() from public,anon,authenticated;
+
+-- Only the owner of a business-type account can view its private profile.
+drop policy if exists organizations_read on public.organizations;
+create policy organizations_read on public.organizations for select to authenticated,anon
+using (
+  published or (
+    owner_id=(select auth.uid())
+    and exists(select 1 from public.account_types a
+               where a.user_id=(select auth.uid()) and a.account_type='business')
+  )
+);
+drop policy if exists services_read on public.organization_services;
+create policy services_read on public.organization_services for select to authenticated,anon
+using (exists (
+  select 1 from public.organizations o
+  where o.id=organization_id and (o.published or (
+    o.owner_id=(select auth.uid()) and exists(
+      select 1 from public.account_types a
+      where a.user_id=(select auth.uid()) and a.account_type='business'
+    )
+  ))
+));
+
 -- Restrict private business operations to business-type accounts.
 drop policy if exists organizations_insert on public.organizations;
 create policy organizations_insert on public.organizations
