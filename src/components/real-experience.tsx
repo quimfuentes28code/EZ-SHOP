@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { LayoutDashboard, UserRound, ArrowLeft, UsersRound, Settings2, ShoppingBag, ClipboardList, Blocks, MessageCircle } from "lucide-react";
 import { CustomerSocial } from "@/components/customer-social";
 import { BusinessLocations } from "@/components/business-locations";
+import { BusinessWorkboard } from "@/components/business-workboard";
 import { SocialInbox } from "@/components/social-inbox";
 import { BusinessHome, BusinessTools, type BusinessArea } from "@/components/business-home";
 import { Brand } from "@/components/brand";
@@ -270,7 +271,7 @@ export function RealExperience({accountType}:{accountType:"business"|"customer"}
      </section>
    : <><div className="live-signed"><span>Sesión de <strong>{session.user.email}</strong></span><div className="live-session-actions"><button type="button" className="button secondary small" onClick={refresh} disabled={busy}>Actualizar datos</button><button className="button secondary small" disabled={busy} onClick={logout}>Cerrar sesión</button></div></div>
       <nav className="live-tabs" aria-label="Espacios conectados">
-       {(accountType==="business"?([["inicio","Inicio"],["negocio","Perfil público"],["gestion","Servicios"],["clientes","Clientes"],["solicitudes-empresa","Solicitudes"],["mensajes","Mensajes"],["sedes","Sedes"],["herramientas","Herramientas"],["perfil","Mi cuenta"]] as const):([["explorar","Explorar"],["solicitudes","Mis solicitudes"],["perfil","Mis datos"]] as const)).map(([id,label])=><button key={id} className={tab===id?"active":""} onClick={()=>setTab(id)}>{label}</button>)}
+       {(accountType==="business"?([["inicio","Inicio"],["negocio","Perfil público"],["gestion","Servicios"],["clientes","Clientes"],["solicitudes-empresa","Solicitudes"],["mensajes","Mensajes"],["sedes","Sedes"],["workboard","Gestión"],["herramientas","Herramientas"],["perfil","Mi cuenta"]] as const):([["explorar","Explorar"],["solicitudes","Mis solicitudes"],["perfil","Mis datos"]] as const)).map(([id,label])=><button key={id} className={tab===id?"active":""} onClick={()=>setTab(id)}>{label}</button>)}
       </nav>
       {tab==="perfil" && <section className="live-card"><h2>{accountType==="business"?"Mis datos personales":"Mis datos de Cliente"}</h2><p className="live-muted">{accountType==="business"?"Estos son tus datos de contacto como propietario. Los datos comerciales se gestionan dentro de Mi negocio.":"Tu nombre, apellidos, correo, teléfono y ciudad se compartirán con el negocio únicamente cuando confirmes una solicitud."}</p>
        <form className="live-form live-columns" onSubmit={saveProfile}>
@@ -289,7 +290,8 @@ export function RealExperience({accountType}:{accountType:"business"|"customer"}
          pendingCount={ownerRequests.filter(r=>r.status==="new").length}
          onNavigate={setTab}
         />}
-       {accountType==="business" && tab==="herramientas" && <BusinessTools onNavigate={setTab}/>}
+       {accountType==="business" && tab==="herramientas" && <BusinessTools onNavigate={setTab} organizationId={selectedOrg}/>}
+       {accountType==="business" && tab==="workboard" && (selectedOrg?<BusinessWorkboard key={selectedOrg} organizationId={selectedOrg}/>:<section className="live-card">Primero registra una empresa.</section>)}
        {accountType==="business" && tab==="sedes" && (selectedOrg?<BusinessLocations key={selectedOrg} organizationId={selectedOrg}/>:<section className="live-card"><h2>Registra tu primera empresa</h2><button type="button" className="button primary" onClick={()=>setTab("gestion")}>Crear empresa</button></section>)}
        {accountType==="business" && tab==="negocio" && <section className="live-card business-live-profile">
         <h2>Perfil de {business?.name||"tu negocio"}</h2>
@@ -390,6 +392,7 @@ export function RealExperience({accountType}:{accountType:"business"|"customer"}
            ["solicitudes-empresa","Solicitudes",ClipboardList],
            ["mensajes","Mensajes",MessageCircle],
            ["sedes","Tiendas y sedes",Settings2],
+           ["workboard","Proyectos y agenda",ClipboardList],
            ["herramientas","Herramientas",Blocks],
            ["perfil","Mi cuenta",UserRound]
           ] as const).map(([area,label,Icon])=><button key={area} type="button"
@@ -404,7 +407,7 @@ export function RealExperience({accountType}:{accountType:"business"|"customer"}
      </aside>
      <div className="workspace-body live-workspace-body">
        <header className="workspace-topbar live-workspace-topbar">
-         <div className="workspace-breadcrumb"><strong>{business?.name||"AutonoService"}</strong><span> / {tab==="inicio"?"Inicio":tab==="negocio"?"Perfil público":tab==="gestion"?"Servicios":tab==="clientes"?"Clientes":tab==="solicitudes-empresa"?"Solicitudes":tab==="mensajes"?"Mensajes":tab==="sedes"?"Sedes":tab==="herramientas"?"Herramientas":"Mi cuenta"}</span></div>
+         <div className="workspace-breadcrumb"><strong>{business?.name||"AutonoService"}</strong><span> / {tab==="inicio"?"Inicio":tab==="negocio"?"Perfil público":tab==="gestion"?"Servicios":tab==="clientes"?"Clientes":tab==="solicitudes-empresa"?"Solicitudes":tab==="mensajes"?"Mensajes":tab==="sedes"?"Sedes":tab==="workboard"?"Proyectos y agenda":tab==="herramientas"?"Herramientas":"Mi cuenta"}</span></div>
          <ThemeToggle/>
        </header>
        {content}
