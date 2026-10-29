@@ -35,7 +35,7 @@ export default function HomePage() {
     <div className="container home">
       <section className="experience-intro">
         <span className="eyebrow">
-          <span className="intro-dot" /> UNA CUENTA. TU FORMA DE USARLA.
+          <span className="intro-dot" /> DOS TIPOS DE CUENTA. TU ESPACIO.
         </span>
         <h1>
           ¿Cómo quieres utilizar
@@ -44,7 +44,7 @@ export default function HomePage() {
         </h1>
         <p>Tu negocio. Más fácil.</p>
         <span className="intro-prototype">
-          <ShieldCheck size={14} /> Prototipo navegable · Sin registro real
+          <ShieldCheck size={14} /> Registro real disponible · Algunas herramientas siguen en desarrollo
         </span>
       </section>
       <section className="experience-options" aria-label="Elige tu experiencia">
@@ -80,8 +80,7 @@ export default function HomePage() {
           <Link
             className="button primary"
             aria-label="Empezar con AutonoService"
-            href="/onboarding"
-            onClick={() => setDemoExperience("business")}
+            href="/registro/empresa"
           >
             Empezar con AutonoService <ArrowUpRight size={17} />
           </Link>
@@ -123,8 +122,7 @@ export default function HomePage() {
           <Link
             className="button secondary"
             aria-label="Empezar como Cliente"
-            href="/registro"
-            onClick={() => setDemoExperience("customer")}
+            href="/registro/cliente"
           >
             Empezar como Cliente <ArrowUpRight size={17} />
           </Link>
@@ -139,31 +137,30 @@ export default function HomePage() {
       </section>
       <section className="real-phase-entry" aria-label="Cuentas conectadas">
         <div>
-          <strong>Próxima fase: cuentas reales y CRM conectado</strong>
-          <p>Regístrate, crea tu negocio y recibe solicitudes de personas registradas. La activación requiere conectar el backend seguro.</p>
+          <strong>¿Quieres ver cómo funciona antes de registrarte?</strong>
+          <p>Puedes visitar las pantallas de demostración. Las cuentas reales se crean directamente desde las opciones Empresa o Cliente de arriba.</p>
         </div>
-        <Link href="/real" className="button secondary">Acceder a la fase real <ArrowRight size={15} /></Link>
+        <Link href="/real" className="button secondary">Ver opciones de registro <ArrowRight size={15} /></Link>
       </section>
       <div className="one-account-note">
         <Layers3 size={21} />
         <div>
-          <strong>Las dos experiencias. Una misma cuenta.</strong>
+          <strong>Dos tipos de cuenta. Dos espacios independientes.</strong>
           <p>
-            Puedes gestionar tu negocio y reservar en otros. Cambia cuando
-            quieras entre «Mi negocio» y «Modo cliente».
+            La cuenta Empresa gestiona negocios y clientes. La cuenta Cliente solicita servicios. Si quieres usar las dos, necesitas registrarlas por separado.
           </p>
         </div>
       </div>
       {last && (
         <div className="resume-experience">
           <span>
-            Tu última experiencia:{" "}
+            Última vista de demostración:{" "}
             <strong>
               {last === "business" ? "Mi negocio" : "Modo cliente"}
             </strong>
           </span>
           <Link href={last === "business" ? "/empresa" : "/cliente"}>
-            Continuar donde estabas <ArrowRight size={14} />
+            Continuar demostración <ArrowRight size={14} />
           </Link>
         </div>
       )}
@@ -185,8 +182,7 @@ export default function HomePage() {
         </div>
       </section>
       <p className="home-disclaimer">
-        Vista previa del Hito 0. Negocios ficticios, solicitudes locales y
-        funciones previstas. No se envían reservas, mensajes ni cobros reales.
+        Las pantallas de demostración contienen negocios ficticios. Las solicitudes reales se gestionan desde las cuentas registradas. No existen todavía pagos ni facturación reales.
       </p>
     </div>
   );
