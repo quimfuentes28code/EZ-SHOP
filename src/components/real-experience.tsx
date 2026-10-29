@@ -6,6 +6,7 @@ import { LayoutDashboard, UserRound, ArrowLeft, UsersRound, Settings2, ShoppingB
 import { CustomerSocial } from "@/components/customer-social";
 import { BusinessLocations } from "@/components/business-locations";
 import { BusinessWorkboard } from "@/components/business-workboard";
+import { BusinessSocialEditor } from "@/components/business-social-editor";
 import { SocialInbox } from "@/components/social-inbox";
 import { BusinessHome, BusinessTools, type BusinessArea } from "@/components/business-home";
 import { Brand } from "@/components/brand";
@@ -310,6 +311,7 @@ export function RealExperience({accountType}:{accountType:"business"|"customer"}
           </div>
         </>:<button type="button" className="button primary" onClick={()=>setTab("gestion")}>Registrar mi negocio</button>}
        </section>}
+       {accountType==="business" && tab==="negocio" && selectedOrg && <BusinessSocialEditor key={selectedOrg} organizationId={selectedOrg}/>}
        {accountType==="business" && tab==="clientes" && <section className="live-card">
          <h2>Clientes de {business?.name||"tu negocio"}</h2>
          <p className="live-muted">Contactos reales vinculados a las solicitudes recibidas por este negocio. Los clientes de otras empresas permanecen privados.</p>
