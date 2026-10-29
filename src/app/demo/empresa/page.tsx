@@ -310,7 +310,7 @@ export default function BusinessPage() {
             <CircleHelp size={18} />
             Cómo funciona
           </button>
-          <Link href="/cliente" className="account-switch">
+          <Link href="/demo/cliente" className="account-switch">
             <span className="avatar avatar-person">AL</span>
             <span>
               <strong>Modo cliente</strong>
