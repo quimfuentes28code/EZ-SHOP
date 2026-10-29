@@ -61,7 +61,7 @@
   margin-bottom: 36px;
 }
 .personal-next {
-  background: #c5f277;
+  background: #c7a075;
   border-radius: 16px;
   color: #1b2b13;
   position: relative;
@@ -202,8 +202,8 @@
   gap: 12px;
 }
 .personal-stat-icon {
-  background: #c5f27714;
-  border: 1px solid #c5f27725;
+  background: #c7a07514;
+  border: 1px solid #c7a07525;
   color: var(--accent);
   border-radius: 10px;
   width: 38px;
@@ -654,7 +654,7 @@
   border-radius: 13px;
   padding: 22px 25px;
   margin-top: 15px;
-  background: linear-gradient(100deg, #c5f27709, transparent);
+  background: linear-gradient(100deg, #c7a07509, transparent);
 }
 .personal-bottom > div {
   display: flex;
@@ -752,11 +752,11 @@
   position: absolute;
   right: 110px;
   top: 35px;
-  border: 1px solid #c5f27722;
+  border: 1px solid #c7a07522;
   border-radius: 50%;
   box-shadow:
-    0 0 0 25px #c5f27703,
-    0 0 0 50px #c5f27702;
+    0 0 0 25px #c7a07503,
+    0 0 0 50px #c7a07502;
   display: grid;
   place-items: center;
 }
@@ -764,17 +764,17 @@
   font-size: 138px;
   line-height: 1;
   font-weight: 200;
-  color: #c5f27755;
+  color: #c7a07555;
   transform: rotate(-10deg);
 }
 .explore-demo-notice {
   display: flex;
   align-items: center;
   gap: 11px;
-  border: 1px solid #c5f27724;
+  border: 1px solid #c7a07524;
   border-radius: 10px;
   padding: 13px 17px;
-  background: #c5f27705;
+  background: #c7a07505;
   margin-bottom: 25px;
 }
 .explore-demo-notice > svg {
@@ -1173,9 +1173,9 @@
   place-items: center;
   width: 60px;
   height: 60px;
-  border: 1px solid #c5f27730;
+  border: 1px solid #c7a07530;
   border-radius: 16px;
-  background: #c5f2770b;
+  background: #c7a0750b;
   color: var(--accent);
   margin: 0 auto 20px;
 }
@@ -1252,7 +1252,7 @@
   position: absolute;
   width: 200px;
   height: 200px;
-  background: #c5f27708;
+  background: #c7a07508;
   filter: blur(30px);
   left: 43%;
   top: -90px;
@@ -2001,8 +2001,8 @@
 }
 .personal-requests {
   margin-bottom: 12px;
-  border: 1px solid #c5f27738;
-  background: #c5f27704;
+  border: 1px solid #c7a07538;
+  background: #c7a07504;
   border-radius: 13px;
   overflow: hidden;
   padding: 21px;
@@ -2040,7 +2040,7 @@
 }
 .personal-request-icon {
   color: var(--accent);
-  background: #c5f27712;
+  background: #c7a07512;
   width: 40px;
   height: 44px;
   display: grid;
@@ -2231,8 +2231,8 @@
 }
 :root[data-theme="light"] .personal-favorite.saved,
 :root[data-theme="light"] .personal-favorite.saved svg {
-  color: #4b6e16;
-  fill: #4b6e16;
+  color: #a47b53;
+  fill: #a47b53;
 }
 :root[data-theme="light"] .personal-date small,
 :root[data-theme="light"] .personal-experience-detail,
@@ -2321,8 +2321,8 @@
 }
 :root[data-theme="light"] .personal-heart.saved,
 :root[data-theme="light"] .personal-heart.saved svg {
-  color: #4b6e16;
-  fill: #4b6e16;
+  color: #a47b53;
+  fill: #a47b53;
 }
 :root[data-theme="light"] .personal-details strong {
   color: var(--text);
