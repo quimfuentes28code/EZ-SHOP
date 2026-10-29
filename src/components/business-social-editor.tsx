@@ -10,7 +10,7 @@ const mediaBucket="autonoservice-public-media";
 const accepted=["image/jpeg","image/png","image/webp","video/mp4","video/webm"];
 const accents=["#A47B53","#4E807C","#8A6DC2","#BB705E","#446B92","#647748"];
 
-export function BusinessSocialEditor({organizationId}:{organizationId:string}){
+export function BusinessSocialEditor({organizationId,onVisibilityChange}:{organizationId:string;onVisibilityChange?:()=>void}){
  const db=getSupabase();
  const [company,setCompany]=useState<CompanyIdentity|null>(null);
  const [posts,setPosts]=useState<Post[]>([]);
@@ -79,6 +79,7 @@ export function BusinessSocialEditor({organizationId}:{organizationId:string}){
      const {error}=await db.from("organizations").update({published:next}).eq("id",organizationId);
      if(error)throw error;
      setCompany(prev=>prev?{...prev,published:next}:prev);
+     onVisibilityChange?.();
      setMessage(next
        ?"Perfil publicado. Ahora podrás verlo desde Cliente → Explorar."
        :"Perfil privado. Ya no aparecerá en Explorar para otros clientes.");
@@ -152,7 +153,7 @@ export function BusinessSocialEditor({organizationId}:{organizationId:string}){
     <p className="live-muted">Haz reconocible tu negocio. Los cambios se guardan en tu cuenta y las publicaciones aparecen en la experiencia Cliente cuando las publicas.</p>
   </div></div>
   {company&&<div className="business-profile-publication-state" role="status">
-    <div><strong>{company.published?"Tu perfil es público":"Tu perfil es privado"}</strong>
+    <div><strong>{company.name}: {company.published?"perfil público":"perfil privado"}</strong>
       <p>{company.published
         ?"Los clientes pueden encontrar esta empresa, ver su portada y abrir el perfil completo."
         :"Tus cambios están guardados, pero los clientes no pueden verlos hasta que publiques esta empresa."}</p>
