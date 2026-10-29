@@ -1,10 +1,10 @@
 # Hito 0 — Arquitectura y prototipos de AutonoService
 
-## Referencia y estado
+## Antecedente histórico y ubicación actual de las demos
 
-Esta revisión aplica [ESPECIFICACION_MAESTRA.md](ESPECIFICACION_MAESTRA.md): AutonoService es la marca principal, Cliente es la experiencia gratuita y AutonoSuite mejora la gestión profesional dentro de la misma aplicación. El objetivo es revisar arquitectura y experiencia visual; el Hito 1 no está iniciado ni autorizado por terminar este prototipo.
+Este documento conserva el inventario y los criterios de la revisión de prototipos `e4713e5`. `main` evolucionó después con cuentas, CRM, chat, publicaciones, sedes y mapa conectados. Ese estado está en [ARQUITECTURA.md](ARQUITECTURA.md); la revisión autorizada actual está en [PULIDO_20261029.md](PULIDO_20261029.md). AutonoService conserva la marca principal, Cliente la experiencia gratuita y AutonoSuite la mejora profesional prevista.
 
-Los resultados de instalación, TypeScript, pruebas y compilación de la revisión actual se registran en [NOTAS_PRUEBAS.md](NOTAS_PRUEBAS.md). Ya se han comprobado la instalación con `npm ci`, TypeScript, 48 unitarias y la compilación de todas las rutas. Las 27 pruebas de navegador han pasado contra la compilación de producción, sin fallos ni pruebas omitidas. Las comprobaciones de la versión anterior son antecedentes, no pruebas automáticas de estos cambios.
+Los resultados históricos de instalación, TypeScript, pruebas y compilación de este prototipo se registran en [NOTAS_PRUEBAS.md](NOTAS_PRUEBAS.md). Ya se han comprobado la instalación con `npm ci`, TypeScript, 48 unitarias y la compilación de todas las rutas. Las 27 pruebas de navegador han pasado contra la compilación de producción, sin fallos ni pruebas omitidas. Las comprobaciones de la versión anterior son antecedentes, no pruebas automáticas de estos cambios.
 
 ## Inventario del repositorio inspeccionado
 
@@ -39,16 +39,18 @@ La inspección revisó los cambios sociales ya iniciados y los conserva. No se r
 
 Las rutas nuevas y los controles están implementados como prototipos, con compilación y unitarias comprobadas. La verificación final de navegador está completada; no se describen como servicios operativos de producción.
 
-## Rutas de revisión
+## Rutas actuales de las demos históricas
+
+Los paneles originalmente situados en `/empresa` y `/cliente` están ahora en `/demo/*`. Las rutas originales usan cuentas conectadas.
 
 | Ruta | Recorrido |
 | --- | --- |
 | `/` | Elección AutonoService o Cliente |
 | `/onboarding` | Datos del negocio, actividad, modalidad y herramientas |
 | `/registro` | Preferencias personales de Cliente de demostración |
-| `/empresa` | Inicio, clientes, mensajes, perfil y herramientas de la actividad |
-| `/empresa?vista=perfil` | Edición de presentación, fotos y catálogo |
-| `/cliente` | Actividad, favoritos y perfil personal |
+| `/demo/empresa` | Inicio, clientes, mensajes, perfil y herramientas de la actividad |
+| `/demo/empresa?vista=perfil` | Edición de presentación, fotos y catálogo |
+| `/demo/cliente` | Actividad, favoritos y perfil personal |
 | `/explorar` | Directorio ficticio y filtros |
 | `/negocio/photo`, `/negocio/beauty`, `/negocio/bakery`, `/negocio/repairs` | Consulta de perfiles/catálogos de muestra |
 | `/mensajes` | Conversaciones vistas desde el contexto de negocio o Cliente |
@@ -69,7 +71,7 @@ La configuración, perfiles, fotos pequeñas, catálogo, preferencias, textos y 
 
 Preparar una reserva no verifica horarios reales, concurrencia, política de cancelación o zona horaria del negocio. La solicitud es un ejemplo no enviado. El perfil visible en `/negocio/[id]` no acredita una publicación consentida en un directorio real. Los precios de catálogo y las cifras son ilustrativos.
 
-No hay autenticación real, RLS, aislamiento de producción, pagos, facturación española operativa, orientación fiscal certificada, mapa conectado, geolocalización real, aplicación Expo publicada o licencia verificada. Tampoco se promete funcionamiento offline completo por usar almacenamiento local.
+Estas rutas demo no implementan autenticación o aislamiento de producción, pagos, facturación española operativa, orientación fiscal certificada, mapa conectado, localización real, una app Expo publicada o una licencia verificada. Las rutas conectadas de `main` se documentan por separado. El uso de almacenamiento local en las demos tampoco garantiza funcionamiento offline completo.
 
 Las capturas renovadas de `docs/previews/` muestran la entrada en ambos temas, los paneles, Mi plan, el perfil y los mensajes con datos de demostración.
 
@@ -84,6 +86,6 @@ Las capturas renovadas de `docs/previews/` muestran la entrada en ambos temas, l
 7. Probar temas claro/oscuro, móvil, teclado, foco y fallos de almacenamiento.
 8. Usar la guía [MOVIL_Y_PRUEBAS.md](MOVIL_Y_PRUEBAS.md) para revisar la web en Safari; Expo Go y TestFlight corresponden al camino futuro.
 
-## Condiciones para continuar
+## Criterios históricos y revisión actual
 
-Cerrar las pruebas de esta revisión, recoger la aprobación visual del propietario y acordar el primer piloto. Sólo entonces se puede iniciar el Hito 1 con identidad, membresías, permisos de servidor y RLS. Los flujos reales y las compras se habilitan en sus hitos con las pruebas y políticas que requieren.
+El criterio original exigía revisión del prototipo antes del núcleo conectado. El propietario incorporó posteriormente funcionalidades reales a `main`; la tarea autorizada actual las conserva y corrige. Este inventario histórico no demuestra la seguridad del backend conectado ni autoriza compras o nuevas fases. Las validaciones vigentes se registran por separado en `NOTAS_PRUEBAS.md`.

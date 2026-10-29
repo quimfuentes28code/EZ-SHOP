@@ -42,4 +42,6 @@ Aplicar `supabase/migrations/20261029_0004_shared_login_dual_workspaces.sql` **d
 
 ## Estado
 
-Esta implementación permite usar ambos espacios con un mismo correo. El mapa, la facturación fiscal y los cobros siguen en desarrollo.
+Esta implementación permite usar ambos espacios con un mismo correo. El selector **Mi negocio / Modo cliente** cambia la ruta y conserva la sesión; la preferencia del navegador no concede acceso ni se confunde con la clave demo. Si falta una habilitación, la pantalla existente permite activarla.
+
+El código actual incluye mapa de sedes publicadas, publicaciones y mensajes con adjuntos. Facturación fiscal, pagos, reservas automáticas y permisos delegados siguen pendientes. La revisión de integración se describe en [PULIDO_20261029.md](PULIDO_20261029.md); su SQL correctivo no se aplica automáticamente al backend.

@@ -5,10 +5,12 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
+    "start": "node scripts/serve-static.mjs",
     "typecheck": "next typegen && tsc --noEmit",
     "test": "node scripts/test.mjs",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "verify:e2e": "node scripts/verify-browser.mjs",
+    "test:sql": "node scripts/test-sql.mjs"
   },
   "dependencies": {
     "lucide-react": "^0.500.0",

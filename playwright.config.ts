@@ -24,9 +24,9 @@ export default defineConfig({
     },
   },
   webServer: {
-    command: "npm run dev -- --hostname 0.0.0.0",
+    command: "npm start -- --hostname 127.0.0.1",
     url: "http://127.0.0.1:3000",
-    reuseExistingServer: true,
+    reuseExistingServer: !process.env.CI && !process.env.AUTONOSERVICE_E2E,
     timeout: 180_000,
   },
 });

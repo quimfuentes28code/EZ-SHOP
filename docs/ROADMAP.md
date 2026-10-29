@@ -1,8 +1,8 @@
 # Roadmap de AutonoService
 
-La secuencia sigue la [especificación maestra](ESPECIFICACION_MAESTRA.md). Las interfaces de demostración pueden anticipar un recorrido futuro, pero no significan que el dominio o la infraestructura estén implementados. No se avanza de hito sin revisión explícita.
+La secuencia sigue la [especificación maestra](ESPECIFICACION_MAESTRA.md). Es una referencia de planificación: `main` ya contiene capacidades parciales de varios hitos. Esta revisión autorizada corrige su integración y privacidad; no declara una nueva fase iniciada o completada. El detalle de código existente está en [ARQUITECTURA.md](ARQUITECTURA.md) y las correcciones en [PULIDO_20261029.md](PULIDO_20261029.md). Las demos históricas no certifican operaciones de producción.
 
-## Hito 0 — Arquitectura y prototipos (actual)
+## Hito 0 — Arquitectura y prototipos (base histórica conservada)
 
 - Inventariar y conservar el código existente y sus dependencias.
 - Aplicar AutonoService como marca principal, Cliente como experiencia gratuita y AutonoSuite como mejora profesional.
@@ -17,7 +17,7 @@ La secuencia sigue la [especificación maestra](ESPECIFICACION_MAESTRA.md). Las 
 
 **Salida verificable:** prototipo navegable sin errores pendientes de compilación, inventario de capacidades, documentación coherente y resultados registrados en `NOTAS_PRUEBAS.md`. La aprobación visual del propietario permanece pendiente hasta que la otorgue.
 
-## Hito 1 — Núcleo de la plataforma (no iniciado)
+## Hito 1 — Núcleo de la plataforma (implementación parcial existente)
 
 - Usuarios y perfil global con un único sistema de autenticación.
 - Empresas, sedes y membresías contextuales para propietarios, administradores y empleados.
@@ -29,6 +29,8 @@ La secuencia sigue la [especificación maestra](ESPECIFICACION_MAESTRA.md). Las 
 **Salida:** dos empresas y usuarios con roles distintos; pruebas que intenten acceder, modificar o descargar datos cruzados deben fallar. Ocultar menús no se acepta como evidencia de aislamiento.
 
 ## Hito 2 — Herramientas básicas de AutonoService
+
+**Código parcial existente:** CRM ligado a solicitudes y registros internos de agenda, proyectos, trabajos y presupuestos borrador. No equivalen a todos los dominios especializados ni a un adaptador local-first completo.
 
 - CRM, agenda local, trabajos, proyectos sencillos y presupuestos básicos.
 - Límites de la versión gratuita validados y comunicados.
@@ -58,6 +60,8 @@ La secuencia sigue la [especificación maestra](ESPECIFICACION_MAESTRA.md). Las 
 
 ## Hito 5 — Directorio
 
+**Código parcial existente:** Cliente consulta empresas publicadas, servicios, perfiles, publicaciones y favoritos de Supabase. Persisten demos ficticias en rutas propias. Moderación, límites y validación operativa siguen pendientes.
+
 - Publicación voluntaria de perfiles reales con consentimiento y moderación.
 - Categorías, búsqueda por ciudad, servicios y precios publicados.
 - Cobertura para local, domicilio, online, varias sucursales y varias zonas.
@@ -66,6 +70,8 @@ La secuencia sigue la [especificación maestra](ESPECIFICACION_MAESTRA.md). Las 
 **Salida:** sólo aparecen negocios que hayan habilitado su perfil público; no se exponen contactos o archivos privados y se puede buscar sin ubicación precisa.
 
 ## Hito 6 — Mapa
+
+**Código parcial existente:** Leaflet/OpenStreetMap muestra coordenadas de sedes publicadas, elegidas voluntariamente por el propietario. No hay todavía localización automática del Cliente, motor de proximidad ni geocodificación.
 
 - Permiso opcional de ubicación, proximidad y búsqueda geográfica.
 - Zonas de cobertura y precisión adecuada a cada modalidad.
@@ -97,4 +103,4 @@ La secuencia sigue la [especificación maestra](ESPECIFICACION_MAESTRA.md). Las 
 
 El Hito 1 precede a cualquier dato privado real o operación entre usuarios. Las compras no se habilitan antes de definir licencias y políticas por plataforma. Las decisiones de soporte móvil, almacenamiento local, contratos y migración se toman desde el Hito 0; su implementación se incorpora al hito que consume esa capacidad, sin obligar a terminar todas las plataformas simultáneamente.
 
-Las pruebas históricas de la primera versión se conservan en `NOTAS_PRUEBAS.md` como antecedente. No validan automáticamente la actualización actual de marca, onboarding o permisos demo.
+Las pruebas históricas se conservan en `NOTAS_PRUEBAS.md` con su revisión de origen. No validan automáticamente las funciones conectadas ni la aplicación remota de las migraciones correctivas.

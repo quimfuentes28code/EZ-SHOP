@@ -3,9 +3,9 @@
 **Actualización posterior: este diseño de correos separados ha sido sustituido por espacios Empresa y Cliente bajo una sola identidad.** Consulta [CUENTA_UNICA_DOS_ESPACIOS.md](CUENTA_UNICA_DOS_ESPACIOS.md) para la decisión vigente y la migración 0004.
 
 
-## Nueva decisión de producto
+## Decisión histórica sustituida
 
-Los botones **Empezar con AutonoService** y **Empezar como Cliente** de la portada crean **cuentas independientes**, no dos roles intercambiables de una cuenta global.
+La decisión histórica proponía que los botones de la portada creasen cuentas independientes. Fue sustituida: hoy ambos espacios se activan sobre una identidad global y no hay que registrar dos correos. El resto del documento se conserva para entender aquella migración.
 
 - **Empresa**: `/registro/empresa`. Correo y contraseña para actividad profesional. Tras registrarse, crea su negocio, publica servicios y gestiona solicitudes/CRM.
 - **Cliente**: `/registro/cliente`. Correo y contraseña para uso personal. Tras registrarse, completa sus datos, explora negocios y puede solicitar servicios.
@@ -25,7 +25,7 @@ La tabla `public.account_types` almacena un único tipo inmutable por `auth.user
 - La sesión persistida de un tipo no se utiliza para acceder al otro: la interfaz indica la incompatibilidad y permite cerrar sesión.
 - Para pruebas con dos cuentas, utiliza perfiles de navegador diferentes o una ventana de incógnito.
 
-## Migración
+## Migración histórica (continuar con 0004 y las posteriores para el modelo vigente)
 
 Aplicar una sola vez `supabase/migrations/20261029_0003_separate_account_types.sql` sobre el proyecto de desarrollo, después de las migraciones 0001 y 0002.
 

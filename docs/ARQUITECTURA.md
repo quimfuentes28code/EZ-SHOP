@@ -2,9 +2,30 @@
 
 ## Estado y criterio de evolución
 
-La referencia de producto es [ESPECIFICACION_MAESTRA.md](ESPECIFICACION_MAESTRA.md). Este documento separa el prototipo existente de las decisiones propuestas para producción. La revisión actual sigue en Hito 0: no hay autenticación real, autorización de servidor, RLS, base de datos de producción ni licencia comercial verificada.
+La referencia de producto es [ESPECIFICACION_MAESTRA.md](ESPECIFICACION_MAESTRA.md). Este documento distingue la implementación conectada presente en `main`, las demos históricas y la arquitectura objetivo. La revisión autorizada corrige integración y privacidad; no activa compras, nuevas fases ni migraciones remotas. Los cambios se registran en [PULIDO_20261029.md](PULIDO_20261029.md).
 
-El checkout actual es una aplicación Next.js con TypeScript estricto. Se conservarán sus rutas, modelos de demostración y componentes; la propuesta de monorepositorio no obliga a moverlos durante la revisión visual. No se construirán una aplicación por sector ni otra aplicación para AutonoSuite.
+El checkout actual es una aplicación Next.js con TypeScript estricto y exportación estática `out/` para Cloudflare. Las operaciones conectadas se realizan desde el cliente Supabase y están sujetas a PostgreSQL/RLS; no hay un servidor API de Next.js en esta exportación. El servidor local de revisión sirve `out/`. Se conservan las rutas reales y las demostraciones; la propuesta de monorepositorio no obliga a moverlas en esta corrección. No se construye una aplicación por sector ni otra aplicación para AutonoSuite.
+
+### Implementación conectada existente
+
+- `auth.users` y `person_profiles`: una identidad y perfil personal compartidos.
+- `account_types`: habilitaciones Empresa/Cliente por identidad; cambiar de interfaz no concede permisos.
+- `organizations`, `organization_services`, `organization_customers` y `service_requests`: negocio, catálogo, CRM privado y solicitudes.
+- `organization_locations`: varias sedes por negocio con publicación voluntaria y coordenadas opcionales. El mapa muestra sedes publicadas de empresas públicas; buscar por ciudad no necesita localizar al Cliente.
+- `business_posts`: publicaciones con estado público/borrador y referencias a medios.
+- `conversations`, `conversation_messages`, `conversation_read_states`: texto, adjuntos privados y lectura por contexto. El refresco es periódico; no es push ni una suscripción realtime.
+- `organization_module_settings`: accesos destacados por negocio. La selección guardada es independiente del borrador de edición y de otras empresas.
+- `business_work_items`: registros internos de proyectos, agenda, encargos, órdenes y presupuestos borrador. No implementa los motores especializados de cada dominio. Al ampliar esos dominios deberán conservarse sus entidades y reglas propias.
+
+Las nuevas cuentas propietarias tienen una empresa con varias sedes; las organizaciones históricas se conservan. Las membresías delegadas de empleados y los permisos avanzados siguen pendientes. Las tablas propuestas más abajo describen la evolución, no entidades ya creadas por esta revisión.
+
+### Medios y migración correctiva
+
+`20261029_0012_media_privacy_and_profile_permissions.sql` prepara permisos de personalización, lectura de servicios activos y políticas de medios con rutas calificadas expresamente. Convierte en privado el bucket histórico `autonoservice-public-media`; el nombre se conserva para no perder los archivos existentes. La UI resuelve sus referencias y URL antiguas mediante enlaces firmados. El propietario puede consultar borradores; otros lectores necesitan una referencia publicada y una organización pública correspondientes al objeto. El bucket privado de chat permanece separado.
+
+La aplicación emite firmas de 60 segundos y renueva las imágenes durante la visualización. Este TTL es una elección de esta versión, no una revocación universal: el proveedor puede aceptar otros tiempos solicitados por clientes autorizados. Retirar o eliminar una referencia impide nuevas firmas públicas autorizadas, pero no recupera bytes descargados, enlaces aún válidos o cachés previas. La UI verifica que la corrección SQL esté disponible antes de las operaciones de medios que la necesitan.
+
+La migración está preparada para revisión, no aplicada al backend por esta entrega. Las pruebas locales SQL y los mocks de navegador tienen límites distintos; véase [PRUEBAS_SQL.md](PRUEBAS_SQL.md).
 
 ## Una identidad, contextos diferentes
 
@@ -18,9 +39,9 @@ Identidad global de persona
     └── Organización B: permisos independientes
 ```
 
-`Mi negocio / Modo cliente` cambia el contexto de trabajo, no la identidad ni los permisos. La preferencia de última experiencia se almacena por persona/dispositivo; una empresa activa siempre se resuelve entre sus membresías vigentes. No se acepta un `organization_id` enviado por el cliente como prueba de acceso. Si una empresa ya no está disponible, se limpia su selección y se ofrece otra membresía o el modo Cliente.
+`Mi negocio / Modo cliente` cambia el contexto de trabajo, no la identidad ni los permisos. La interfaz conserva una preferencia de experiencia en el navegador, sin identidad privada y con una clave distinta de la demo; no utiliza esa preferencia para autorizar acceso. En la evolución con membresías, la empresa activa se resolverá entre las membresías vigentes. No se acepta un `organization_id` enviado por el cliente como prueba de acceso. Si una empresa ya no está disponible, se limpia su selección y se ofrece otra membresía o el modo Cliente.
 
-### Entidades propuestas para el Hito 1
+### Entidades objetivo y evolución del núcleo
 
 | Entidad | Responsabilidad |
 | --- | --- |
@@ -37,7 +58,7 @@ Identidad global de persona
 
 Es una propuesta de dominio, no migraciones SQL aplicadas. Las operaciones específicas conservan sus propias entidades: citas, reservas de capacidad, pedidos, presupuestos, proyectos, alquileres, estancias y entregas.
 
-### Autorización prevista
+### Controles presentes y autorización objetivo
 
 - El servidor resuelve identidad, membresía, rol y capacidad para cada operación; PostgreSQL/RLS protege las filas privadas de la organización.
 - Los roles iniciales propuestos son propietario, administrador y empleado con capacidades acotadas. No se concede acceso global a datos personales por ser empleado.
@@ -47,7 +68,7 @@ Es una propuesta de dominio, no migraciones SQL aplicadas. Las operaciones espec
 - Los accesos de soporte requieren finalidad, privilegio mínimo y auditoría; no existe un rol con acceso indiscriminado por conveniencia de UI.
 - Las pruebas cruzadas deben intentar leer y modificar datos de otra organización, cambiar IDs, reutilizar enlaces de documentos, elevar roles y usar membresías revocadas.
 
-**Nada de esto se considera implementado por la navegación demo.** Los parámetros de URL, los toggles locales y los menús ocultos no son controles de seguridad.
+Las rutas conectadas ya incluyen políticas de propietario/participante en las migraciones. La validación de su aplicación remota y los futuros roles delegados requieren pruebas específicas. **La navegación demo no implementa esos controles.** Los parámetros de URL, toggles y menús ocultos no autorizan acceso.
 
 ## Composición por sectores y dominios
 
@@ -135,7 +156,7 @@ Esta estructura es una propuesta de evolución. Hoy el código sigue bajo `src/`
 | Datos locales estructurados | IndexedDB, según evaluación | SQLite |
 | Secretos/credenciales | Cookies seguras/flujo de sesión revisado | Almacenamiento seguro nativo |
 | Archivos | File API y almacenamiento local elegido | File system y selectores nativos |
-| Autenticación conectada | Adaptador Supabase para web, con servidor | Adaptador móvil y enlaces de retorno |
+| Autenticación conectada | SDK Supabase y políticas PostgreSQL/RLS en la web estática actual; revisar otro adaptador si se incorpora SSR | Adaptador móvil y enlaces de retorno |
 | Ubicación opcional | Geolocation API con consentimiento | Permisos y API nativa de ubicación |
 | Notificaciones | Adaptador web cuando se habilite | Permisos y proveedor push revisado |
 
@@ -176,13 +197,13 @@ La licencia de una versión anterior no se revoca para forzar migraciones comerc
 - `src/lib/demo.ts`: configuración local validada, Clientes obligatorio, sin cobros/facturación operativos.
 - `src/features/business-profile/`: cuatro perfiles ficticios, catálogo compartido, fotos pequeñas y solicitudes de ejemplo.
 - `src/features/messaging/`: hilos y archivos locales de demostración. Su existencia no garantiza entrega entre usuarios; las pruebas de esta revisión deben completar la verificación.
-- Las rutas de empresa, Cliente y directorio son vistas de la misma web. La URL no verifica una identidad.
+- `/demo/empresa`, `/demo/cliente`, `/explorar`, `/negocio/*` y `/mensajes` conservan datos ficticios del navegador. `/empresa` y `/cliente` usan Supabase; la URL por sí sola no verifica una identidad.
 
 Las claves internas antiguas que empiezan por `nexo-demo-` se mantienen para no borrar la configuración y los favoritos existentes al cambiar la marca. No son nombres comerciales. Una futura migración de claves deberá leer las antiguas, validar, escribir la versión nueva y comprobar el resultado antes de retirar las anteriores.
 
 Las fotos del perfil son contenido de presentación. Los adjuntos de chat representan entregas privadas y no se publican automáticamente en el perfil. El prototipo puede usar URLs de objeto durante la sesión; si se pierden los bytes al recargar debe mostrarlo y deshabilitar la descarga. Nada de esto garantiza confidencialidad de producción.
 
-## Seguridad y verificaciones antes de conectar servicios
+## Seguridad y verificaciones de los servicios conectados y futuras ampliaciones
 
 1. Modelar amenazas y límites por dominio, incluidos sectores regulados.
 2. Probar servidor y RLS con dos empresas y dos usuarios, cambios de rol y archivos cruzados.
@@ -192,4 +213,4 @@ Las fotos del perfil son contenido de presentación. Los adjuntos de chat repres
 6. Verificar licencias/recibos por canal y derechos de versiones anteriores antes de activar premium real.
 7. Validar normativa española antes de facturación o una revisión fiscal automatizada; definir límites de cualquier orientación.
 
-La aprobación visual del Hito 0 no sustituye estas pruebas ni autoriza automáticamente el siguiente hito.
+La aprobación visual histórica no sustituye estas pruebas. Esta revisión conserva los servicios ya incorporados por el propietario y no amplía automáticamente su alcance operativo.

@@ -5,7 +5,7 @@ Este documento recoge la referencia principal de producto aportada por el propie
 ## 1. Identidad y marca
 
 - **AutonoService** — **Tu negocio. Más fácil.** Es la marca principal y la experiencia profesional gratuita.
-- **Cliente** es la experiencia de consumidor, completamente gratuita, dentro de la misma plataforma, pero con registro y cuenta independientes.
+- **Cliente** es la experiencia de consumidor, completamente gratuita, dentro de la misma aplicación y con la misma identidad que la experiencia profesional.
 - **AutonoSuite** — **Todo el potencial de tu negocio.** Es la mejora premium de la gestión profesional dentro de AutonoService.
 
 No se usarán nombres comerciales que añadan «Business» a la marca principal ni presenten Cliente como otra aplicación. AutonoSuite no requiere instalar una segunda aplicación ni crear otra cuenta. Los identificadores internos `business`, `customer` o `premium` pueden seguir siendo descriptivos.
@@ -16,8 +16,8 @@ La primera entrada presenta el logotipo y la pregunta **¿Cómo quieres utilizar
 
 | Opción | Descripción | Identificación | Destino |
 | --- | --- | --- | --- |
-| **AutonoService**, icono de negocio | Gestiona tu negocio, organiza tus clientes, simplifica tus tareas y consigue nuevas oportunidades. | Gratis · Mejora disponible con AutonoSuite | Onboarding empresarial |
-| **Cliente**, icono de persona | Descubre negocios cercanos, reserva servicios y gestiona todas tus contrataciones desde un solo lugar. | Completamente gratis | Onboarding personal |
+| **AutonoService**, icono de negocio | Gestiona tu negocio, organiza tus clientes, simplifica tus tareas y consigue nuevas oportunidades. | Gratis · Mejora disponible con AutonoSuite | Acceso/alta de empresa en `/registro/empresa` |
+| **Cliente**, icono de persona | Descubre negocios cercanos, reserva servicios y gestiona todas tus contrataciones desde un solo lugar. | Completamente gratis | Acceso/alta personal en `/registro/cliente` |
 
 Una identidad verificada puede activar **dos espacios de uso diferenciados**, Empresa y Cliente, con el mismo correo y contraseña. Los botones de la portada abren el acceso específico y permiten activar el segundo espacio sin duplicar cuentas.
 
@@ -149,13 +149,13 @@ Las fotos de presentación del negocio se distinguen de archivos privados de con
 
 Ningún negocio podrá consultar datos privados o contrataciones del cliente con otros negocios. No se incorporarán publicidad invasiva ni mensajes comerciales no solicitados.
 
-## 10. Cuentas independientes, roles y permisos
+## 10. Identidad global, espacios y permisos contextuales
 
 Una cuenta de autenticación puede tener habilitadas ambas experiencias, cada una con su interfaz y permisos específicos. Los datos comerciales pertenecen a cada organización y los encargos personales al usuario. Dentro de una cuenta Empresa podrán existir en el futuro permisos específicos de propietario y empleados; no se confunden con el tipo Cliente.
 
 Las membresías y los permisos se comprueban en servidor y mediante RLS; ocultar botones o cambiar un identificador en la URL no autoriza acceso. Los datos y archivos privados pertenecen al contexto de empresa y a participantes verificados. Los contactos de empresas distintas no se fusionan por coincidencias de nombre o correo no verificado.
 
-La separación segura de producción pertenece al núcleo del Hito 1. En Hito 0 los cambios de vista y empresa sólo prueban la experiencia visual; no se describen como autenticación o aislamiento ya implantados.
+Las migraciones actuales incluyen controles de propietario y participante para las rutas conectadas. Su validación remota y los permisos delegados de empleados siguen siendo requisitos específicos. Las demos del Hito 0 sólo prueban la experiencia visual y no acreditan esos controles. El estado implementado está en [ARQUITECTURA.md](ARQUITECTURA.md).
 
 ## 11. Web, iOS y Android
 
@@ -163,7 +163,7 @@ Arquitectura a estudiar:
 
 - Next.js y TypeScript para web, tabletas y navegadores móviles.
 - React Native y Expo para iPhone y Android.
-- Supabase para identidad, PostgreSQL/RLS, almacenamiento y servicios conectados, cuando se aprueben.
+- Supabase ya está integrado para identidad, PostgreSQL/RLS, almacenamiento y servicios conectados; las ampliaciones se revisarán antes de activarse.
 - Monorepositorio con paquetes compartidos de dominio, tipos, contratos y validaciones.
 - Adaptadores de almacenamiento, autenticación y capacidades nativas por plataforma.
 
@@ -197,10 +197,10 @@ La facturación real deberá cumplir los requisitos españoles aplicables antes 
 | 7 | Licencias, premium, compras por plataforma, actualizaciones opcionales y servicios online |
 | 8 | Sectores, módulos, herramientas avanzadas, integraciones e IA opcional |
 
-El orden se ajustará por dependencias técnicas justificadas. Las interfaces demo del Hito 0 no significan que las operaciones posteriores estén implementadas. Cada fase tendrá criterios verificables; véase [ROADMAP.md](ROADMAP.md).
+El orden se ajustará por dependencias técnicas justificadas. `main` contiene ya partes del núcleo, herramientas internas, directorio y mapa; esto no declara completos sus hitos ni sus criterios de producción. Las interfaces demo conservadas tampoco certifican operaciones reales. Véase el estado en [ROADMAP.md](ROADMAP.md).
 
 ## 15. Encargo actual y límites
 
-Inspeccionar y conservar lo desarrollado; actualizar esta documentación y la marca; diseñar primera entrada, onboarding profesional/personal, selector y Mi plan; definir identidad/roles y arquitectura sectorial y multiplataforma; actualizar roadmap y explicar las pruebas en iPhone.
+El propietario ha autorizado corregir los problemas revisados en `main`: políticas y permisos de medios, privacidad de borradores, chat, separación de contextos, navegación, búsqueda por sedes, selección de módulos, pruebas e instrucciones. Conservar las cuentas y funcionalidades ya incorporadas, el diseño aprobado y las demos históricas. Consultar [PULIDO_20261029.md](PULIDO_20261029.md).
 
-No sobrescribir funciones sin revisar dependencias. No implementar el marketplace completo, pagos reales ni todo el catálogo empresarial. Primero se revisan la arquitectura y los prototipos. El Hito 1 requiere aprobación explícita del propietario.
+Preparar una migración incremental y validaciones sin aplicarla al backend ni desplegar en esta revisión. No implementar compras, facturación real, marketplace completo o todo el catálogo empresarial. Las nuevas fases y cambios de alcance requieren permiso del propietario. La decisión anterior de limitar el desarrollo al Hito 0 se conserva como antecedente, no como orden de borrar funcionalidades que ya existen en `main`.

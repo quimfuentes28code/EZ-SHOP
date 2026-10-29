@@ -11,6 +11,7 @@ import { SocialInbox } from "@/components/social-inbox";
 import { BusinessHome, BusinessTools, type BusinessArea } from "@/components/business-home";
 import { Brand } from "@/components/brand";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { AccountExperienceSwitcher } from "@/components/account-experience-switcher";
 import { useEffect, useState, type FormEvent } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { getSupabase } from "@/lib/supabase/client";
@@ -98,7 +99,7 @@ export function RealExperience({accountType}:{accountType:"business"|"customer"}
        setAccountRole(data?.some(row=>row.account_type===accountType)?accountType:null);
      });
    return ()=>{active=false;};
- },[db,session?.user?.id]);
+ },[db,session?.user?.id,accountType]);
 
  useEffect(()=>{
    if(!db||!session?.user?.id)return;
@@ -257,6 +258,7 @@ export function RealExperience({accountType}:{accountType:"business"|"customer"}
    </section>
    : accountRole === undefined ? <p role="status">Comprobando permisos de la cuenta...</p>
    : accountRole === null ? <section className="live-card live-auth">
+      <AccountExperienceSwitcher experience={accountType}/>
       <h2>Activar espacio {accountType==="business"?"Empresa":"Cliente"}</h2>
       <p>Ya tienes una cuenta con <strong>{session.user.email}</strong>. Puedes activar también el espacio <strong>{accountType==="business"?"Empresa":"Cliente"}</strong> utilizando este mismo correo y contraseña.</p>
       <p className="live-muted">Los negocios y el CRM seguirán asociados a tu espacio Empresa. En Cliente podrás explorar servicios, hacer solicitudes y consultar tu actividad personal. No perderás lo que ya tienes creado.</p>
@@ -291,7 +293,7 @@ export function RealExperience({accountType}:{accountType:"business"|"customer"}
          pendingCount={ownerRequests.filter(r=>r.status==="new").length}
          onNavigate={setTab}
         />}
-       {accountType==="business" && tab==="herramientas" && <BusinessTools onNavigate={setTab} organizationId={selectedOrg}/>}
+       {accountType==="business" && tab==="herramientas" && <BusinessTools key={selectedOrg} onNavigate={setTab} organizationId={selectedOrg}/>}
        {accountType==="business" && tab==="workboard" && (selectedOrg?<BusinessWorkboard key={selectedOrg} organizationId={selectedOrg}/>:<section className="live-card">Primero registra una empresa.</section>)}
        {accountType==="business" && tab==="sedes" && (selectedOrg?<BusinessLocations key={selectedOrg} organizationId={selectedOrg}/>:<section className="live-card"><h2>Registra tu primera empresa</h2><button type="button" className="button primary" onClick={()=>setTab("gestion")}>Crear empresa</button></section>)}
        {accountType==="business" && tab==="negocio" && <section className="live-card business-live-profile">
@@ -370,7 +372,7 @@ export function RealExperience({accountType}:{accountType:"business"|"customer"}
       </section>}
    </>}
    {notice && <p className="live-alert" role="status">{notice}</p>}
-   <p className="live-disclaimer">Los clientes, servicios y solicitudes de este espacio se guardan en la base de datos. El mapa, los pagos y la facturación todavía están en desarrollo.</p>
+   <p className="live-disclaimer">Tus clientes, servicios y solicitudes se guardan en tu cuenta. Los pagos, la facturación y las reservas automáticas todavía no están disponibles.</p>
  </div>;
  if (accountType==="customer" && pathname==="/cliente" && session && accountRole==="customer") {
    return <CustomerSocial userId={session.user.id} email={session.user.email||""} onLogout={logout}/>;
@@ -410,7 +412,7 @@ export function RealExperience({accountType}:{accountType:"business"|"customer"}
      <div className="workspace-body live-workspace-body">
        <header className="workspace-topbar live-workspace-topbar">
          <div className="workspace-breadcrumb"><strong>{business?.name||"AutonoService"}</strong><span> / {tab==="inicio"?"Inicio":tab==="negocio"?"Perfil público":tab==="gestion"?"Servicios":tab==="clientes"?"Clientes":tab==="solicitudes-empresa"?"Solicitudes":tab==="mensajes"?"Mensajes":tab==="sedes"?"Sedes":tab==="workboard"?"Proyectos y agenda":tab==="herramientas"?"Herramientas":"Mi cuenta"}</span></div>
-         <ThemeToggle/>
+         <div className="live-session-actions"><AccountExperienceSwitcher experience="business"/><ThemeToggle/></div>
        </header>
        {content}
      </div>

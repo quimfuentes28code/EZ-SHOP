@@ -1,15 +1,19 @@
 "use client";
 
 import { useEffect,useMemo,useState,type FormEvent } from "react";
-import { useRouter } from "next/navigation";
 import {
  ArrowRight, CalendarDays, Camera, Check, Compass, Heart, LayoutGrid, MapPin,
  MessageCircle, Search, ShieldCheck, Sparkles, UserRound, RefreshCw,
- Bookmark, Building2, SlidersHorizontal, MapPinned, LogOut, Settings2
+ Bookmark, SlidersHorizontal, MapPinned, LogOut, Settings2
 } from "lucide-react";
 import { getSupabase } from "@/lib/supabase/client";
+import { BusinessVideo } from "@/components/business-video";
 import { SocialInbox } from "@/components/social-inbox";
 import { BusinessMap } from "@/components/business-map";
+import { AccountExperienceSwitcher } from "@/components/account-experience-switcher";
+import { Modal } from "@/components/modal";
+import { useBusinessMedia } from "@/components/use-business-media";
+import { matchesBusinessLocation, matchesBusinessQuery } from "@/lib/business-discovery";
 import "./customer-social.css";
 
 type Organization={id:string;name:string;category:string;city:string;description:string;tagline:string;accent_color:string;avatar_url:string;cover_url:string;published:boolean};
@@ -39,7 +43,6 @@ const categoryMatches=(category:string,choice:string):boolean=>{
 };
 export function CustomerSocial({userId,email,onLogout}:{userId:string;email:string;onLogout:()=>void}){
  const db=getSupabase();
- const router=useRouter();
  const [tab,setTab]=useState<Tab>("explorar");
  const [organizations,setOrganizations]=useState<Organization[]>([]);
  const [services,setServices]=useState<Service[]>([]);
@@ -60,6 +63,7 @@ export function CustomerSocial({userId,email,onLogout}:{userId:string;email:stri
  const [notice,setNotice]=useState("");
  const [reload,setReload]=useState(0);
  const refresh=()=>setReload(v=>v+1);
+ const mediaUrl=useBusinessMedia([...organizations.flatMap(o=>[o.avatar_url,o.cover_url]),...posts.map(p=>p.media_url)],reload);
  const displayName=profile.first_name.trim()||email.split("@")[0]||"Hola";
  const initials=(profile.first_name.slice(0,1)+profile.last_name.slice(0,1)).toUpperCase()||"AS";
  const selectedOrganization=organizations.find(o=>o.id===detail);
@@ -94,13 +98,11 @@ export function CustomerSocial({userId,email,onLogout}:{userId:string;email:stri
    return ()=>{active=false;};
  },[db,userId,reload]);
 
- const listed=useMemo(()=>organizations.filter(o=>{
-   const q=query.toLocaleLowerCase("es").trim();
-   return categoryMatches(o.category,category)
-     &&(!city.trim()||o.city.toLowerCase().includes(city.toLowerCase().trim()))
-     &&(!q||[o.name,o.category,o.city,o.description,...services.filter(s=>s.organization_id===o.id).map(s=>s.title)]
-        .join(" ").toLocaleLowerCase("es").includes(q));
- }),[organizations,category,city,query,services]);
+ const listed=useMemo(()=>organizations.filter(o=>
+   categoryMatches(o.category,category)
+   && matchesBusinessLocation(o,locations,city)
+   && matchesBusinessQuery(o,locations,services.filter(s=>s.organization_id===o.id).map(s=>s.title),query)
+ ),[organizations,category,city,query,services,locations]);
  const favoriteOrgs=organizations.filter(o=>favorites.includes(o.id));
 
  async function operation(fn:()=>Promise<void>){
@@ -157,15 +159,15 @@ export function CustomerSocial({userId,email,onLogout}:{userId:string;email:stri
   {id:"mensajes" as Tab,label:"Mensajes",Icon:MessageCircle},
   {id:"perfil" as Tab,label:"Mi perfil",Icon:UserRound},
  ];
- const BusinessCard=({org}:{org:Organization})=>{
+ const renderBusinessCard=(org:Organization)=>{
   const offers=services.filter(s=>s.organization_id===org.id);
   const followed=favorites.includes(org.id);
-  return <article className="as-social-business-card">
+  return <article key={org.id} className="as-social-business-card">
      <button type="button" className={`as-social-business-art ${categoryTheme(org.category)}`}
       onClick={()=>{setDetail(org.id);setChosenService(null);}} aria-label={"Ver negocio "+org.name}>
       <span className="as-social-art-label">{org.category}</span>
-      {org.cover_url?<img className="as-social-cover-image" src={org.cover_url} alt={"Portada de "+org.name}/>:<span className="as-social-art-monogram">{org.name.slice(0,1).toUpperCase()}</span>}
-      <span className="as-social-art-end"><MapPin size={13}/>{org.city||"Servicio sin localidad"}</span>
+      {mediaUrl(org.cover_url)?<img className="as-social-cover-image" src={mediaUrl(org.cover_url)} alt={"Portada de "+org.name}/>:<span className="as-social-art-monogram">{org.name.slice(0,1).toUpperCase()}</span>}
+      <span className="as-social-art-end"><MapPin size={13}/>{[...new Set([org.city,...locations.filter(l=>l.organization_id===org.id&&l.published).map(l=>l.city)])].filter(Boolean).join(" · ")||"Servicio sin localidad"}</span>
      </button>
      <div className="as-social-business-body">
       <div className="as-social-business-top"><span className="as-social-type">NEGOCIO INSCRITO</span>
@@ -174,7 +176,7 @@ export function CustomerSocial({userId,email,onLogout}:{userId:string;email:stri
          <Heart size={19} fill={followed?"currentColor":"none"}/>
        </button>
       </div>
-      <h3>{org.avatar_url&&<img className="as-social-mini-avatar" src={org.avatar_url} alt=""/>}{org.name}</h3>
+      <h3>{mediaUrl(org.avatar_url)&&<img className="as-social-mini-avatar" src={mediaUrl(org.avatar_url)} alt=""/>}{org.name}</h3>
       <p>{org.tagline||org.description||"Descubre los servicios que ofrece este negocio."}</p>
       <div className="as-social-tags">{offers.slice(0,3).map(s=><span key={s.id}>{s.title}</span>)}</div>
       <div className="as-social-business-actions">
@@ -191,16 +193,16 @@ export function CustomerSocial({userId,email,onLogout}:{userId:string;email:stri
         <div><strong>{displayName}</strong><small>Tu espacio personal · Gratis</small></div></div>
       <div className="as-social-client-tools">
         <button className="as-social-utility" onClick={refresh} aria-label="Actualizar datos" title="Actualizar datos"><RefreshCw size={18}/></button>
-        <button className="as-social-utility" onClick={()=>router.push("/empresa")} aria-label="Ir a mi espacio Empresa" title="Cambiar al espacio Empresa"><Building2 size={18}/></button>
+        <AccountExperienceSwitcher experience="customer"/>
         <button className="as-social-utility" onClick={onLogout} aria-label="Cerrar sesión" title="Cerrar sesión"><LogOut size={18}/></button>
       </div>
     </div>
     <nav className="as-social-client-tabs" aria-label="Navegación Cliente">
-      {nav.map(({id,label,Icon})=><button key={id} type="button" onClick={()=>{setTab(id);setDetail(null);}} className={tab===id?"is-active":""}>
+      {nav.map(({id,label,Icon})=><button key={id} type="button" onClick={()=>{setTab(id);setDetail(null);}} className={tab===id?"is-active":""} aria-current={tab===id?"page":undefined}>
         <Icon size={17}/><span>{label}</span>
       </button>)}
     </nav>
-    <main className="as-social-client-content">
+    <div className="as-social-client-content">
     {tab==="explorar" && <>
       <section className="as-social-hero">
         <div><span className="eyebrow"><Sparkles size={12}/> TU CIUDAD, TUS SERVICIOS</span>
@@ -218,10 +220,10 @@ export function CustomerSocial({userId,email,onLogout}:{userId:string;email:stri
          <input placeholder="Filtrar localidad" aria-label="Filtrar por localidad" value={city} onChange={e=>setCity(e.target.value)}/></label>
       </section>
       <div className="as-social-category-scroll" aria-label="Filtrar por categoría">
-        {categories.map(c=><button type="button" key={c} className={category===c?"is-active":""} onClick={()=>setCategory(c)}>{c}</button>)}
+        {categories.map(c=><button type="button" key={c} className={category===c?"is-active":""} aria-pressed={category===c} onClick={()=>setCategory(c)}>{c}</button>)}
       </div>
       <div className="as-social-business-grid">
-        {listed.map(o=><BusinessCard key={o.id} org={o}/>)}
+        {listed.map(renderBusinessCard)}
       </div>
       {listed.length===0&&<div className="as-social-empty-large"><SlidersHorizontal size={23}/><h3>No hemos encontrado negocios con esos filtros</h3><p>Prueba otro sector, servicio o localidad.</p></div>}
       <div className="as-social-map-preview"><MapPinned size={20}/><div><strong>Mapa de tiendas y servicios</strong><p>Explora únicamente sedes que hayan publicado su ubicación exacta.</p><button className="button secondary small" type="button" onClick={()=>setTab("mapa")}>Abrir mapa interactivo <ArrowRight size={14}/></button></div></div>
@@ -245,14 +247,14 @@ export function CustomerSocial({userId,email,onLogout}:{userId:string;email:stri
       <button className="button primary" type="button" onClick={()=>setTab("explorar")}>Descubrir negocios</button></div>
     :<div className="as-social-news-feed">{posts.filter(p=>favorites.includes(p.organization_id)).map(post=><article key={post.id} className="as-social-news-post">
       <button type="button" className="as-social-news-author" onClick={()=>{setDetail(post.organization_id);setChosenService(null);}}>
-       {organizations.find(o=>o.id===post.organization_id)?.avatar_url
-         ?<img src={organizations.find(o=>o.id===post.organization_id)?.avatar_url} alt=""/>
+       {mediaUrl(organizations.find(o=>o.id===post.organization_id)?.avatar_url)
+         ?<img src={mediaUrl(organizations.find(o=>o.id===post.organization_id)?.avatar_url)} alt=""/>
          :<span>{orgName(post.organization_id).slice(0,1)}</span>}
        <strong>{orgName(post.organization_id)}</strong><small>{new Date(post.created_at).toLocaleDateString("es-ES")}</small>
       </button>
       {post.body&&<p>{post.body}</p>}
-      {post.media_url&&post.media_kind==="image"&&<img className="as-social-news-media" src={post.media_url} alt={"Publicación de "+orgName(post.organization_id)}/>}
-      {post.media_url&&post.media_kind==="video"&&<video className="as-social-news-media" controls preload="metadata" src={post.media_url}/>}
+      {mediaUrl(post.media_url)&&post.media_kind==="image"&&<img className="as-social-news-media" src={mediaUrl(post.media_url)} alt={"Publicación de "+orgName(post.organization_id)}/>}
+      {mediaUrl(post.media_url)&&post.media_kind==="video"&&<BusinessVideo className="as-social-news-media" controls preload="metadata" src={mediaUrl(post.media_url)}/>}
       <button type="button" className="button secondary small" onClick={()=>openMessages(post.organization_id)}><MessageCircle size={14}/> Contactar con el negocio</button>
     </article>)}</div>}
   </>}
@@ -273,7 +275,7 @@ export function CustomerSocial({userId,email,onLogout}:{userId:string;email:stri
     </>}
     {tab==="favoritos"&&<>
       <div className="as-social-section-title"><span className="eyebrow">TUS FAVORITOS</span><h1>Los negocios que te gustan.</h1><p>Guárdalos y encuéntralos siempre desde tu cuenta, incluso si cambias de dispositivo.</p></div>
-      {favoriteOrgs.length?<div className="as-social-business-grid">{favoriteOrgs.map(o=><BusinessCard key={o.id} org={o}/>)}</div>
+      {favoriteOrgs.length?<div className="as-social-business-grid">{favoriteOrgs.map(renderBusinessCard)}</div>
        :<div className="as-social-empty-large"><Heart size={27}/><h3>Todavía no has guardado negocios</h3><p>Marca el corazón en cualquier negocio para añadirlo a favoritos.</p><button type="button" className="button primary" onClick={()=>setTab("explorar")}>Descubrir negocios</button></div>}
     </>}
     {tab==="mensajes"&&<SocialInbox userId={userId} role="customer" organizations={organizations}
@@ -297,18 +299,17 @@ export function CustomerSocial({userId,email,onLogout}:{userId:string;email:stri
         <button type="submit" disabled={busy} className="button primary"><Settings2 size={15}/> Guardar perfil</button>
       </form></div>
     </>}
-    </main>
+    </div>
 
-    {detail&&selectedOrganization&&<div className="as-social-modal-backdrop" onClick={()=>{setDetail(null);setChosenService(null);}}>
-      <section className="as-social-public-profile" role="dialog" aria-modal="true" aria-label={"Perfil de "+selectedOrganization.name}
-       onClick={e=>e.stopPropagation()}>
-        <button type="button" className="as-social-modal-close" onClick={()=>{setDetail(null);setChosenService(null);}} aria-label="Cerrar perfil">×</button>
-        <div className={`as-social-profile-cover ${categoryTheme(selectedOrganization.category)}`} style={{backgroundColor:selectedOrganization.cover_url?undefined:selectedOrganization.accent_color}}>
-          <span>{selectedOrganization.category}</span>{selectedOrganization.cover_url?<img className="as-social-public-cover-image" src={selectedOrganization.cover_url} alt={"Portada de "+selectedOrganization.name}/>:<strong>{selectedOrganization.name.slice(0,1).toUpperCase()}</strong>}
+    {detail&&selectedOrganization&&<Modal title={"Perfil de "+selectedOrganization.name} className="as-social-profile-dialog"
+      onClose={()=>{setDetail(null);setChosenService(null);}}>
+      <div className="as-social-public-profile">
+        <div className={`as-social-profile-cover ${categoryTheme(selectedOrganization.category)}`} style={{backgroundColor:mediaUrl(selectedOrganization.cover_url)?undefined:selectedOrganization.accent_color}}>
+          <span>{selectedOrganization.category}</span>{mediaUrl(selectedOrganization.cover_url)?<img className="as-social-public-cover-image" src={mediaUrl(selectedOrganization.cover_url)} alt={"Portada de "+selectedOrganization.name}/>:<strong>{selectedOrganization.name.slice(0,1).toUpperCase()}</strong>}
         </div>
         <div className="as-social-public-body">
           <span className="eyebrow">PERFIL COMERCIAL</span>
-          <h2>{selectedOrganization.avatar_url&&<img className="as-social-public-avatar" src={selectedOrganization.avatar_url} alt=""/>}{selectedOrganization.name}</h2>{selectedOrganization.tagline&&<p className="as-social-business-tagline">{selectedOrganization.tagline}</p>}
+          <h2>{mediaUrl(selectedOrganization.avatar_url)&&<img className="as-social-public-avatar" src={mediaUrl(selectedOrganization.avatar_url)} alt=""/>}{selectedOrganization.name}</h2>{selectedOrganization.tagline&&<p className="as-social-business-tagline">{selectedOrganization.tagline}</p>}
           <p className="as-social-location"><MapPin size={15}/>{selectedOrganization.city||"Localidad no indicada"}</p>
           <p>{selectedOrganization.description||"Este negocio todavía no ha añadido su presentación."}</p>
           <div className="as-social-business-actions">
@@ -330,8 +331,8 @@ export function CustomerSocial({userId,email,onLogout}:{userId:string;email:stri
             {posts.filter(p=>p.organization_id===selectedOrganization.id).slice(0,8).map(post=><article key={post.id} className="as-social-news-post">
               <small>{new Date(post.created_at).toLocaleDateString("es-ES")}</small>
               {post.body&&<p>{post.body}</p>}
-              {post.media_url&&post.media_kind==="image"&&<img className="as-social-news-media" src={post.media_url} alt="Foto publicada por el negocio"/>}
-              {post.media_url&&post.media_kind==="video"&&<video className="as-social-news-media" controls preload="metadata" src={post.media_url}/>}
+              {mediaUrl(post.media_url)&&post.media_kind==="image"&&<img className="as-social-news-media" src={mediaUrl(post.media_url)} alt="Foto publicada por el negocio"/>}
+              {mediaUrl(post.media_url)&&post.media_kind==="video"&&<BusinessVideo className="as-social-news-media" controls preload="metadata" src={mediaUrl(post.media_url)}/>}
             </article>)}
           </section>}
           <h3>Servicios disponibles</h3>
@@ -348,8 +349,8 @@ export function CustomerSocial({userId,email,onLogout}:{userId:string;email:stri
             <button type="submit" className="button primary" disabled={busy}>Confirmar solicitud <ArrowRight size={15}/></button>
           </form>}
         </div>
-      </section>
-    </div>}
+      </div>
+    </Modal>}
     {notice&&<div className="as-social-notice" role="status">{notice}<button type="button" onClick={()=>setNotice("")} aria-label="Cerrar mensaje">×</button></div>}
     <footer className="as-social-footer"><ShieldCheck size={14}/> Los negocios, servicios, mensajes, favoritos y publicaciones son reales. Las reservas automáticas todavía están en desarrollo. El mapa muestra únicamente sedes con coordenadas verificadas por sus propietarios.</footer>
   </div>;

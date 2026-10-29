@@ -175,7 +175,7 @@ export function ChatDemo({
       <div className="as-messaging-top">
         <Link
           className="inline-link"
-          href={audience === "business" ? "/empresa" : "/cliente"}
+          href={audience === "business" ? "/demo/empresa" : "/demo/cliente"}
         >
           <ArrowLeft size={15} />
           Volver a {audience === "business" ? "mi negocio" : "Cliente"}

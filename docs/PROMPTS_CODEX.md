@@ -1,35 +1,29 @@
 # Prompts de trabajo de AutonoService
 
-La referencia principal es `docs/ESPECIFICACION_MAESTRA.md`. Las instrucciones del propietario prevalecen sobre estas plantillas; cada hito requiere la aprobación prevista en `AGENTS.md` y `ROADMAP.md`.
+La referencia de producto es `docs/ESPECIFICACION_MAESTRA.md`; el estado de código se registra en `README.md`, `ARQUITECTURA.md` y `PULIDO_20261029.md`. El propietario exige permiso antes de modificar el proyecto. La aprobación de esta revisión cubre las correcciones acordadas; estas plantillas no conceden por sí solas autorización para ampliaciones.
 
-## Revisión del Hito 0
-
-```text
-Lee AGENTS.md, README.md y todos los documentos de docs/. Inspecciona las funciones existentes antes de cambiar su arquitectura o sustituirlas.
-
-Actualiza el prototipo según la especificación maestra: AutonoService como marca principal, Cliente como experiencia gratuita de la misma aplicación y AutonoSuite como mejora premium profesional. Diseña la primera entrada con las dos opciones, onboarding profesional y personal, selector Mi negocio/Modo cliente, paneles y Mi plan. Mantén las interacciones de perfiles, catálogo, mensajes y solicitudes de demostración.
-
-No implementes autenticación real, compras, marketplace completo, facturación real ni todas las capacidades del catálogo. No describas los menús locales como permisos de producción. Documenta identidad global, roles contextuales, módulos, estrategia local-first y arquitectura web/iOS/Android. Explica cómo probar la web en iPhone y distingue ese recorrido de Expo Go, Development Builds y TestFlight futuros.
-
-Instala las dependencias apropiadamente al lockfile y ejecuta typecheck, unitarias, build y E2E relevantes. Registra lo que pasó, falló o quedó sin ejecutar. Termina con los cambios, límites y pasos para revisar. No avances al Hito 1 sin aprobación.
-```
-
-## Hito 1 — Sólo después de aprobación explícita
+## Revisión autorizada de integración
 
 ```text
-Inicia el Hito 1 de ROADMAP.md: una identidad global, perfiles, organizaciones, sedes, membresías, roles, sectores y configuración de módulos. Diseña primero permisos de servidor y RLS, vínculos verificados con contactos y acceso a archivos privados.
+Lee AGENTS.md, README.md y los documentos de docs/. Comprueba la rama y los cambios pendientes antes de editar. Trabaja desde main en la rama de revisión acordada y conserva el trabajo local de otras ramas.
 
-No confíes en organization_id, perspectiva o rol enviados por el navegador. Escribe pruebas con varias personas y empresas para impedir lecturas, cambios y descargas cruzadas y elevación de privilegios. Mantén Cliente gratuito y el cálculo de derechos premium separado de permisos y habilitación de módulos. No conectes todos los dominios empresariales ni pagos por terminar autenticación.
+Corrige los problemas auditados de permisos y privacidad de medios, mensajes, separación de contextos, navegación demo/real, búsqueda por sedes, preferencias de herramientas y accesibilidad. Conserva las funciones conectadas incorporadas por el propietario, las demostraciones históricas y la identidad AutonoService/Cliente bajo una misma cuenta. AutonoSuite sigue siendo una mejora prevista sin compras activadas.
+
+Prepara migraciones incrementales sin aplicarlas al backend del propietario. Usa cuentas y datos ficticios o respuestas simuladas para las pruebas automáticas. Documenta límites de enlaces firmados, datos históricos y qué validaciones cubren las pruebas SQL locales frente al servicio alojado.
+
+Ejecuta instalación desde el lockfile, typecheck, unitarias, exportación estática y E2E pertinentes. Actualiza las instrucciones de arranque y revisión en iPhone, diferenciando web responsive de Expo/TestFlight futuros. Registra resultados por revisión y entrega cambios revisables. No despliegues ni amplíes la fase sin la autorización correspondiente.
 ```
 
-## Hito 2 — Sólo tras revisión del núcleo
+## Antes de una ampliación posterior
 
 ```text
-Desarrolla las herramientas básicas autorizadas: CRM, agenda local, trabajos, proyectos sencillos y presupuestos básicos. Usa los permisos del núcleo y adaptadores de persistencia con contratos compartibles con móvil. Define los datos offline, exportación, copias y migraciones de lo implementado.
+Inspecciona qué está implementado en main y sus dependencias. Describe el problema, alcance y comprobaciones de la ampliación para obtener la autorización del propietario antes de modificar el proyecto.
 
-No conviertas borradores locales en reservas confirmadas ni documentos fiscales reales. Ejecuta las pruebas de dominio, aislamiento y recuperación pertinentes. Detente al cumplir el alcance revisable de este hito.
+Conserva una identidad global, los permisos contextuales de organizaciones y la separación del historial personal de Cliente. No confíes en organization_id, rol, experiencia o licencias enviados por el navegador. Reutiliza componentes, contratos y validaciones compatibles con web y móvil sin duplicar aplicaciones por sector.
+
+Las reservas requieren reglas de disponibilidad y concurrencia; los documentos fiscales requieren revisión normativa; pagos y licencias requieren revisión por plataforma. No conviertas registros internos o prototipos visuales en capacidades operativas sin implementar y validar sus reglas.
 ```
 
-## Hitos posteriores
+## Antecedentes
 
-Utiliza la numeración y dependencias actuales de `ROADMAP.md`: reservas y conexión con clientes (3), sectores especializados (4), directorio (5), mapa (6), AutonoSuite y monetización (7), expansión (8). Las pantallas de demostración del Hito 0 no autorizan activar sus servicios reales.
+Los encargos originales de Hito 0 y de la primera integración de Supabase están documentados en `HITO_0.md` y `HITO_1_CUENTAS_Y_CRM.md`. Sus restricciones y listas de funciones pendientes corresponden a esas entregas históricas; no ordenan retirar capacidades que el propietario ya incorporó después. El roadmap conserva los objetivos de producto sin certificar que cada hito esté completo.

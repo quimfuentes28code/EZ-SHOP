@@ -2,7 +2,7 @@
 
 ## Lo que se puede probar hoy
 
-El proyecto existente es una web Next.js responsive. Puede abrirse en Safari de iPhone o Chrome de Android desde la misma red local que el ordenador. **Todavía no existe una aplicación Expo distribuible, un QR de Expo Go ni una versión en TestFlight.** No se debe intentar abrir el servidor Next.js con Expo Go.
+El proyecto existente es una web Next.js responsive con exportación estática. Puede abrirse en Safari de iPhone o Chrome de Android desde la misma red local que el ordenador. `/empresa` y `/cliente` usan las cuentas conectadas cuando Supabase está configurado; las demos se conservan en rutas propias. El inventario está en [README.md](../README.md). **Todavía no existe una aplicación Expo distribuible, un QR de Expo Go ni una versión en TestFlight.** No se debe intentar abrir el servidor Next.js con Expo Go.
 
 ### iPhone + ordenador Windows
 
@@ -19,7 +19,7 @@ El proyecto existente es una web Next.js responsive. Puede abrirse en Safari de 
    npm.cmd run build
    ```
 
-4. Cuando la compilación termine sin errores, inicia el servidor accesible desde la red local:
+4. Cuando la compilación termine sin errores, inicia el servidor estático incluido, accesible desde la red local:
 
    ```powershell
    npm.cmd run start -- --hostname 0.0.0.0
@@ -34,7 +34,7 @@ El proyecto existente es una web Next.js responsive. Puede abrirse en Safari de 
 6. Busca la **Dirección IPv4** del adaptador Wi-Fi que utilizas, por ejemplo `192.168.1.25`. No uses direcciones de un adaptador virtual, una VPN o el valor `0.0.0.0`.
 7. Conecta el iPhone a la misma Wi-Fi. En Safari escribe la dirección de ese ordenador con el puerto 3000; con la IP de ejemplo sería `http://192.168.1.25:3000`.
 
-En el iPhone, `localhost` apunta al propio teléfono, no al ordenador. La IP del ejemplo debe sustituirse por la tuya. Las pruebas de esta red local no crean una web pública.
+`npm start` utiliza `scripts/serve-static.mjs` para servir `out/`, compatible con `output: "export"`. No ejecutes `next start` para esta configuración. En el iPhone, `localhost` apunta al propio teléfono, no al ordenador. La IP del ejemplo debe sustituirse por la tuya. Las pruebas de esta red local no crean una web pública.
 
 Si Windows pide permitir Node.js en la red, limita el acceso a la red privada de confianza. No hace falta abrir puertos del router ni exponer el ordenador a Internet. Si el teléfono no conecta, comprueba primero que el servidor sigue abierto, la IP es correcta, ambos dispositivos usan la misma Wi-Fi y la red no aísla sus dispositivos. Una VPN o una red de invitados puede impedir la conexión.
 
@@ -51,25 +51,34 @@ npm.cmd run build
 npm.cmd run start -- --hostname 0.0.0.0
 ```
 
-Después vuelve a abrir la IP local del ordenador en Safari. Algunas capacidades del navegador exigen HTTPS y no están disponibles en una IP HTTP local; una vista responsive no prueba ubicación, push, cámara o funciones nativas. La geolocalización real sigue fuera del prototipo.
+Después vuelve a abrir la IP local del ordenador en Safari. Algunas capacidades del navegador exigen HTTPS y no están disponibles en una IP HTTP local; una vista responsive no prueba ubicación, push, cámara o funciones nativas. El mapa conectado usa las coordenadas publicadas voluntariamente por los negocios; no solicita la localización automática del Cliente. Las subidas y otras APIs del navegador deben revisarse también desde un origen HTTPS de desarrollo autorizado.
 
 ### Android y otros ordenadores
 
 En Android abre la misma dirección local en Chrome. En macOS/Linux puedes usar `npm` en lugar de `npm.cmd` y consultar la IP del equipo en sus ajustes de red. Revisa las vistas en vertical y horizontal, teclado en pantalla, tamaño de texto, foco, modales y ausencia de desplazamiento horizontal involuntario.
 
-## Recorrido de revisión visual
+## Recorridos separados de revisión
 
-- Primera entrada: opciones **AutonoService** y **Cliente** bajo una misma identidad prevista.
-- Onboarding profesional y personal, con avisos de demostración.
-- Selector **Mi negocio / Modo cliente** y recuerdo de experiencia.
-- Panel profesional, perfil del negocio, productos/servicios y conversaciones locales cuando estén disponibles.
-- Cliente: Explorar, Mi actividad, Favoritos y Perfil; solicitudes de ejemplo, sin confirmaciones reales.
-- Mi plan: precio provisional y explicación de AutonoSuite, sin introducir tarjeta ni realizar una compra.
-- Temas claro/oscuro, legibilidad, targets táctiles, navegación atrás y avisos de almacenamiento.
+### Cuentas conectadas
 
-Los identificadores locales del prototipo cuentan con una alternativa cuando `crypto.randomUUID` no está disponible en HTTP local. Esa compatibilidad se comprueba con pruebas automatizadas que desactivan la API; no sustituye una prueba en un iPhone físico.
+1. Configura el frontend con las variables públicas de un proyecto Supabase de desarrollo autorizado y revisa las migraciones ya aplicadas antes de compilar. El alta puede requerir retorno a una URL autorizada en Supabase; revisa la configuración de correo para el origen utilizado.
+2. Entra mediante `/registro/empresa` o `/registro/cliente`. Una persona utiliza el mismo correo y contraseña en ambos espacios, sin duplicar su identidad.
+3. Cambia mediante **Mi negocio / Modo cliente**. Si falta el segundo espacio, debe ofrecer activarlo conservando la sesión.
+4. Revisa el perfil comercial, publicaciones, catálogo, sedes, solicitudes, conversación y archivos de prueba. Busca una ciudad en la que exista una sede publicada.
+5. Comprueba foco y cierre del perfil emergente, teclado en pantalla, targets táctiles y ambos temas.
 
-Los datos de la demo permanecen en cada navegador. El iPhone y el ordenador **no sincronizan** mensajes, favoritos o solicitudes por abrir la misma web: no hay backend conectado. Una recarga puede perder los bytes de los adjuntos de sesión; la interfaz debe comunicarlo.
+Los datos conectados se almacenan en Supabase y pueden consultarse desde el iPhone y el ordenador con la misma identidad autorizada y conexión. Eso no implementa sincronización offline ni garantiza que la configuración de un backend remoto coincida con las migraciones del repositorio. La corrección 0012 está preparada, pero no se aplica al proyecto del propietario en esta revisión.
+
+### Demostraciones locales
+
+- `/onboarding` y `/registro` configuran las demos y terminan en `/demo/empresa` y `/demo/cliente`.
+- `/explorar`, `/negocio/photo` y los otros perfiles ficticios permiten revisar el catálogo y solicitudes de ejemplo.
+- `/mensajes` conserva conversaciones locales; `/mi-plan` muestra AutonoSuite sin compras.
+- El selector de demostración permanece dentro de las demos y no abre el acceso conectado.
+
+Los datos demo pertenecen a cada navegador. No se sincronizan entre Safari y el ordenador; una recarga puede perder los bytes de un adjunto de sesión y debe mostrarlo. La alternativa a `crypto.randomUUID` de los identificadores demo no demuestra por sí sola compatibilidad de todas las APIs conectadas en HTTP local.
+
+Una revisión en Safari físico sigue siendo necesaria: los escenarios Chromium y los mocks automatizados no la sustituyen.
 
 ## Camino futuro de la aplicación móvil
 
@@ -138,7 +147,7 @@ La firma, el versionado y los canales de distribución serán independientes de 
 - [Google Play: política de pagos](https://support.google.com/googleplay/android-developer/answer/9858738).
 - [Android: canales de prueba](https://support.google.com/googleplay/android-developer/answer/9845334).
 
-### Consulta realizada y límites de acceso
+### Consulta histórica del Hito 0 y límites de acceso
 
 En esta revisión se leyeron fuentes técnicas oficiales de Expo desde su repositorio público:
 

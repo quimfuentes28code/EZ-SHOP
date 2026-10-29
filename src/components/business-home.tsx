@@ -2,7 +2,7 @@
 
 import { ArrowRight, CalendarDays, ClipboardList, FileText, Image, LayoutDashboard, MapPin, MessageCircle, Settings2, ShieldCheck, ShoppingBag, UsersRound, WalletCards, type LucideIcon } from "lucide-react";
 import { MODULES, type ModuleId } from "@/lib/catalog";
-import { useEffect,useState } from "react";
+import { useEffect,useRef,useState } from "react";
 import { getSupabase } from "@/lib/supabase/client";
 
 export type BusinessArea = "inicio" | "negocio" | "gestion" | "clientes" | "solicitudes-empresa" | "mensajes" | "sedes" | "workboard" | "herramientas" | "perfil";
@@ -108,27 +108,49 @@ const icons: Partial<Record<ModuleId,LucideIcon>>={
 export function BusinessTools({onNavigate,organizationId}:{onNavigate:(area:BusinessArea)=>void;organizationId:string}) {
   const db=getSupabase();
   const [enabled,setEnabled]=useState<string[]>([]);
-  const [saved,setSaved]=useState(false);
+  const [savedModules,setSavedModules]=useState<string[]|null>(null);
+  const [loading,setLoading]=useState(true);
+  const [loadFailed,setLoadFailed]=useState(false);
+  const [reload,setReload]=useState(0);
   const [saving,setSaving]=useState(false);
   const [notice,setNotice]=useState("");
+  const generation=useRef(0);
   useEffect(()=>{
+    const current=++generation.current;
+    let active=true;
+    setEnabled([]);setSavedModules(null);setSaving(false);setLoadFailed(false);setNotice("");
+    setLoading(!!db&&!!organizationId);
     if(!db||!organizationId)return;
     db.from("organization_module_settings").select("modules").eq("organization_id",organizationId).maybeSingle()
       .then(({data,error})=>{
-        if(error)setNotice("No se pudieron cargar preferencias: "+error.message);
-        else if(data){setEnabled((data.modules||[]) as string[]);setSaved(true);}
+        if(!active||current!==generation.current)return;
+        setLoading(false);
+        if(error){setLoadFailed(true);setNotice("No se pudieron cargar preferencias: "+error.message);}
+        else if(data){
+          const modules=Array.isArray(data.modules)
+            ? data.modules.filter((id:unknown):id is string=>typeof id==="string"&&Object.hasOwn(working,id))
+            : [];
+          setEnabled(modules);setSavedModules(modules);
+        }
       });
-  },[db,organizationId]);
+    return ()=>{active=false;generation.current++;};
+  },[db,organizationId,reload]);
   const saveModules=async()=>{
-    if(!db||!organizationId)return;
+    if(!db||!organizationId||loading||loadFailed||saving)return;
+    const current=generation.current;
+    const snapshot=[...enabled];
     setSaving(true);setNotice("");
     try{
-      const {error}=await db.from("organization_module_settings").upsert({organization_id:organizationId,modules:enabled},{onConflict:"organization_id"});
+      const {error}=await db.from("organization_module_settings").upsert({organization_id:organizationId,modules:snapshot},{onConflict:"organization_id"});
       if(error)throw error;
-      setSaved(true);setNotice("Herramientas seleccionadas guardadas en tu cuenta.");
-    }catch(e){setNotice(e instanceof Error?e.message:"No se pudo guardar la configuración.");}
-    finally{setSaving(false);}
+      if(current!==generation.current)return;
+      setSavedModules(snapshot);setNotice("Herramientas seleccionadas guardadas en tu cuenta.");
+    }catch(e){if(current===generation.current)setNotice(e instanceof Error?e.message:"No se pudo guardar la configuración.");}
+    finally{if(current===generation.current)setSaving(false);}
   };
+  const dirty=savedModules===null
+    ? enabled.length>0
+    : enabled.length!==savedModules.length||enabled.some(id=>!savedModules.includes(id));
 
   return <section className="live-card">
     <div className="business-live-section-head"><div><h2>Todas las herramientas</h2><p className="live-muted">AutonoService se adapta al tipo de negocio. Aquí tienes el catálogo, indicando cuáles están conectadas de verdad.</p></div></div>
@@ -137,16 +159,19 @@ export function BusinessTools({onNavigate,organizationId}:{onNavigate:(area:Busi
       <strong>Módulos destacados</strong>
       <div className="business-live-module-checkboxes">
         {(Object.entries(MODULES) as [ModuleId,(typeof MODULES)[ModuleId]][]).filter(([id])=>!!working[id]).map(([id,m])=>
-          <label key={id}><input type="checkbox" checked={enabled.includes(id)} onChange={e=>setEnabled(current=>e.target.checked?[...current,id]:current.filter(x=>x!==id))}/>{m.label}</label>)}
+          <label key={id}><input type="checkbox" checked={enabled.includes(id)} disabled={loading||loadFailed||saving||!organizationId} onChange={e=>setEnabled(current=>e.target.checked?[...current,id]:current.filter(x=>x!==id))}/>{m.label}</label>)}
       </div>
-      <button type="button" className="button secondary" onClick={saveModules} disabled={saving||!organizationId}>Guardar selección</button>
-      {saved&&<span className="live-muted">Configuración personalizada</span>}
+      <button type="button" className="button secondary" onClick={saveModules} disabled={loading||loadFailed||saving||!organizationId}>{saving?"Guardando...":"Guardar selección"}</button>
+      {loadFailed&&<button type="button" className="button secondary" onClick={()=>setReload(value=>value+1)}>Reintentar carga</button>}
+      {loading&&<span role="status" className="live-muted">Cargando herramientas de esta empresa...</span>}
+      {!loading&&dirty&&<span role="status" className="live-muted">Tienes cambios sin guardar.</span>}
+      {!dirty&&savedModules!==null&&<span className="live-muted">Configuración personalizada guardada</span>}
       {notice&&<p className="live-alert" role="status">{notice}</p>}
     </div>
     <div className="business-live-section-head"><h3>Herramientas disponibles</h3><span>Puedes usarlas ya con tu empresa</span></div>
     <div className="business-live-tool-grid">
       {(Object.entries(MODULES) as [ModuleId,(typeof MODULES)[ModuleId]][])
-        .filter(([id])=>!!working[id]&&(!saved||enabled.includes(id))).map(([id,m])=>{
+        .filter(([id])=>!!working[id]&&(savedModules===null||savedModules.includes(id))).map(([id,m])=>{
           const Icon=icons[id]||Settings2;
           return <button type="button" className="business-live-tool" key={id} onClick={()=>onNavigate(working[id]!)}>
             <Icon size={19}/><strong>{m.label}</strong><small>{m.desc}</small><em className="business-live-available">Disponible</em>
@@ -159,10 +184,10 @@ export function BusinessTools({onNavigate,organizationId}:{onNavigate:(area:Busi
         <Settings2 size={19}/><strong>Perfil comercial y publicaciones</strong><small>Portada, fotos, vídeos y novedades sociales</small><em className="business-live-available">Disponible</em>
       </button>
     </div>
-    {saved&&<details className="business-live-tools-details"><summary>Mostrar otras herramientas disponibles</summary>
+    {savedModules!==null&&<details className="business-live-tools-details"><summary>Mostrar otras herramientas disponibles</summary>
        <div className="business-live-tool-grid">
         {(Object.entries(MODULES) as [ModuleId,(typeof MODULES)[ModuleId]][])
-         .filter(([id])=>!!working[id]&&!enabled.includes(id)).map(([id,m])=>{
+         .filter(([id])=>!!working[id]&&!savedModules.includes(id)).map(([id,m])=>{
            const Icon=icons[id]||Settings2;
            return <button type="button" className="business-live-tool" key={id} onClick={()=>onNavigate(working[id]!)}>
              <Icon size={19}/><strong>{m.label}</strong><small>{m.desc}</small><em className="business-live-available">Disponible</em>

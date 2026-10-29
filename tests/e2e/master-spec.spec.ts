@@ -22,8 +22,8 @@ test("la primera entrada ofrece las dos experiencias bajo una sola marca", async
     name: "Empezar como Cliente",
     exact: true,
   });
-  await expect(business).toHaveAttribute("href", "/onboarding");
-  await expect(customer).toHaveAttribute("href", "/registro");
+  await expect(business).toHaveAttribute("href", "/registro/empresa");
+  await expect(customer).toHaveAttribute("href", "/registro/cliente");
   await expect(
     page.getByText("Gratis · Mejora disponible con AutonoSuite", {
       exact: true,
@@ -37,8 +37,9 @@ test("la primera entrada ofrece las dos experiencias bajo una sola marca", async
   );
   await expect(page.locator("body")).not.toContainText("AutonoService Cliente");
   await customer.click();
-  await expect(page).toHaveURL(/\/registro$/);
-  await expect(page.locator('input[type="password"]')).toHaveCount(0);
+  await expect(page).toHaveURL(/\/registro\/cliente$/);
+  await expect(page.getByRole("heading", {name: "Tu espacio Cliente", exact: true})).toBeVisible();
+  await expect(page.locator("body")).not.toContainText("Negocio de demostración");
 });
 
 test("el perfil Cliente persiste y permite usar ambas experiencias sin otro registro", async ({
@@ -71,7 +72,7 @@ test("el perfil Cliente persiste y permite usar ambas experiencias sin otro regi
   await page
     .getByRole("button", { name: "Abrir modo Cliente", exact: true })
     .click();
-  await expect(page).toHaveURL(/\/cliente$/);
+  await expect(page).toHaveURL(/\/demo\/cliente$/);
   const stored = await page.evaluate(
     (key) => JSON.parse(localStorage.getItem(key) || "{}"),
     CUSTOMER_PROFILE_KEY,
@@ -84,7 +85,7 @@ test("el perfil Cliente persiste y permite usar ambas experiencias sin otro regi
     .first();
   await expect(selector).toHaveValue("customer");
   await selector.selectOption("business");
-  await expect(page).toHaveURL(/\/empresa$/);
+  await expect(page).toHaveURL(/\/demo\/empresa$/);
   const organization = page.getByRole("combobox", { name: "Empresa activa", exact: true });
   await organization.selectOption("beauty");
   await expect(organization).toHaveValue("beauty");
@@ -98,7 +99,7 @@ test("el perfil Cliente persiste y permite usar ambas experiencias sin otro regi
     .getByRole("combobox", { name: "Experiencia", exact: true })
     .first()
     .selectOption("customer");
-  await expect(page).toHaveURL(/\/cliente$/);
+  await expect(page).toHaveURL(/\/demo\/cliente$/);
   await page.reload();
   await expect(
     page.getByRole("combobox", { name: "Experiencia", exact: true }).first(),
@@ -117,7 +118,7 @@ test("el perfil Cliente persiste y permite usar ambas experiencias sin otro regi
   ).toBe("Cris de prueba");
   await page.goto("/");
   await expect(page.locator(".resume-experience")).toContainText("Modo cliente");
-  await expect(page.getByRole("link", { name: "Continuar donde estabas", exact: true })).toHaveAttribute("href", "/cliente");
+  await expect(page.getByRole("link", { name: "Continuar demostración", exact: true })).toHaveAttribute("href", "/demo/cliente");
   await expect(page.getByRole("link", { name: "Empezar con AutonoService", exact: true })).toBeVisible();
   expect(mutations).toEqual([]);
 });
@@ -150,7 +151,7 @@ test("Mi plan muestra AutonoSuite como mejora y no realiza compras", async ({
   ).toHaveCount(0);
   await page.keyboard.press("Escape");
   await expect(dialog).toHaveCount(0);
-  await page.goto("/cliente");
+  await page.goto("/demo/cliente");
   await expect(
     page.getByRole("button", {
       name: "Mejorar a AutonoSuite — 99 €",
@@ -160,24 +161,19 @@ test("Mi plan muestra AutonoSuite como mejora y no realiza compras", async ({
   expect(mutations).toEqual([]);
 });
 
-test("el tema claro y oscuro se conserva y sigue disponible al cambiar de experiencia", async ({
-  page,
-}) => {
+test("el tema claro y oscuro se conserva y sigue disponible al cambiar de experiencia", async ({ page }) => {
   await page.goto("/");
-  await page
-    .getByRole("button", { name: "Cambiar a modo claro", exact: true })
-    .first()
-    .click();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+  await page.getByRole("button", { name: "Cambiar a modo oscuro", exact: true }).first().click();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  await page.reload();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  await page.goto("/demo/cliente");
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  await page.getByRole("button", { name: "Cambiar a modo claro", exact: true }).first().click();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
   await page.reload();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
-  await page.goto("/cliente");
-  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
-  await page
-    .getByRole("button", { name: "Cambiar a modo oscuro", exact: true })
-    .first()
-    .click();
-  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
 });
 
 for (const width of [360, 768, 1440]) {
@@ -197,8 +193,8 @@ for (const width of [360, 768, 1440]) {
       "/",
       "/registro",
       "/onboarding",
-      "/empresa",
-      "/cliente",
+      "/demo/empresa",
+      "/demo/cliente",
       "/explorar",
       "/negocio/photo",
       "/mensajes?como=cliente&conversacion=lumen-alex",

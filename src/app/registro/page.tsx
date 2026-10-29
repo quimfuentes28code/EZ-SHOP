@@ -79,7 +79,7 @@ export default function CustomerRegistrationPage() {
       return;
     }
     setDemoExperience("customer");
-    router.push("/cliente");
+    router.push("/demo/cliente");
   };
 
   return (

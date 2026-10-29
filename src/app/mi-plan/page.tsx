@@ -31,7 +31,7 @@ export default function PlanPage() {
   ) as [FeatureId, (typeof FEATURE_CATALOG)[FeatureId]][];
   return (
     <div className="container plan-page">
-      <Link href="/empresa" className="inline-link">
+      <Link href="/demo/empresa" className="inline-link">
         <ArrowLeft size={15} />
         Volver a mi negocio
       </Link>

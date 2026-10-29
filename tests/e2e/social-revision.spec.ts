@@ -15,7 +15,7 @@ test("el catálogo editado por el negocio es el mismo que consulta el cliente", 
   await page.addInitScript(() => {
     Object.defineProperty(Crypto.prototype, "randomUUID", { value: undefined, configurable: true });
   });
-  await page.goto("/empresa?vista=perfil");
+  await page.goto("/demo/empresa?vista=perfil");
   await page
     .getByLabel("Nombre del negocio", { exact: true })
     .fill("Lumen QA de prueba");
@@ -79,7 +79,7 @@ test("el catálogo editado por el negocio es el mismo que consulta el cliente", 
   await expect(
     page.getByRole("img", { name: "escena-e2e", exact: true }),
   ).toBeVisible();
-  await page.goto("/empresa?vista=perfil");
+  await page.goto("/demo/empresa?vista=perfil");
   await expect(
     page.getByLabel("Nombre del negocio", { exact: true }),
   ).toHaveValue("Lumen QA de prueba");
@@ -163,7 +163,7 @@ test("una reserva de perfil sólo guarda una solicitud local que aparece en la c
       { exact: true },
     ),
   ).toBeVisible();
-  await page.goto("/cliente");
+  await page.goto("/demo/cliente");
   const request = page
     .locator(".personal-demo-request")
     .filter({ hasText: serviceTitle });

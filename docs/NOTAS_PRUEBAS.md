@@ -1,81 +1,63 @@
-# Verificación de AutonoService — Hito 0
+# Verificación de AutonoService
 
-## Revisión actual: especificación maestra
+## Revisión de integración y privacidad — 29 de octubre de 2026
 
-Están implementados la marca, entrada, onboarding de dos experiencias, selector, Mi plan y los recorridos locales de perfil, catálogo, conversación y solicitudes. **Verificación final completada: 27 pruebas de navegador correctas.**
+Base inspeccionada: `main`, commit `d424a9b`. Rama de correcciones: `codex/pulido-integracion`. El propietario autorizó las correcciones descritas en [PULIDO_20261029.md](PULIDO_20261029.md). Los resultados corresponden a esta rama; cada comprobación indica el entorno y sus límites.
 
-| Comprobación de la revisión actual | Estado registrado |
+| Comprobación de esta rama | Estado |
 | --- | --- |
-| Instalación desde el lockfile | `npm ci` correcto |
+| Instalación desde el lockfile | `npm ci` correcto, sin añadir dependencias |
 | `npm run typecheck` | Correcto |
-| `npm test` | 48 pruebas unitarias correctas |
-| `npm run build` | Compilación correcta de todas las rutas |
-| `npm run test:e2e` | 27 pruebas correctas contra `npm start`, 0 fallos y 0 omitidas (2,7 min) |
-| iPhone físico | No verificado en esta entrega por el agente |
-| Aprobación visual del propietario | Pendiente |
+| `npm test` | 65 pruebas correctas, 0 fallos y 0 omitidas |
+| `npm run build` | Correcto: exportación de las 20 páginas; también se generó la compilación normal sin variables ficticias |
+| Navegador (`verify:e2e` y regresión focalizada) | 42 casos comprobados: 40 generales y 2 de renovación de vídeo correctos en sus últimas ejecuciones; ninguna prueba omitida |
+| `npm run test:sql` | 12 migraciones y 47 aserciones correctas en PostgreSQL 17.11 local desechable; véase [PRUEBAS_SQL.md](PRUEBAS_SQL.md) |
+| Backend remoto del propietario | No modificado por esta revisión |
+| Migración correctiva 0012 en backend remoto | No aplicada por esta revisión |
+| Revisión responsive | Empresa y Cliente a 360, 768 y 1440 px, en claro/oscuro: sin desbordamiento ni errores de ejecución detectados |
+| iPhone físico, TestFlight y Android nativo | No verificados por esta revisión |
 
-La evidencia anterior corresponde a esta revisión, salvo donde se indica el antecedente histórico. Las pruebas se ejecutaron contra la compilación de producción sin sesiones de capturas simultáneas; verifican los recorridos de esta revisión, no garantías de seguridad de producción.
+En la auditoría previa se reejecutaron las **48 pruebas unitarias existentes** de `d424a9b` en una copia aislada. Su resultado no certifica las correcciones posteriores ni el backend conectado: cubren principalmente el dominio de demostración.
 
-## Ejecutar
+La ejecución completa de 42 casos pasó los 40 recorridos generales y detectó dos fallos en la fixture de vídeo: el transporte simulado no respondía a peticiones HTTP Range y no permitía buscar la posición inicial. Se corrigió para responder `206` con `Content-Range`/`Accept-Ranges`, se añadió una precondición de posición y se reejecutaron los dos casos: **2/2 correctos en 5,3 s**. No se eliminaron pruebas ni se rebajaron sus comprobaciones. Los otros 40 casos habían pasado sobre la misma compilación final.
 
-Desde la carpeta que contiene el lockfile:
+## Ejecutar las comprobaciones web
 
 ```bash
 npm ci
 npm run typecheck
 npm test
-npm run build
-npm run test:e2e
+npm run verify:e2e
 ```
 
-En Windows/PowerShell utiliza `npm.cmd` para evitar el bloqueo de `npm.ps1`. `scripts/test.mjs` descubre `*.test.ts` de `tests/unit/` sin depender de la expansión de comodines del shell y conserva el resultado de cada suite.
+En PowerShell utiliza `npm.cmd`. `scripts/test.mjs` descubre las suites TypeScript sin depender de comodines del shell. `npm start` sirve la exportación estática `out/` mediante `scripts/serve-static.mjs`; `next start` no es compatible con `output: "export"`.
 
-Playwright reutiliza un servidor en el puerto 3000 o inicia uno. Usa `/usr/bin/chromium` cuando existe; puede indicarse otro ejecutable con `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`. Si falta el navegador, ejecutar `npx playwright install chromium` (`npx.cmd` en PowerShell). Los resultados de fallos en `test-results/` son artefactos locales ignorados por Git.
+`npm run verify:e2e` genera la compilación con URL/clave ficticias y ejecuta Playwright con transporte interceptado. No cambia variables persistentes ni archivos `.env`. El puerto 3000 debe estar libre; el runner inicia su propio servidor estático y lo cierra al terminar. Después, ejecutar `npm run build` para generar la vista habitual con la configuración de desarrollo. `npm run test:e2e` ejecuta solo Playwright y necesita una compilación preparada con las mismas variables ficticias que usa CI. Usa `/usr/bin/chromium` si está instalado; puede indicarse otro ejecutable mediante `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`. Si falta el navegador, ejecutar `npx playwright install chromium` (`npx.cmd` en PowerShell). Evita reutilizar un servidor de otra rama o una compilación anterior. Los artefactos de fallos se guardan en `test-results/`, ignorado por Git.
 
-Se han renovado capturas del prototipo compilado en `docs/previews/`: entrada oscura/clara, Mi negocio, móvil, Cliente, Mi plan, perfil del negocio y mensajes. Son evidencia visual, no sustituyen la ejecución de los recorridos.
+## Alcance de las pruebas actuales
 
-## Casos que deben validar la revisión
+- Las demos deben completar onboarding, cambio de experiencia, perfil/catálogo, actividad y mensajes dentro de sus rutas de demostración, sin enviar sus datos a Supabase.
+- Los escenarios conectados de navegador usan **respuestas Supabase simuladas**, sesiones ficticias y peticiones interceptadas. Permiten comprobar la UI, sus estados, navegación y solicitudes emitidas sin utilizar cuentas del propietario.
+- Las pruebas de chat deben cubrir selección estable con refresco, últimos mensajes e historial, borradores por conversación, lectura de lo mostrado y separación Empresa/Cliente.
+- Los medios deben respetar referencias propias, firmas temporales, borradores, publicación/retirada, compensación ante fallos y disponibilidad de la migración correctiva.
+- Las preferencias de módulos deben permanecer en su organización y distinguir el borrador de la selección guardada.
+- Las pruebas SQL locales deben validar las políticas y permisos con identidades distintas y datos ficticios. Un esquema local que reproduce las tablas necesarias no certifica todos los componentes del servicio Supabase alojado.
+- CI debe comprobar TypeScript, unitarias, exportación y recorridos de navegador. Un resultado verde no sustituye pruebas autenticadas sobre un proyecto de desarrollo autorizado.
 
-### Marca y primera entrada
+## Revisión manual pendiente del entorno conectado
 
-- Marca AutonoService y los eslóganes correctos; Cliente como experiencia, AutonoSuite sólo como mejora profesional.
-- Entrada con la pregunta y las dos opciones exactas, sin inventar dos cuentas o productos independientes.
-- Onboarding de ambas experiencias, validación y errores de almacenamiento visibles.
-- Selector Mi negocio/Modo cliente y elección de empresa demo, con recuerdo tras recargar y posibilidad de cambiar.
-- Mi plan sin solicitud de tarjeta, checkout, recibo o licencia real; Cliente nunca requiere premium.
-- Derechos profesionales por capacidad/versión: no tratar un booleano editable como permiso de producción.
+Con datos ficticios y un proyecto de desarrollo autorizado, comprobar confirmación de correo y retornos, acceso y activación de ambas experiencias, persistencia entre dispositivos, solicitudes, chat bidireccional, archivos y publicación/retirada de medios. Intentar leer y modificar organizaciones, conversaciones y archivos ajenos. Verificar la versión de migraciones aplicada y los permisos de Storage.
 
-### Interacción conservada
+La nueva migración cambia el bucket histórico de medios a privado. Debe coordinarse con la versión del frontend que resuelve los archivos mediante firmas. Los enlaces emitidos por esta app usan 60 segundos; esto no recupera descargas ni cachés anteriores ni impide que otros clientes autorizados soliciten al proveedor otro tiempo de firma. Las referencias externas HTTPS conservadas no pueden retirarse mediante nuestras políticas de Storage.
 
-- Cuatro sectores en onboarding y navegación de herramientas activas; Clientes obligatorio y finanzas no operativas.
-- Edición de perfil/catálogo desde negocio y consulta de los mismos datos desde Cliente/directorio.
-- Creación de elementos y adjuntos sin `crypto.randomUUID`, simulando la ausencia de esa API en HTTP local; no equivale a una prueba física en Safari.
-- Búsqueda, filtros, favoritos, preferencias y estados vacíos.
-- Solicitud de reserva local con fecha/hora válidas, sin POST a un negocio, confirmación o plaza bloqueada.
-- Mi actividad identifica cada solicitud como ejemplo no enviado y no mezcla reglas de cita y pedido.
-- Conversaciones locales separadas por hilo; cambio de perspectiva no simula entrega a otra persona.
-- Adjuntos de prueba, límites/tipos, descarga durante la sesión y aviso de archivo no disponible tras recarga.
-- Fotos de perfil separadas de adjuntos privados.
+## Evidencia histórica del Hito 0 — `e4713e5`
 
-### UI, datos y accesibilidad
+La revisión histórica registró `npm ci`, TypeScript y build correctos, **48 unitarias y 27 E2E correctas**, sin omitidas. Aquellos E2E verificaban las rutas demo antes de trasladarlas a `/demo/*`; sus resultados no prueban la implementación conectada posterior de `main` ni la rama actual.
 
-- Rutas antiguas y nuevas a 360, 768 y 1440 px sin desbordamiento horizontal involuntario.
-- Navegación por teclado, nombres accesibles, foco visible, Escape y restitución de foco en modales/menú móvil.
-- Temas claro/oscuro y contraste legible en componentes y estados.
-- Cero errores de ejecución/hidratación; inspeccionar tanto `pageerror` como `console.error` cuando proceda.
-- Datos corruptos, claves heredadas, duplicados, bloqueo de almacenamiento, cuotas y recuperación sin fingir guardado.
-- Compatibilidad de las claves antiguas y ausencia de borrado silencioso al cambiar de marca.
+Las capturas anteriores de `docs/previews/` pertenecen a esa revisión histórica. Las nuevas `pulido-*.png` muestran esta revisión con datos sintéticos y transporte interceptado. Sirven de antecedente visual; no acreditan el estado actual, un despliegue público o una prueba física de iPhone.
 
-## Pruebas móviles
+La primera base anterior registró 12 unitarias y 12 E2E. Se conserva como antecedente, sin trasladar automáticamente su resultado a revisiones posteriores.
 
-La guía [MOVIL_Y_PRUEBAS.md](MOVIL_Y_PRUEBAS.md) explica la revisión web en Safari/Chrome y el futuro camino nativo. El viewport de Chromium emula un tamaño, no demuestra el comportamiento de un iPhone real o de una app React Native.
+## Móvil y límites
 
-Para el iPhone físico revisar red local, controles táctiles, teclado, selección de archivos y persistencia de Safari. No dar por comprobadas ubicación, push, autenticación nativa, Expo Go, compras de tienda o distribución sin una implementación y un dispositivo/build adecuados.
-
-## Antecedente de la primera versión
-
-En la primera versión se comprobaron instalación, reinstalación con `npm ci`, TypeScript, 12 unitarias, compilación y 12 E2E en 50,6 s contra `npm start`, sin fallos ni omitidas. Las cinco rutas originales se revisaron a 360, 768 y 1440 px sin errores JavaScript detectados. Esa evidencia corresponde a una revisión anterior y no certifica los cambios actuales.
-
-## Fuera del alcance de validación del Hito 0
-
-Autorización multiempresa, RLS, aislamiento de archivos de producción, concurrencia de reservas reales, fiscalidad española operativa, pagos/licencias verificadas, sincronización, migraciones de una base productiva y publicación en App Store/Google Play. No hay backend o apps nativas que permitan declarar esas garantías. Deben probarse en sus hitos.
+[MOVIL_Y_PRUEBAS.md](MOVIL_Y_PRUEBAS.md) explica la prueba web por red local y el camino nativo futuro. Un viewport de Chromium no acredita Safari real ni React Native. Ubicación automática, push, compras, licencias, fiscalidad operativa, concurrencia de reservas, sincronización offline y publicación en tiendas requieren implementación y validaciones específicas.

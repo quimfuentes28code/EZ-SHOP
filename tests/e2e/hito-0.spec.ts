@@ -69,7 +69,7 @@ for (const template of templates) {
     await page
       .getByRole("button", { name: "Abrir mi panel", exact: true })
       .click();
-    await expect(page).toHaveURL(/\/empresa$/);
+    await expect(page).toHaveURL(/\/demo\/empresa$/);
     const persisted = await page.evaluate(
       (key) => JSON.parse(localStorage.getItem(key) || "{}"),
       DEMO_STORAGE_KEY,
@@ -97,7 +97,7 @@ for (const template of templates) {
 test("los módulos cambian la navegación de empresa y se conservan al recargar", async ({
   page,
 }) => {
-  await page.goto("/empresa");
+  await page.goto("/demo/empresa");
   const navigation = page.getByRole("navigation", {
     name: "Módulos del negocio",
   });
@@ -165,7 +165,7 @@ test("el onboarding valida identidad y comunica un fallo real de almacenamiento"
 test("la cuenta cliente permite revisar detalles, favoritos y preferencias de muestra", async ({
   page,
 }) => {
-  await page.goto("/cliente");
+  await page.goto("/demo/cliente");
   await page
     .locator(".personal-experience")
     .first()
@@ -254,8 +254,8 @@ for (const width of [360, 768, 1440]) {
     for (const path of [
       "/",
       "/onboarding",
-      "/empresa",
-      "/cliente",
+      "/demo/empresa",
+      "/demo/cliente",
       "/explorar",
     ]) {
       await page.goto(path);
@@ -284,7 +284,7 @@ test("el menú móvil conserva el foco y cierra al navegar entre módulos", asyn
   page,
 }) => {
   await page.setViewportSize({ width: 360, height: 900 });
-  await page.goto("/empresa");
+  await page.goto("/demo/empresa");
   const menu = page.getByRole("button", { name: "Abrir menú", exact: true });
   const sidebar = page.locator("#business-navigation");
   await expect(sidebar).toHaveAttribute("inert", "");

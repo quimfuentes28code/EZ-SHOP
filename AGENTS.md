@@ -2,7 +2,7 @@
 
 ## Referencia principal
 
-Lee `README.md`, `docs/ESPECIFICACION_MAESTRA.md` y todos los documentos de `docs/` antes de desarrollar. La especificación maestra aportada por el propietario sustituye las decisiones de marca, alcance y roadmap anteriores que entren en conflicto con ella.
+Lee `README.md`, `docs/ESPECIFICACION_MAESTRA.md` y todos los documentos de `docs/` antes de desarrollar. El estado de integración actual está en `docs/PULIDO_20261029.md`; los documentos de Hito 0 y decisiones sustituidas se conservan como antecedentes, no como descripción de todas las rutas actuales. La especificación maestra aportada por el propietario sustituye las decisiones de marca, alcance y roadmap anteriores que entren en conflicto con ella.
 
 AutonoService — **Tu negocio. Más fácil.** — es una única aplicación con experiencia profesional y experiencia **Cliente**, gratuita. **AutonoSuite** — **Todo el potencial de tu negocio.** — es una mejora premium de gestión dentro de la misma aplicación, sin otra cuenta ni instalación. No se utilizarán nombres comerciales que añadan Business a la marca ni presenten Cliente como producto independiente. Los nombres internos descriptivos y las claves heredadas de almacenamiento pueden conservarse por compatibilidad.
 
@@ -16,7 +16,7 @@ AutonoService — **Tu negocio. Más fácil.** — es una única aplicación con
 6. Una identidad global de Cliente NO concede a todas las empresas visibilidad de su historial. Cada empresa accede exclusivamente a relaciones y datos autorizados en su contexto. Los archivos privados requieren participantes y propiedad comprobados.
 7. Salud, finanzas y otros dominios regulados requieren evaluación específica; no crear módulos clínicos, fiscales o financieros operativos por defecto. La facturación real exige normativa española aplicable y la orientación fiscal debe definir sus límites.
 8. Separar perfil/fotos públicas de datos internos y adjuntos privados. Ubicación, cobertura y visibilidad pública requieren consentimiento y control explícito; el cliente debe poder buscar por ciudad sin compartir ubicación precisa.
-9. En Hito 0 usar datos ficticios, sin autenticación real, pagos, reservas enviadas ni información sensible. Etiquetar claramente la simulación. Los selectores visuales, el almacenamiento local y los prototipos de licencias no constituyen seguridad o autorización de producción.
+9. Mantener las demostraciones del Hito 0 con datos ficticios y avisos claros. Las rutas `/empresa` y `/cliente` ya usan Supabase; las demos están en `/demo/*`, `/explorar`, `/negocio/*` y `/mensajes`. No mezclar sus datos ni enviar una operación demo al backend. Los selectores y el almacenamiento local no conceden autorización. No introducir pagos ni facturación real en esta revisión.
 10. TypeScript estricto, componentes accesibles y responsive, temas claro/oscuro y separación entre dominio, UI y adaptadores. No incluir secretos en el repositorio. Evitar dependencias de DOM/Next.js en reglas destinadas a compartirse con React Native.
 11. Antes de introducir dependencias, consultar documentación reciente y explicar por qué se necesitan. Preferir las herramientas existentes y el lockfile.
 12. Ejecutar instalación apropiada al lockfile (`npm ci` o `npm install` cuando se actualice), `npm run typecheck`, `npm test` y `npm run build`; usar las E2E relevantes cuando se modifiquen recorridos. Corregir errores y distinguir pruebas pasadas, fallidas y no ejecutadas.
@@ -26,4 +26,6 @@ AutonoService — **Tu negocio. Más fácil.** — es una única aplicación con
 
 ## Encargo actual
 
-Hito 0: inspeccionar y conservar lo existente, actualizar marca y documentación, diseñar la entrada AutonoService/Cliente, onboarding de ambas experiencias, selector Mi negocio/Modo cliente, paneles y Mi plan. Mantener las interacciones demo de perfiles, catálogo, mensajes y solicitudes. Definir arquitectura web/iOS/Android y explicar cómo revisar el prototipo en iPhone. No conectar todavía Supabase ni implementar marketplace completo, pagos, autenticación real o todos los módulos empresariales.
+El propietario ha autorizado corregir los problemas de integración, privacidad, navegación, pruebas y documentación detectados en `main`, conservando las funcionalidades conectadas ya existentes. Trabajar en `codex/pulido-integracion`, sin sobrescribir cambios locales de otras ramas. Preparar migraciones correctivas incrementales y pruebas; no aplicar SQL al backend ni desplegar como parte de esta revisión.
+
+El propietario exige permiso antes de modificar el proyecto. La aprobación actual cubre las correcciones revisadas y su validación; los cambios de alcance o las fases nuevas requieren su autorización. Las instrucciones históricas de no conectar Supabase no ordenan eliminar la implementación que el propietario ha incorporado a `main`. Mantener AutonoService/Cliente bajo la misma identidad y AutonoSuite como mejora prevista, sin activar compras o nuevas capacidades empresariales.

@@ -73,7 +73,7 @@ export function ExperienceSwitcher() {
                 ? ""
                 : "El cambio funcionará esta vez, pero no se puede recordar en este navegador.",
             );
-            router.push(next === "business" ? "/empresa" : "/cliente");
+            router.push(next === "business" ? "/demo/empresa" : "/demo/cliente");
           }}
         >
           <option value="business">Mi negocio</option>

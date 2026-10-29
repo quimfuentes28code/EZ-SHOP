@@ -227,3 +227,23 @@
 .as-location-map-canvas .leaflet-control-attribution{font-size:10px;}
 .as-location-map-empty{border:1px solid var(--border);background:var(--surface-2);color:var(--muted);padding:13px;border-radius:10px;font-size:12px;}
 .as-location-map-credit{font-size:10px;color:var(--muted);}
+
+/* Native dialog keeps keyboard focus and Escape behavior across both experiences. */
+.modal.as-social-profile-dialog{width:min(700px,calc(100vw - 32px));max-height:calc(100dvh - 32px);padding:0;overflow:auto;}
+.as-social-profile-dialog>.modal-heading{padding:16px 20px;margin:0;position:sticky;top:0;background:var(--surface);border-bottom:1px solid var(--border);z-index:2;}
+.as-social-profile-dialog>.modal-heading h2{font-size:16px;overflow-wrap:anywhere;}
+.as-social-profile-dialog .as-social-public-profile{width:100%;border-radius:0;box-shadow:none;}
+.as-social-client-tools{align-items:center;flex-wrap:wrap;justify-content:flex-end;}
+.as-social-heart,.as-social-utility,.as-social-category-scroll button{min-width:44px;min-height:44px;}
+.as-social-category-scroll button,.as-social-client-tabs button{flex-shrink:0;}
+.as-social-hero-search:focus-within,.as-social-city-filter:focus-within{outline:2px solid var(--accent);outline-offset:3px;}
+.as-social-public-profile input:focus-visible,.as-social-public-profile textarea:focus-visible{outline:2px solid var(--accent);outline-offset:3px;}
+.as-social-public-body h2,.as-social-public-body>p,.as-social-public-location p{overflow-wrap:anywhere;}
+.as-social-client-content{min-width:0;}
+@media(max-width:650px){
+ .as-social-client-top{align-items:flex-start;flex-wrap:wrap;}
+ .as-social-client-tools{margin-left:auto;}
+ .as-social-client input,.as-social-client textarea,.as-social-client select,.as-social-profile-dialog input,.as-social-profile-dialog textarea{font-size:16px;}
+ .modal.as-social-profile-dialog{width:calc(100vw - 16px);max-height:calc(100dvh - 16px);}
+ .as-social-client .button,.as-social-profile-dialog .button{min-height:44px;}
+}

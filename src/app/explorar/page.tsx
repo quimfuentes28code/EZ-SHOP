@@ -179,9 +179,9 @@ export default function ExplorePage() {
           <Compass size={15} />
           Explorar
         </Link>
-        <Link href="/cliente">Mi actividad</Link>
-        <Link href="/cliente?seccion=favoritos">Favoritos</Link>
-        <Link href="/cliente?seccion=perfil">Perfil</Link>
+        <Link href="/demo/cliente">Mi actividad</Link>
+        <Link href="/demo/cliente?seccion=favoritos">Favoritos</Link>
+        <Link href="/demo/cliente?seccion=perfil">Perfil</Link>
       </nav>
       <div className="explore-intro">
         <span className="eyebrow">

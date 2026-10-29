@@ -149,7 +149,7 @@ export default function OnboardingPage() {
         return;
       }
       setDemoExperience("business");
-      router.push("/empresa");
+      router.push("/demo/empresa");
     } catch {
       setError(
         "No hemos podido guardar la configuración en este navegador. Activa el almacenamiento local e inténtalo de nuevo.",

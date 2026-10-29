@@ -1,5 +1,7 @@
 # Recuperación del diseño social y conexión real con Supabase
 
+**Antecedente de la recuperación inicial.** Esta rama ya se incorporó a `main`. Las ampliaciones posteriores añadieron publicaciones multimedia, sedes, mapa, adjuntos y refresco periódico. El estado actual está en [RECUPERACION_SOCIAL_SEDES_HERRAMIENTAS_20261029.md](RECUPERACION_SOCIAL_SEDES_HERRAMIENTAS_20261029.md) y las correcciones autorizadas en [PULIDO_20261029.md](PULIDO_20261029.md). Las limitaciones descritas debajo corresponden a aquella primera entrega.
+
 ## Diagnóstico confirmado
 
 Las rutas originales `/cliente` y `/empresa` se sustituyeron por un componente `RealExperience` orientado a gestión CRUD. Los prototipos con tarjetas, favoritos, perfiles y chat continuaron en `/demo/cliente`, `/demo/empresa`, `/explorar` y `/mensajes`, pero con datos locales/ficticios.

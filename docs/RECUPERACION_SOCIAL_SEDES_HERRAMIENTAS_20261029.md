@@ -16,7 +16,7 @@ La sustitución de las rutas de prototipo `/cliente` y `/empresa` por `RealExper
 ### Ya conectado a PostgreSQL y Storage
 
 - Perfil empresarial editable: nombre, categoría, localidad, descripción, eslogan, color, logo y portada.
-- Publicaciones auténticas: textos, imágenes JPG/PNG/WebP y vídeos MP4/WebM, con opción público/borrador. Subidas a `autonoservice-public-media`; contenido público accesible mediante URL, no usar para datos privados.
+- Publicaciones auténticas: textos, imágenes JPG/PNG/WebP y vídeos MP4/WebM, con opción público/borrador. El bucket histórico se llama `autonoservice-public-media`; la corrección 0012 lo convierte en privado. La app guarda referencias `storage://`, resuelve también URL propias antiguas y firma sólo los medios permitidos por RLS.
 - Servicios y catálogo de precios.
 - CRM de contactos vinculados a solicitudes.
 - Solicitudes con estado.
@@ -52,8 +52,14 @@ Migraciones en orden:
 - `0008_business_social_profiles.sql`: publicaciones, identidad visual y bucket de medios públicos.
 - `0009_chat_attachments_unread.sql`: archivos privados y estado leído por contexto.
 - `0010_opt_in_location_coordinates.sql`: latitud/longitud voluntarias y protegidas.
+- `0011_read_state_upsert_permissions.sql`: permisos de upsert del estado de lectura.
+- `0012_media_privacy_and_profile_permissions.sql`: corrección preparada de permisos de personalización, servicios activos y acceso privado a medios; no aplicada al backend por esta revisión.
 
-Los datos públicos publicados se muestran a todos los usuarios. No publicar material protegido o privado en `autonoservice-public-media`. Los adjuntos se guardan en un bucket privado.
+Con 0012 aplicada, el propietario puede consultar medios de borradores; los demás lectores necesitan una referencia publicada vinculada al objeto y una empresa pública. Los adjuntos de conversaciones permanecen en otro bucket privado. La nueva UI comprueba la disponibilidad de la corrección antes de subir o retirar medios. Hay que ensayar y coordinar la migración con la versión del frontend que firma las referencias antiguas, para evitar que una versión anterior siga solicitando URL públicas del bucket convertido.
+
+Los enlaces generados por esta app caducan a los 60 segundos y se renuevan durante la visualización. Es una configuración de esta versión: otros clientes autorizados pueden solicitar al proveedor otro tiempo de firma. Retirar o eliminar una publicación corta nuevas firmas no autorizadas, pero no borra descargas, copias o cachés previas. Las referencias externas HTTPS heredadas se conservan por compatibilidad y no pueden retirarse mediante nuestras políticas de Storage. No utilizar las publicaciones para documentos privados de clientes.
+
+La migración está preparada para revisión y validación, no aplicada al proyecto remoto. Véanse [PULIDO_20261029.md](PULIDO_20261029.md) y [PRUEBAS_SQL.md](PRUEBAS_SQL.md).
 
 El visor de mapas usa teselas web de OSM exclusivamente para navegación interactiva humana. Mantiene atribución visible, no descarga mapas offline, no usa la API pública de geocodificación Nominatim. Para producción a escala habrá que contratar un proveedor de teselas/geocodificación con SLA y revisar cuotas y políticas: https://operations.osmfoundation.org/policies/tiles/
 

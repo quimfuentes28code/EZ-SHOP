@@ -8,13 +8,13 @@ La referencia principal y completa es [ESPECIFICACION_MAESTRA.md](ESPECIFICACION
 
 Una persona tiene una identidad global y roles contextuales: puede administrar un estudio, trabajar en otro negocio y reservar una peluquería como Cliente. El selector Mi negocio/Modo cliente cambia el contexto; no crea otra cuenta ni entrega acceso por sí mismo.
 
-## Alcance actual: Hito 0
+## Alcance de la revisión actual
 
-La tarea actual es actualizar marca, arquitectura, navegación y prototipos: primera entrada con las dos opciones, onboarding profesional y personal, selector, dos paneles y Mi plan. Se conservan el catálogo modular, el perfil de negocio, los productos/servicios y las interacciones locales ya iniciadas.
+El propietario ha autorizado pulir la integración existente: corregir permisos, privacidad de medios, chat, navegación real/demo, búsqueda por sedes, módulos y pruebas, conservando las funciones que ha incorporado a `main`. Las migraciones correctivas se preparan para revisión; no se aplican al backend en esta entrega.
 
-El negocio publica su catálogo y Cliente lo consulta, solicita o pregunta por él. Esta especificación no incorpora un mercado de productos entre particulares. En fotografía, los archivos del trabajo se comparten en la conversación, separados de las fotos del perfil.
+Las rutas `/empresa` y `/cliente` utilizan Supabase para cuentas, perfiles, servicios, CRM, solicitudes, favoritos, publicaciones, mensajes y sedes. El mapa conectado muestra sedes con coordenadas publicadas voluntariamente. La agenda y los presupuestos son registros internos y borradores; no hay motor de reservas o facturación fiscal.
 
-El directorio conserva negocios ficticios. Las solicitudes de reserva no verifican disponibilidad, no bloquean una plaza ni se envían a otro usuario. Los mensajes y archivos de demostración no constituyen un servicio real de comunicaciones. El inventario inspeccionado y los pendientes de validación se registran en [HITO_0.md](HITO_0.md).
+Las demos conservan datos locales ficticios en `/demo/empresa`, `/demo/cliente`, `/explorar`, `/negocio/*` y `/mensajes`. Sus solicitudes no se envían ni bloquean disponibilidad. El catálogo lo publica el negocio; esta especificación no introduce un mercado de productos entre particulares. Los adjuntos privados de un trabajo se mantienen separados de la presentación comercial.
 
 ## Núcleo reutilizable
 
@@ -39,7 +39,7 @@ El directorio conserva negocios ficticios. Las solicitudes de reserva no verific
 10. Membresía: renovación, créditos y suspensión.
 11. Entrega/ruta: cobertura, paradas y trazabilidad.
 
-No se reemplazan estas reglas por una única operación genérica. El prototipo permite comprobar la composición visual sin afirmar que esos motores ya funcionan.
+No se reemplazan estas reglas por una única operación genérica. Las demos permiten comprobar la composición visual y la gestión interna conectada conserva registros sencillos. Ninguna de ellas declara implementados todos esos motores especializados.
 
 ## Modalidades y sectores
 
@@ -57,6 +57,6 @@ Las compras reales y su implementación en web/iOS/Android requieren estudiar lo
 
 ## Fuera de esta entrega
 
-Autenticación real, autorización de servidor/RLS, sincronización, reservas confirmadas, catálogo de comercios reales, marketplace completo, geolocalización, mapa, pagos, facturación española operativa, expedientes regulados y aplicaciones nativas publicadas. Se documenta su arquitectura y secuencia sin implementarlos todos ahora.
+Motor de reservas con disponibilidad y concurrencia, permisos delegados avanzados, sincronización offline completa, marketplace completo, localización automática del Cliente, pagos y licencias comerciales, facturación española operativa, expedientes regulados y aplicaciones nativas publicadas.
 
-El paso a Hito 1 sigue sujeto a revisión humana explícita. La aprobación visual tampoco sustituye las pruebas de privacidad, concurrencia y seguridad necesarias para operaciones reales.
+La revisión no sustituye los servicios conectados por demos ni declara que las políticas SQL estén ya aplicadas y validadas en un entorno remoto. Nuevas fases y cambios de alcance requieren permiso del propietario; véanse [ROADMAP.md](ROADMAP.md) y [NOTAS_PRUEBAS.md](NOTAS_PRUEBAS.md).

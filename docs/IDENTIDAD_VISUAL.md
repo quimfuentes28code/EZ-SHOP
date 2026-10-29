@@ -50,10 +50,10 @@ Las láminas PNG/HTML originales del ZIP son materiales de referencia adicionale
 - En Cliente, usar superficies luminosas y recursos visuales de negocios; mantener contraste, tarjetas claras y filtros legibles.
 - AutonoService profesional: navegación de productividad y densidad de información contenida.
 - El modo oscuro es **opcional**, no la única apariencia. Respetar preferencias previas guardadas.
-- Las rutas de demostración no afirman reservas, pagos, búsquedas o mapas reales.
-- Mantener la compatibilidad con la exportación estática para Cloudflare mientras no exista backend.
+- Las rutas de demostración no afirman reservas, pagos, búsquedas o mapas reales. `/empresa` y `/cliente` conservan la experiencia conectada y deben identificar sus estados reales y pendientes con precisión.
+- Mantener la exportación estática para Cloudflare, con acceso a Supabase mediante su SDK y RLS. No introducir APIs de servidor Next.js sin revisar la estrategia de despliegue.
 - Antes del lanzamiento comprobar licencia de marca, imágenes, contraste, accesibilidad y capturas de tiendas.
 
 ## Verificación
 
-En cada cambio visual probar `/`, `/onboarding`, `/empresa`, `/cliente`, `/explorar` y `/mi-plan` en escritorio y móvil; verificar ambos temas y los estados sin datos. Ejecutar `npm run typecheck`, `npm test` y `npm run build`.
+En cada cambio visual probar `/`, `/onboarding`, `/demo/empresa`, `/demo/cliente`, `/explorar` y `/mi-plan`; revisar también `/empresa` y `/cliente` con una sesión de desarrollo o respuestas simuladas autorizadas en escritorio y móvil; verificar ambos temas y los estados sin datos. Ejecutar `npm run typecheck`, `npm test` y `npm run build`.

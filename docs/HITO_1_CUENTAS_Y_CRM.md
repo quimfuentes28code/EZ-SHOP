@@ -1,6 +1,8 @@
 # Hito 1A — Cuentas reales, CRM y solicitudes
 
-**Estado de desarrollo:** código añadido en rama `feature/real-accounts-crm-v1`. **No operativo con datos reales hasta configurar Supabase y verificar la migración SQL / políticas RLS.** La versión anterior sigue en `main`.
+**Documento histórico de la primera integración.** La rama `feature/real-accounts-crm-v1` ya está incorporada en `main`, que contiene ampliaciones posteriores de cuentas, chat, publicaciones, sedes y mapa. Las rutas conectadas actuales son `/empresa` y `/cliente`; `/real` se conserva como selector. No uses la lista de dos migraciones de este antecedente como guía completa para un proyecto nuevo: revisa todas las migraciones numeradas, [README.md](../README.md) y [PRUEBAS_SQL.md](PRUEBAS_SQL.md).
+
+La corrección autorizada actual figura en [PULIDO_20261029.md](PULIDO_20261029.md). Este documento conserva el alcance inicial, no declara que aquellas comprobaciones se hayan realizado en un proyecto remoto.
 
 ## Qué se ha implementado
 
@@ -15,11 +17,11 @@
 - Separación multiempresa mediante RLS de PostgreSQL.
 - UI en ruta `/real` respetando la identidad visual existente.
 
-### No disponible todavía
+### No disponible en aquella primera integración (estado histórico)
 
 Mapa geográfico, reservas con agenda/capacidad, trabajadores, pagos, facturas, presupuestos y documentos fiscales, sincronización offline, suscripciones, conexión con las pantallas heredadas del prototipo. No es una plataforma lista para producción sin auditoría y pruebas de seguridad reales.
 
-## Activación del backend — entorno de desarrollo
+## Procedimiento histórico de la primera integración — no usar como guía completa actual
 
 1. Conecta Supabase y crea un **proyecto de desarrollo** dedicado (no lo mezcles con información fiscal o personal de clientes existentes).
 2. En el panel de Supabase abre SQL Editor y aplica, en este orden, `supabase/migrations/20261029_0001_auth_crm_requests.sql` y `supabase/migrations/20261029_0002_customer_city.sql` una sola vez. La segunda migración incorpora la ciudad del Cliente a la ficha CRM.
@@ -51,7 +53,7 @@ Para no sustituir accidentalmente la versión publicada, conservar `main` intact
 
 La migración SQL y la conexión de Supabase tienen que validarse con el proyecto real: las pruebas de compilación no demuestran que el backend esté operativo. **No publicar datos reales ni crear clientes finales hasta verificar RLS desde dos cuentas distintas.**
 
-## Siguientes fases (en orden)
+## Plan histórico de siguientes fases (sustituido por ROADMAP.md)
 
 1. **Hito 1B:** completar autenticación, recuperación de contraseñas, perfil en la experiencia Cliente principal, membresías/roles de empleados, migración de pantallas demo hacia datos del backend.
 2. **Hito 2:** agenda real con disponibilidad por negocio/servicio y reserva transaccional evitando solapes.

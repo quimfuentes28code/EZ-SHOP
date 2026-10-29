@@ -1,4 +1,4 @@
-name: Verify web prototype
+name: Verify AutonoService
 
 on:
   pull_request:
@@ -11,6 +11,9 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://autonoservice-test.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: autonoservice-e2e-public-placeholder
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -20,6 +23,8 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm test
+      - name: Verify migrations and RLS in isolated PostgreSQL
+        run: npm run test:sql
       - run: npm run build
       - name: Verify static output
         run: |
@@ -36,3 +41,14 @@ jobs:
           test -f out/negocio/beauty.html
           test -f out/negocio/bakery.html
           test -f out/negocio/repairs.html
+      - name: Install Chromium for browser tests
+        run: npx playwright install --with-deps chromium
+      - name: Verify public, demo and mocked account flows
+        run: npm run test:e2e
+      - name: Preserve browser failure evidence
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-failure-evidence
+          path: test-results/
+          retention-days: 7

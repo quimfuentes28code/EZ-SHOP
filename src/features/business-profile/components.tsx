@@ -363,7 +363,7 @@ export function BusinessPublicProfile({ id }: { id: string }) {
               <div className="bp-success" role="status">
                 <CheckCircle2 size={20} />
                 <p>{success}</p>
-                <Link className="inline-link" href="/cliente">
+                <Link className="inline-link" href="/demo/cliente">
                   Ver mi actividad <ArrowRight size={14} />
                 </Link>
               </div>
