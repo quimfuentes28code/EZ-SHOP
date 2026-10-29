@@ -8,13 +8,13 @@ const THEME_KEY = "autonoservice-theme-v1";
 const THEME_EVENT = "autonoservice-theme-change";
 
 export function ThemeToggle() {
-  const [theme, setTheme] = useState<Theme>("dark");
+  const [theme, setTheme] = useState<Theme>("light");
   const [status, setStatus] = useState("");
 
   useEffect(() => {
-    let initial: Theme = "dark";
+    let initial: Theme = "light";
     try {
-      if (localStorage.getItem(THEME_KEY) === "light") initial = "light";
+      if (localStorage.getItem(THEME_KEY) === "dark") initial = "dark";
     } catch {
       // Theme switching remains usable when storage is unavailable.
     }
@@ -27,7 +27,7 @@ export function ThemeToggle() {
     const synchronizeStorage = (event: StorageEvent) => {
       if (event.key !== THEME_KEY) return;
       document.documentElement.dataset.theme =
-        event.newValue === "light" ? "light" : "dark";
+        event.newValue === "dark" ? "dark" : "light";
       synchronize();
     };
     window.addEventListener(THEME_EVENT, synchronize);
