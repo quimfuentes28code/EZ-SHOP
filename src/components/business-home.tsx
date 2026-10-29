@@ -2,8 +2,10 @@
 
 import { ArrowRight, CalendarDays, ClipboardList, FileText, Image, LayoutDashboard, MapPin, MessageCircle, Settings2, ShieldCheck, ShoppingBag, UsersRound, WalletCards, type LucideIcon } from "lucide-react";
 import { MODULES, type ModuleId } from "@/lib/catalog";
+import { useEffect,useState } from "react";
+import { getSupabase } from "@/lib/supabase/client";
 
-export type BusinessArea = "inicio" | "negocio" | "gestion" | "clientes" | "solicitudes-empresa" | "mensajes" | "herramientas" | "perfil";
+export type BusinessArea = "inicio" | "negocio" | "gestion" | "clientes" | "solicitudes-empresa" | "mensajes" | "sedes" | "workboard" | "herramientas" | "perfil";
 
 type Company = { name: string; category: string; city: string; description: string; published: boolean };
 type BusinessHomeProps = {
@@ -30,6 +32,8 @@ export function BusinessHome({organization,serviceCount,customerCount,requestCou
     {label:"Clientes",desc:"Fichas CRM vinculadas a solicitudes",area:"clientes",icon:UsersRound,value:String(customerCount)},
     {label:"Solicitudes",desc:"Revisar y actualizar estados",area:"solicitudes-empresa",icon:ClipboardList,value:String(requestCount)},
     {label:"Mensajes",desc:"Conversa con clientes de tu negocio",area:"mensajes",icon:MessageCircle},
+    {label:"Mis tiendas",desc:"Sedes y ubicaciones de tu empresa",area:"sedes",icon:MapPin},
+    {label:"Proyectos y agenda",desc:"Organiza trabajos y citas internas",area:"workboard",icon:CalendarDays},
     {label:"Herramientas",desc:"Todos los módulos y su estado de desarrollo",area:"herramientas",icon:LayoutDashboard},
   ];
   return (
@@ -88,6 +92,12 @@ const working: Partial<Record<ModuleId,BusinessArea>>={
   customers:"clientes",
   services:"gestion",
   communications:"mensajes",
+  locations:"sedes",
+  projects:"workboard",
+  bookings:"workboard",
+  quotes:"workboard",
+  workOrders:"workboard",
+  orders:"workboard",
 };
 const icons: Partial<Record<ModuleId,LucideIcon>>={
   customers:UsersRound,services:ShoppingBag,bookings:CalendarDays,quotes:FileText,
@@ -95,9 +105,44 @@ const icons: Partial<Record<ModuleId,LucideIcon>>={
   payments:WalletCards,invoices:FileText,
 };
 
-export function BusinessTools({onNavigate}:{onNavigate:(area:BusinessArea)=>void}) {
+export function BusinessTools({onNavigate,organizationId}:{onNavigate:(area:BusinessArea)=>void;organizationId:string}) {
+  const db=getSupabase();
+  const [enabled,setEnabled]=useState<string[]>([]);
+  const [saved,setSaved]=useState(false);
+  const [saving,setSaving]=useState(false);
+  const [notice,setNotice]=useState("");
+  useEffect(()=>{
+    if(!db||!organizationId)return;
+    db.from("organization_module_settings").select("modules").eq("organization_id",organizationId).maybeSingle()
+      .then(({data,error})=>{
+        if(error)setNotice("No se pudieron cargar preferencias: "+error.message);
+        else if(data){setEnabled((data.modules||[]) as string[]);setSaved(true);}
+      });
+  },[db,organizationId]);
+  const saveModules=async()=>{
+    if(!db||!organizationId)return;
+    setSaving(true);setNotice("");
+    try{
+      const {error}=await db.from("organization_module_settings").upsert({organization_id:organizationId,modules:enabled},{onConflict:"organization_id"});
+      if(error)throw error;
+      setSaved(true);setNotice("Herramientas seleccionadas guardadas en tu cuenta.");
+    }catch(e){setNotice(e instanceof Error?e.message:"No se pudo guardar la configuración.");}
+    finally{setSaving(false);}
+  };
+
   return <section className="live-card">
     <div className="business-live-section-head"><div><h2>Todas las herramientas</h2><p className="live-muted">AutonoService se adapta al tipo de negocio. Aquí tienes el catálogo, indicando cuáles están conectadas de verdad.</p></div></div>
+    <p className="live-muted">Personaliza los módulos destacados en tu empresa. Las herramientas disponibles se pueden utilizar aunque no las marques; lo que configuras es su visibilidad y prioridad.</p>
+    <div className="business-live-module-editor">
+      <strong>Módulos destacados</strong>
+      <div className="business-live-module-checkboxes">
+        {(Object.entries(MODULES) as [ModuleId,(typeof MODULES)[ModuleId]][]).filter(([id])=>!!working[id]).map(([id,m])=>
+          <label key={id}><input type="checkbox" checked={enabled.includes(id)} onChange={e=>setEnabled(current=>e.target.checked?[...current,id]:current.filter(x=>x!==id))}/>{m.label}</label>)}
+      </div>
+      <button type="button" className="button secondary" onClick={saveModules} disabled={saving||!organizationId}>Guardar selección</button>
+      {saved&&<span className="live-muted">Configuración personalizada</span>}
+      {notice&&<p className="live-alert" role="status">{notice}</p>}
+    </div>
     <div className="business-live-tool-grid">
       {(Object.entries(MODULES) as [ModuleId,(typeof MODULES)[ModuleId]][]).map(([id,m])=>{
         const area=working[id];
