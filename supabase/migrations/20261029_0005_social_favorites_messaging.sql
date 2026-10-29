@@ -13,6 +13,7 @@ create table if not exists public.conversations (
   id uuid primary key default gen_random_uuid(),
   organization_id uuid not null references public.organizations(id) on delete cascade,
   customer_id uuid not null references auth.users(id) on delete cascade default auth.uid(),
+  customer_display_name text not null default '',
   created_at timestamptz not null default now(),
   unique(organization_id,customer_id)
 );
@@ -25,6 +26,37 @@ create table if not exists public.conversation_messages (
   body text not null check (length(btrim(body)) between 1 and 2000),
   created_at timestamptz not null default now()
 );
+
+
+-- The public chat request is user-initiated. Capture a display name from the
+-- authenticated profile rather than trusting an arbitrary browser-supplied name.
+create or replace function public.autonoservice_conversation_init()
+returns trigger language plpgsql security definer set search_path=''
+as $
+declare
+  p record;
+begin
+  new.customer_id := auth.uid();
+  if new.customer_id is null then raise exception 'Authentication required'; end if;
+  if not exists(select 1 from public.account_types a
+                where a.user_id=new.customer_id and a.account_type='customer') then
+     raise exception 'Cliente workspace is required';
+  end if;
+  if not exists(select 1 from public.organizations o where o.id=new.organization_id and o.published) then
+     raise exception 'Business profile is not public';
+  end if;
+  select first_name,last_name into p from public.person_profiles where user_id=new.customer_id;
+  new.customer_display_name := left(
+    coalesce(nullif(btrim(concat_ws(' ',nullif(btrim(coalesce(p.first_name,'')),''),nullif(btrim(coalesce(p.last_name,'')),''))),''),'Cliente'),
+    200
+  );
+  return new;
+end; $;
+drop trigger if exists autonoservice_conversation_before_insert on public.conversations;
+create trigger autonoservice_conversation_before_insert
+before insert on public.conversations for each row
+execute function public.autonoservice_conversation_init();
+revoke all on function public.autonoservice_conversation_init() from public,anon,authenticated;
 
 create index if not exists conversation_messages_by_thread on public.conversation_messages(conversation_id,created_at);
 create index if not exists conversations_by_customer on public.conversations(customer_id,created_at desc);
