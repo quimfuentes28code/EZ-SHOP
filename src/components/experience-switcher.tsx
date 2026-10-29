@@ -73,7 +73,20 @@ export function ExperienceSwitcher() {
                 ? ""
                 : "El cambio funcionará esta vez, pero no se puede recordar en este navegador.",
             );
-            router.push(next === "business" ? "/empresa" : "/cliente");
+            // Keep prototype navigation inside its isolated demo context.
+            // On the homepage the same switch opens the authenticated product.
+            const inDemo =
+              path.startsWith("/demo/") ||
+              path === "/explorar" ||
+              path === "/mensajes" ||
+              path.startsWith("/negocio/") ||
+              path === "/mi-plan" ||
+              path === "/onboarding";
+            router.push(
+              inDemo
+                ? (next === "business" ? "/demo/empresa" : "/demo/cliente")
+                : (next === "business" ? "/empresa" : "/cliente"),
+            );
           }}
         >
           <option value="business">Mi negocio</option>
