@@ -2,17 +2,21 @@
 import { useEffect,useState,type FormEvent } from "react";
 import { Building2, MapPin, Plus, Store, Clock3, ShieldCheck } from "lucide-react";
 import { getSupabase } from "@/lib/supabase/client";
+import { BusinessMap } from "@/components/business-map";
 
 type Location={
  id:string;organization_id:string;name:string;city:string;address:string;
  service_mode:"local"|"domicilio"|"online"|"mixto";
  availability_mode:"horario"|"cita"|"24h"|"flexible";
  opens_at:string|null;closes_at:string|null;weekdays:string[];
- published:boolean;is_primary:boolean;
+ published:boolean;is_primary:boolean;latitude:number|null;longitude:number|null;
 };
 const days=[["lun","L"],["mar","M"],["mie","X"],["jue","J"],["vie","V"],["sab","S"],["dom","D"]] as const;
-const empty={name:"",city:"",address:"",service_mode:"local" as Location["service_mode"],
- availability_mode:"cita" as Location["availability_mode"],opens_at:"09:00",closes_at:"18:00",weekdays:["lun","mar","mie","jue","vie"] as string[],published:false};
+type Draft={name:string;city:string;address:string;service_mode:Location["service_mode"];
+ availability_mode:Location["availability_mode"];opens_at:string;closes_at:string;weekdays:string[];published:boolean;
+ latitude:number|null;longitude:number|null};
+const empty:Draft={name:"",city:"",address:"",service_mode:"local" as Location["service_mode"],
+ availability_mode:"cita" as Location["availability_mode"],opens_at:"09:00",closes_at:"18:00",weekdays:["lun","mar","mie","jue","vie"] as string[],published:false,latitude:null,longitude:null};
 
 export function BusinessLocations({organizationId}:{organizationId:string}){
  const db=getSupabase();
@@ -36,7 +40,7 @@ export function BusinessLocations({organizationId}:{organizationId:string}){
  const startEdit=(l:Location)=>{setEditing(l.id);setAdding(true);setMessage("");setDraft({
    name:l.name,city:l.city,address:l.address,service_mode:l.service_mode,availability_mode:l.availability_mode,
    opens_at:l.opens_at?.slice(0,5)||"09:00",closes_at:l.closes_at?.slice(0,5)||"18:00",
-   weekdays:l.weekdays,published:l.published
+   weekdays:l.weekdays,published:l.published,latitude:l.latitude,longitude:l.longitude
  });};
  const cancel=()=>{setEditing("");setAdding(false);setDraft(empty);};
  const submit=async(e:FormEvent)=>{
@@ -48,7 +52,7 @@ export function BusinessLocations({organizationId}:{organizationId:string}){
     opens_at:draft.availability_mode==="horario"?draft.opens_at:null,
     closes_at:draft.availability_mode==="horario"?draft.closes_at:null,
     weekdays:draft.availability_mode==="horario"?draft.weekdays:[],
-    published:draft.published
+    published:draft.published,latitude:draft.latitude,longitude:draft.longitude
    };
    try{
     if(!payload.name||payload.name.length<2)throw Error("Indica un nombre de sede válido.");
@@ -77,7 +81,7 @@ export function BusinessLocations({organizationId}:{organizationId:string}){
         <strong>{l.name}{l.is_primary&&<span className="location-primary">Principal</span>}</strong>
         <p><MapPin size={13}/>{[l.address,l.city].filter(Boolean).join(" · ")||"Ubicación por completar"}</p>
         <p><Clock3 size={13}/>{({horario:"Horario fijo",cita:"Solo con cita",flexible:"Horario flexible","24h":"Atención 24 h"} as const)[l.availability_mode]} · {({local:"En establecimiento",domicilio:"A domicilio",online:"Online",mixto:"Mixto"} as const)[l.service_mode]}</p>
-        <small>{l.published?"Sede visible en el perfil público":"Sede privada"}</small>
+        <small>{l.published?"Sede visible en el perfil público":"Sede privada"} · {l.latitude!==null?"Ubicación marcada en mapa":"Sin pin exacto"}</small>
       </div>
       <button className="button secondary small" type="button" onClick={()=>startEdit(l)}>Editar</button>
     </article>)}
@@ -102,6 +106,14 @@ export function BusinessLocations({organizationId}:{organizationId:string}){
           {days.map(([day,short])=><label key={day}><input type="checkbox" checked={draft.weekdays.includes(day)} onChange={e=>update("weekdays",e.target.checked?[...draft.weekdays,day]:draft.weekdays.filter(d=>d!==day))}/><span>{short}</span></label>)}
         </div>
       </>}
+      <div className="location-wide">
+        <strong>Coloca tu tienda en el mapa (opcional)</strong>
+        <p className="live-muted">Mueve el mapa y pulsa en el punto exacto. La dirección y el pin no se compartirán con los clientes a menos que publiques la sede.</p>
+        <BusinessMap points={[]} editable
+          initialPoint={draft.latitude!==null&&draft.longitude!==null?{latitude:draft.latitude,longitude:draft.longitude}:null}
+          onPick={(latitude,longitude)=>setDraft(d=>({...d,latitude,longitude}))} height={310}/>
+        {draft.latitude!==null&&draft.longitude!==null&&<p className="live-muted">Posición: {draft.latitude.toFixed(6)}, {draft.longitude.toFixed(6)}. <button className="button secondary small" type="button" onClick={()=>setDraft(d=>({...d,latitude:null,longitude:null}))}>Quitar pin</button></p>}
+      </div>
       <label className="location-wide location-publish"><input type="checkbox" checked={draft.published} onChange={e=>update("published",e.target.checked)}/>
         <span>Mostrar esta sede en el perfil público de la empresa (incluida su dirección si la añades)</span>
       </label>
