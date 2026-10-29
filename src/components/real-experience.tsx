@@ -328,11 +328,11 @@ export function RealExperience({accountType}:{accountType:"business"|"customer"}
         <label>Precio (€) — opcional<input type="number" min="0" step="0.01" value={servicePrice} onChange={e=>setServicePrice(e.target.value)} placeholder="Consultar"/></label>
         <button className="button primary" disabled={busy}>Guardar servicio</button></form>
         {services.map(s=><div key={s.id} className="live-row"><strong>{s.title}</strong><span>{money(s.price_eur)}</span></div>)}</> : <p className="live-muted">Todavía no tienes negocios registrados.</p>}
-        <h3>Registrar otro negocio</h3><form className="live-form" onSubmit={addOrg}>
+        <details className="business-live-add-another" open={orgs.length===0}><summary>{orgs.length?"Añadir otro negocio":"Registrar mi primer negocio"}</summary><form className="live-form" onSubmit={addOrg}>
         <label>Nombre comercial<input value={businessName} onChange={e=>setBusinessName(e.target.value)} required minLength={2} maxLength={120}/></label>
         <label>Sector<input value={businessCategory} onChange={e=>setBusinessCategory(e.target.value)} maxLength={80} required/></label>
         <label>Ciudad<input value={businessCity} onChange={e=>setBusinessCity(e.target.value)} maxLength={100}/></label>
-        <button className="button primary" disabled={busy}>Crear negocio</button></form>
+        <button className="button primary" disabled={busy}>Crear negocio</button></form></details>
        </section>
        <section className="live-card"><h2>CRM · Clientes reales</h2>
         <p className="live-muted">Aquí aparecen únicamente los clientes que han enviado una solicitud a este negocio.</p>
@@ -361,13 +361,24 @@ export function RealExperience({accountType}:{accountType:"business"|"customer"}
      <aside className="workspace-sidebar" aria-label="Navegación de Empresa">
        <div className="workspace-logo"><Brand /></div>
        <div className="live-sidebar-heading">TU NEGOCIO</div>
+       {orgs.length>0 && <label className="business-live-sidebar-select">Empresa activa
+         <select value={selectedOrg} onChange={e=>setSelectedOrg(e.target.value)}>
+           {orgs.map(o=><option key={o.id} value={o.id}>{o.name}</option>)}
+         </select>
+       </label>}
        <nav className="live-sidebar-nav" aria-label="Módulos disponibles">
-         <button type="button" className={`workspace-nav-item ${tab==="empresa"?"is-active":""}`} onClick={()=>setTab("empresa")}>
-           <LayoutDashboard size={18}/> Mi negocio
-         </button>
-         <button type="button" className={`workspace-nav-item ${tab==="perfil"?"is-active":""}`} onClick={()=>setTab("perfil")}>
-           <UserRound size={18}/> Mi perfil
-         </button>
+         {([
+           ["inicio","Inicio",LayoutDashboard],
+           ["negocio","Perfil público",Settings2],
+           ["gestion","Servicios",ShoppingBag],
+           ["clientes","Clientes",UsersRound],
+           ["solicitudes-empresa","Solicitudes",ClipboardList],
+           ["herramientas","Herramientas",Blocks],
+           ["perfil","Mi cuenta",UserRound]
+          ] as const).map(([area,label,Icon])=><button key={area} type="button"
+             className={`workspace-nav-item ${tab===area?"is-active":""}`} onClick={()=>setTab(area)}>
+             <Icon size={18}/>{label}
+           </button>)}
        </nav>
        <div className="live-sidebar-bottom">
          <Link className="workspace-nav-item" href="/"><ArrowLeft size={18}/> Página inicial</Link>
@@ -376,7 +387,7 @@ export function RealExperience({accountType}:{accountType:"business"|"customer"}
      </aside>
      <div className="workspace-body live-workspace-body">
        <header className="workspace-topbar live-workspace-topbar">
-         <div className="workspace-breadcrumb"><strong>AutonoService</strong><span> / Mi negocio</span></div>
+         <div className="workspace-breadcrumb"><strong>{business?.name||"AutonoService"}</strong><span> / {tab==="inicio"?"Inicio":tab==="negocio"?"Perfil público":tab==="gestion"?"Servicios":tab==="clientes"?"Clientes":tab==="solicitudes-empresa"?"Solicitudes":tab==="herramientas"?"Herramientas":"Mi cuenta"}</span></div>
          <ThemeToggle/>
        </header>
        {content}
