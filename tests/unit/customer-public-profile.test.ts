@@ -16,8 +16,8 @@ assert.match(customer,/directoryLoading/);
 assert.match(customer,/setOrganizations\(\(o\.data\|\|\[\]\) as Organization\[\]\)/);
 assert.match(customer,/secondaryErrors/);
 
-assert.match(editor,/Tu perfil es público/);
-assert.match(editor,/Tu perfil es privado/);
+assert.match(editor,/perfil público/);
+assert.match(editor,/perfil privado/);
 assert.match(editor,/Publicar mi empresa/);
 assert.match(editor,/\.update\(\{published:next\}\)/);
 assert.match(editor,/\.eq\("id",organizationId\)/);
