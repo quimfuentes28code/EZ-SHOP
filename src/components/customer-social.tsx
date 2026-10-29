@@ -9,15 +9,16 @@ import {
 } from "lucide-react";
 import { getSupabase } from "@/lib/supabase/client";
 import { SocialInbox } from "@/components/social-inbox";
+import { BusinessMap } from "@/components/business-map";
 import "./customer-social.css";
 
 type Organization={id:string;name:string;category:string;city:string;description:string;tagline:string;accent_color:string;avatar_url:string;cover_url:string;published:boolean};
 type BusinessPost={id:string;organization_id:string;body:string;media_url:string;media_kind:"image"|"video"|null;created_at:string};
-type PublicLocation={id:string;organization_id:string;name:string;city:string;address:string;service_mode:string;availability_mode:string;published:boolean};
+type PublicLocation={id:string;organization_id:string;name:string;city:string;address:string;service_mode:string;availability_mode:string;published:boolean;latitude:number|null;longitude:number|null};
 type Service={id:string;organization_id:string;title:string;description:string;price_eur:number|null;active:boolean};
 type Request={id:string;organization_id:string;service_id:string;notes:string;requested_date:string|null;status:string;created_at:string};
 type Profile={first_name:string;last_name:string;phone:string;city:string};
-type Tab="explorar"|"novedades"|"actividad"|"favoritos"|"mensajes"|"perfil";
+type Tab="explorar"|"mapa"|"novedades"|"actividad"|"favoritos"|"mensajes"|"perfil";
 const formatMoney=(n:number|null)=>n===null?"Consultar precio":
  new Intl.NumberFormat("es-ES",{style:"currency",currency:"EUR"}).format(n);
 const categories=["Todos","Fotografía","Belleza","Gastronomía","Hogar","Otros"];
@@ -77,7 +78,7 @@ export function CustomerSocial({userId,email,onLogout}:{userId:string;email:stri
     db.from("customer_favorites").select("organization_id").eq("customer_id",userId),
     db.from("person_profiles").select("first_name,last_name,phone,city").eq("user_id",userId).maybeSingle(),
     db.from("business_posts").select("id,organization_id,body,media_url,media_kind,created_at").eq("published",true).order("created_at",{ascending:false}).limit(120),
-    db.from("organization_locations").select("id,organization_id,name,city,address,service_mode,availability_mode,published").eq("published",true)
+    db.from("organization_locations").select("id,organization_id,name,city,address,service_mode,availability_mode,published,latitude,longitude").eq("published",true)
    ]).then(([o,s,r,f,p,postResult,locationResult])=>{
      if(!active)return;
      const error=o.error||s.error||r.error||f.error||p.error||postResult.error||locationResult.error;
@@ -149,6 +150,7 @@ export function CustomerSocial({userId,email,onLogout}:{userId:string;email:stri
  }
  const nav=[
   {id:"explorar" as Tab,label:"Explorar",Icon:Compass},
+  {id:"mapa" as Tab,label:"Mapa",Icon:MapPinned},
   {id:"novedades" as Tab,label:"Novedades",Icon:Sparkles},
   {id:"actividad" as Tab,label:"Mi actividad",Icon:CalendarDays},
   {id:"favoritos" as Tab,label:"Favoritos",Icon:Heart},
@@ -222,9 +224,19 @@ export function CustomerSocial({userId,email,onLogout}:{userId:string;email:stri
         {listed.map(o=><BusinessCard key={o.id} org={o}/>)}
       </div>
       {listed.length===0&&<div className="as-social-empty-large"><SlidersHorizontal size={23}/><h3>No hemos encontrado negocios con esos filtros</h3><p>Prueba otro sector, servicio o localidad.</p></div>}
-      <div className="as-social-map-preview"><MapPinned size={20}/><div><strong>Mapa de servicios cercanos</strong><p>El mapa geográfico interactivo está en desarrollo. Por ahora puedes descubrir negocios reales por nombre, sector y localidad.</p></div></div>
+      <div className="as-social-map-preview"><MapPinned size={20}/><div><strong>Mapa de tiendas y servicios</strong><p>Explora únicamente sedes que hayan publicado su ubicación exacta.</p><button className="button secondary small" type="button" onClick={()=>setTab("mapa")}>Abrir mapa interactivo <ArrowRight size={14}/></button></div></div>
     </>}
-    {tab==="novedades"&&<>
+    {tab==="mapa"&&<>
+  <div className="as-social-section-title"><span className="eyebrow">NEGOCIOS CERCA DE TI</span><h1>Explora tiendas en el mapa.</h1>
+    <p>Solo aparecen ubicaciones que sus propietarios han colocado y publicado expresamente. No inferimos direcciones ni mostramos pines ficticios.</p>
+  </div>
+  <BusinessMap height={470} points={locations
+    .filter(l=>l.latitude!==null&&l.longitude!==null&&organizations.some(o=>o.id===l.organization_id))
+    .map(l=>({id:l.organization_id,name:orgName(l.organization_id)+" · "+l.name,latitude:l.latitude as number,longitude:l.longitude as number}))}
+    onSelect={id=>{setDetail(id);setChosenService(null);}}/>
+  <p className="live-muted">Utiliza el buscador de Explorar si un negocio no ha publicado su ubicación. El mapa no solicita tu ubicación personal.</p>
+ </>}
+ {tab==="novedades"&&<>
   <div className="as-social-section-title"><span className="eyebrow">COMUNIDAD</span>
    <h1>Novedades de tus negocios</h1>
    <p>Publicaciones auténticas de las empresas que has guardado como favoritas.</p></div>
@@ -339,6 +351,6 @@ export function CustomerSocial({userId,email,onLogout}:{userId:string;email:stri
       </section>
     </div>}
     {notice&&<div className="as-social-notice" role="status">{notice}<button type="button" onClick={()=>setNotice("")} aria-label="Cerrar mensaje">×</button></div>}
-    <footer className="as-social-footer"><ShieldCheck size={14}/> Los negocios, servicios, mensajes, favoritos y publicaciones son reales. Las reservas automáticas y el mapa integrado todavía están en desarrollo.</footer>
+    <footer className="as-social-footer"><ShieldCheck size={14}/> Los negocios, servicios, mensajes, favoritos y publicaciones son reales. Las reservas automáticas todavía están en desarrollo. El mapa muestra únicamente sedes con coordenadas verificadas por sus propietarios.</footer>
   </div>;
 }
