@@ -300,7 +300,7 @@
   left: 60%;
   top: 0;
   transform: rotate(25deg);
-  background: #c5f27711;
+  background: #c7a07511;
 }
 .bp-photo-placeholder.bp-art-1 {
   background: #4b4540;
@@ -485,7 +485,7 @@
   width: 42px;
   height: 42px;
   border-radius: 10px;
-  background: #c5f27712;
+  background: #c7a07512;
   color: var(--accent);
   margin-bottom: 25px;
 }
@@ -563,8 +563,8 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  background: #c5f2770d;
-  border: 1px solid #c5f27733;
+  background: #c7a0750d;
+  border: 1px solid #c7a07533;
   border-radius: 10px;
   padding: 15px;
   color: #cce8ad;
@@ -594,8 +594,8 @@
 }
 .bp-reservation-summary {
   padding: 15px;
-  background: #c5f27708;
-  border: 1px solid #c5f27724;
+  background: #c7a07508;
+  border: 1px solid #c7a07524;
   border-radius: 10px;
 }
 .bp-reservation-summary strong {
@@ -708,8 +708,8 @@
 .bp-editor-number {
   font-size: 10px;
   color: var(--accent);
-  border: 1px solid #c5f27733;
-  background: #c5f2770a;
+  border: 1px solid #c7a07533;
+  background: #c7a0750a;
   border-radius: 7px;
   display: grid;
   place-items: center;
@@ -836,7 +836,7 @@
   width: 34px;
   height: 34px;
   border-radius: 8px;
-  background: #c5f2770b;
+  background: #c7a0750b;
   color: var(--accent);
   flex-shrink: 0;
 }

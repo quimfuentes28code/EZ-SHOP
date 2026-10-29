@@ -7,8 +7,8 @@
   --border: #30362f;
   --text: #f0f3ed;
   --muted: #a2aaa0;
-  --accent: #c5f277;
-  --accent-dim: #c5f27712;
+  --accent: #c7a075;
+  --accent-dim: #c7a07512;
   --radius: 16px;
   --on-accent: #17210e;
   --accent-hover: #d4ff8f;
@@ -347,7 +347,7 @@ textarea {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  border: 1px solid #c5f27733;
+  border: 1px solid #c7a07533;
   color: var(--accent);
   padding: 4px 8px;
   border-radius: 5px;
@@ -463,8 +463,8 @@ textarea {
   --border: #d6ddd0;
   --text: #1f2a20;
   --muted: #5b6858;
-  --accent: #4b6e16;
-  --accent-dim: #4b6e1610;
+  --accent: #a47b53;
+  --accent-dim: #a47b5310;
   --on-accent: #ffffff;
   --accent-hover: #3d5c0e;
   --field-bg: #fafcf8;
