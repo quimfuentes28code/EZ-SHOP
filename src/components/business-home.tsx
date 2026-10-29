@@ -3,7 +3,7 @@
 import { ArrowRight, CalendarDays, ClipboardList, FileText, Image, LayoutDashboard, MapPin, MessageCircle, Settings2, ShieldCheck, ShoppingBag, UsersRound, WalletCards, type LucideIcon } from "lucide-react";
 import { MODULES, type ModuleId } from "@/lib/catalog";
 
-export type BusinessArea = "inicio" | "negocio" | "gestion" | "clientes" | "solicitudes-empresa" | "herramientas" | "perfil";
+export type BusinessArea = "inicio" | "negocio" | "gestion" | "clientes" | "solicitudes-empresa" | "mensajes" | "herramientas" | "perfil";
 
 type Company = { name: string; category: string; city: string; description: string; published: boolean };
 type BusinessHomeProps = {
@@ -29,6 +29,7 @@ export function BusinessHome({organization,serviceCount,customerCount,requestCou
     {label:"Servicios",desc:"Catálogo de servicios y precios reales",area:"gestion",icon:ShoppingBag,value:String(serviceCount)},
     {label:"Clientes",desc:"Fichas CRM vinculadas a solicitudes",area:"clientes",icon:UsersRound,value:String(customerCount)},
     {label:"Solicitudes",desc:"Revisar y actualizar estados",area:"solicitudes-empresa",icon:ClipboardList,value:String(requestCount)},
+    {label:"Mensajes",desc:"Conversa con clientes de tu negocio",area:"mensajes",icon:MessageCircle},
     {label:"Herramientas",desc:"Todos los módulos y su estado de desarrollo",area:"herramientas",icon:LayoutDashboard},
   ];
   return (
@@ -76,7 +77,7 @@ export function BusinessHome({organization,serviceCount,customerCount,requestCou
         <span><FileText size={17}/> Presupuestos y facturación</span>
         <span><WalletCards size={17}/> Cobros</span>
         <span><Image size={17}/> Galerías de entrega</span>
-        <span><MessageCircle size={17}/> Mensajería</span>
+
       </div>
       <p className="business-live-disclaimer"><ShieldCheck size={15}/> La cuenta, los servicios y el CRM son reales. No se emiten todavía facturas, pagos ni reservas automáticas.</p>
     </div>
@@ -86,6 +87,7 @@ export function BusinessHome({organization,serviceCount,customerCount,requestCou
 const working: Partial<Record<ModuleId,BusinessArea>>={
   customers:"clientes",
   services:"gestion",
+  communications:"mensajes",
 };
 const icons: Partial<Record<ModuleId,LucideIcon>>={
   customers:UsersRound,services:ShoppingBag,bookings:CalendarDays,quotes:FileText,
@@ -115,6 +117,6 @@ export function BusinessTools({onNavigate}:{onNavigate:(area:BusinessArea)=>void
         <Settings2 size={19}/><strong>Perfil comercial</strong><small>Edita tu negocio y su visibilidad pública</small><em className="business-live-available">Disponible</em>
       </button>
     </div>
-    <p className="live-muted">Las herramientas marcadas «En desarrollo» aún no guardan información ni ejecutan operaciones reales.</p>
+    <p className="live-muted">Las herramientas marcadas «En desarrollo» todavía no ejecutan operaciones reales. La mensajería actualmente admite texto sin adjuntos.</p>
   </section>;
 }
