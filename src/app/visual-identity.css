@@ -206,3 +206,11 @@ h1,h2,h3 { letter-spacing: -0.045em; }
   .brand, .site-footer .brand { font-size: 19px; }
   .brand .brand-mark { width: 30px; height: 26px; }
 }
+
+
+/* Entry point for the connected accounts beta, without replacing the existing Hito 0 landing. */
+.real-phase-entry { max-width:940px; margin:23px auto 0; border:1px solid #e3d4c4; background:color-mix(in srgb,var(--surface) 88%,#edd9c4); border-radius:14px; padding:20px 24px; display:flex;justify-content:space-between;align-items:center;gap:22px; }
+.real-phase-entry strong {font-size:14px;display:block;color:var(--text);}
+.real-phase-entry p {font-size:12px;line-height:1.55;color:var(--muted);margin:6px 0 0;max-width:550px;}
+.real-phase-entry .button {white-space:nowrap;}
+@media(max-width:700px){.real-phase-entry{align-items:stretch;flex-direction:column;padding:18px}.real-phase-entry .button{width:100%}}
