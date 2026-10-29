@@ -2,6 +2,7 @@
 import { useEffect,useState,type ChangeEvent,type FormEvent } from "react";
 import { ImagePlus, Camera, Send, ShieldCheck, Sparkles, Trash2, Eye, EyeOff, Video, Palette } from "lucide-react";
 import { getSupabase } from "@/lib/supabase/client";
+import "./customer-social.css";
 
 type CompanyIdentity={id:string;name:string;tagline:string;accent_color:string;avatar_url:string;cover_url:string;published:boolean};
 type Post={id:string;organization_id:string;body:string;media_url:string;media_kind:"image"|"video"|null;published:boolean;created_at:string};
