@@ -311,7 +311,7 @@ export function RealExperience({accountType}:{accountType:"business"|"customer"}
           </div>
         </>:<button type="button" className="button primary" onClick={()=>setTab("gestion")}>Registrar mi negocio</button>}
        </section>}
-       {accountType==="business" && tab==="negocio" && selectedOrg && <BusinessSocialEditor key={selectedOrg} organizationId={selectedOrg}/>}
+       {accountType==="business" && tab==="negocio" && selectedOrg && <BusinessSocialEditor key={selectedOrg} organizationId={selectedOrg} onVisibilityChange={refresh}/>}
        {accountType==="business" && tab==="clientes" && <section className="live-card">
          <h2>Clientes de {business?.name||"tu negocio"}</h2>
          <p className="live-muted">Contactos reales vinculados a las solicitudes recibidas por este negocio. Los clientes de otras empresas permanecen privados.</p>
