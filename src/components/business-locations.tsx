@@ -32,7 +32,7 @@ export function BusinessLocations({organizationId}:{organizationId:string}){
     .then(({data,error})=>{if(active){if(error)setMessage(error.message);else setLocations((data||[]) as Location[]);}});
    return ()=>{active=false};
  },[db,organizationId,reload]);
- const update=<K extends keyof typeof draft>(key:K,value:(typeof draft)[K])=>setDraft(d=>({...d,[key]:value}));
+ const update=<K extends keyof typeof draft,>(key:K,value:(typeof draft)[K])=>setDraft(d=>({...d,[key]:value}));
  const startEdit=(l:Location)=>{setEditing(l.id);setAdding(true);setMessage("");setDraft({
    name:l.name,city:l.city,address:l.address,service_mode:l.service_mode,availability_mode:l.availability_mode,
    opens_at:l.opens_at?.slice(0,5)||"09:00",closes_at:l.closes_at?.slice(0,5)||"18:00",
