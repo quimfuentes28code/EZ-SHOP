@@ -44,7 +44,7 @@ revoke all on function public.autonoservice_enroll_new_user() from public,anon,a
 -- be confirmed by email and no browser session is available immediately.
 create or replace function public.autonoservice_new_person()
 returns trigger language plpgsql security definer set search_path = ''
-as $
+as $$
 begin
   insert into public.person_profiles(user_id,first_name,last_name,phone,city)
   values (
@@ -56,7 +56,7 @@ begin
   )
   on conflict (user_id) do nothing;
   return new;
-end; $;
+end; $$;
 revoke all on function public.autonoservice_new_person() from public,anon,authenticated;
 
 -- Only the owner of a business-type account can view its private profile.
