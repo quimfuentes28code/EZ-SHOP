@@ -1,10 +1,15 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { LayoutDashboard, UserRound, ArrowLeft, UsersRound } from "lucide-react";
+import { Brand } from "@/components/brand";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { useEffect, useState, type FormEvent } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { getSupabase } from "@/lib/supabase/client";
 import "@/app/real/real.css";
+import "@/app/empresa/workspace.css";
 
 type Profile = { first_name:string; last_name:string; city:string; phone:string };
 type Organization = { id:string; owner_id?:string; name:string; category:string; city:string; description:string; published:boolean };
@@ -18,6 +23,10 @@ const money=(n:number|null)=>n==null?"Consultar precio":new Intl.NumberFormat("e
 
 export function RealExperience({accountType}:{accountType:"business"|"customer"}){
  const db=getSupabase();
+ const router=useRouter();
+ const pathname=usePathname();
+ const registrationPath=accountType==="business"?"/registro/empresa":"/registro/cliente";
+ const homePath=accountType==="business"?"/empresa":"/cliente";
  const [session,setSession]=useState<Session|null>(null);
  const [ready,setReady]=useState(false);
  const [accountRole,setAccountRole]=useState<"business"|"customer"|null|undefined>(undefined);
@@ -43,6 +52,16 @@ export function RealExperience({accountType}:{accountType:"business"|"customer"}
  const [busy,setBusy]=useState(false);
  const [notice,setNotice]=useState("");
  const [reload,setReload]=useState(0);
+ // Registration stays within the app: after login, open the canonical role dashboard.
+ // Canonical pages do not expose demo content when there is no signed-in session.
+ useEffect(()=>{
+   if(!ready)return;
+   if((pathname==="/empresa"||pathname==="/cliente")&&!session){
+     router.replace(registrationPath);
+   } else if(pathname===registrationPath && session && accountRole===accountType){
+     router.replace(homePath);
+   }
+ },[ready,pathname,router,registrationPath,homePath,session,accountRole,accountType]);
  const refresh=()=>setReload(v=>v+1);
 
  useEffect(()=>{
@@ -193,7 +212,7 @@ export function RealExperience({accountType}:{accountType:"business"|"customer"}
  const business=orgs.find(o=>o.id===selectedOrg);
  const ownerRequests=requests.filter(r=>r.organization_id===selectedOrg);
  const myRequests=requests.filter(r=>r.customer_id===session?.user.id);
- return <div className="container live-app" id="live-app">
+ const content = <div className="container live-app" id="live-app">
    <header className="live-top">
     <div><span className="eyebrow">AUTONOSERVICE · {accountType==="business"?"EMPRESAS":"CLIENTE"}</span><h1>{accountType==="business"?"Tu espacio de negocio":"Tu espacio Cliente"}</h1><p>{accountType==="business"?"Gestiona los servicios y los clientes de tu empresa.":"Descubre negocios y consulta tus solicitudes en una cuenta gratuita."}</p></div>
     <Link href="/" className="button secondary small">Volver al inicio</Link>
@@ -275,6 +294,34 @@ export function RealExperience({accountType}:{accountType:"business"|"customer"}
       </section>}
    </>}
    {notice && <p className="live-alert" role="status">{notice}</p>}
-   <p className="live-disclaimer">Fase 1: datos reales solo después de conectar Supabase, ejecutar las políticas RLS y confirmar el registro. No está habilitada la facturación fiscal ni pagos.</p>
+   <p className="live-disclaimer">Los clientes, servicios y solicitudes de este espacio se guardan en la base de datos. El mapa, los pagos y la facturación todavía están en desarrollo.</p>
  </div>;
+ if (accountType==="business" && pathname==="/empresa" && session && accountRole==="business") {
+   return <div className="workspace-shell live-integrated-shell">
+     <aside className="workspace-sidebar" aria-label="Navegación de Empresa">
+       <div className="workspace-logo"><Brand /></div>
+       <div className="live-sidebar-heading">TU NEGOCIO</div>
+       <nav className="live-sidebar-nav" aria-label="Módulos disponibles">
+         <button type="button" className={`workspace-nav-item ${tab==="empresa"?"is-active":""}`} onClick={()=>setTab("empresa")}>
+           <LayoutDashboard size={18}/> Mi negocio
+         </button>
+         <button type="button" className={`workspace-nav-item ${tab==="perfil"?"is-active":""}`} onClick={()=>setTab("perfil")}>
+           <UserRound size={18}/> Mi perfil
+         </button>
+       </nav>
+       <div className="live-sidebar-bottom">
+         <Link className="workspace-nav-item" href="/"><ArrowLeft size={18}/> Página inicial</Link>
+         <Link className="workspace-nav-item" href="/demo/empresa"><UsersRound size={18}/> Ver demo de herramientas</Link>
+       </div>
+     </aside>
+     <div className="workspace-body live-workspace-body">
+       <header className="workspace-topbar live-workspace-topbar">
+         <div className="workspace-breadcrumb"><strong>AutonoService</strong><span> / Mi negocio</span></div>
+         <ThemeToggle/>
+       </header>
+       {content}
+     </div>
+   </div>;
+ }
+ return content;
 }

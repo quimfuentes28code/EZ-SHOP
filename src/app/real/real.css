@@ -38,3 +38,22 @@
 @media (max-width:800px){.live-grid{grid-template-columns:1fr}.live-top{flex-direction:column}.live-columns{grid-template-columns:1fr}.live-card{padding:20px}.live-app{padding-top:24px}}
 
 .live-session-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+
+/* Real professional workspace, based on the existing AutonoService design. */
+.live-integrated-shell .workspace-sidebar{display:flex;flex-direction:column;gap:18px;}
+.live-integrated-shell .workspace-logo{padding-bottom:14px;border-bottom:1px solid var(--border);}
+.live-sidebar-heading{margin:14px 16px 0;color:var(--muted);font-size:11px;font-weight:700;letter-spacing:.12em;}
+.live-sidebar-nav{display:grid;gap:4px;}
+.live-sidebar-nav .workspace-nav-item{width:100%;border:0;text-align:left;cursor:pointer;}
+.live-sidebar-bottom{margin-top:auto;display:grid;gap:4px;padding:14px 0;border-top:1px solid var(--border);}
+.live-workspace-body{min-width:0;min-height:100vh;}
+.live-workspace-topbar{display:flex;align-items:center;justify-content:space-between;}
+.live-integrated-shell .live-app{max-width:1140px;width:100%;margin:0 auto;padding:34px clamp(18px,3vw,44px);}
+.live-integrated-shell .live-app>.live-tabs{display:none;}
+.live-integrated-shell .live-top{margin-bottom:28px;}
+@media(max-width:860px){
+ .live-integrated-shell .workspace-sidebar{display:none;}
+ .live-integrated-shell .workspace-body{width:100%;min-width:0;margin:0;}
+ .live-integrated-shell .live-app>.live-tabs{display:flex;}
+ .live-integrated-shell .live-workspace-topbar{padding:14px 20px;}
+}
