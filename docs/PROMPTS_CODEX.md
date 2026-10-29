@@ -1,39 +1,35 @@
-# Prompts secuenciales para Codex
+# Prompts de trabajo de AutonoService
 
-## 1. PRIMER PROMPT: ejecutar ahora (Hito 0)
+La referencia principal es `docs/ESPECIFICACION_MAESTRA.md`. Las instrucciones del propietario prevalecen sobre estas plantillas; cada hito requiere la aprobación prevista en `AGENTS.md` y `ROADMAP.md`.
 
-```text
-Estamos construyendo una plataforma SaaS modular de gestión para negocios llamada provisionalmente Nexo.
-
-Lee primero README.md, AGENTS.md y los documentos de docs/. No presupongas que es software solo para fotógrafos: contempla negocios muy diversos, pero mantén el desarrollo limitado al Hito 0.
-
-Revisa el proyecto Next.js del repositorio, instala sus dependencias y ejecuta:
-- npm run typecheck
-- npm run build
-Corrige cualquier error.
-
-Después revisa y mejora el prototipo navegable de las rutas /, /onboarding, /empresa, /cliente y /explorar. Haz que el diseño sea profesional, minimalista, oscuro, responsive y accesible.
-
-Asegúrate de que:
-1. El onboarding permite elegir sector, modalidad, módulos y datos básicos.
-2. El menú del panel se adapte a los módulos elegidos.
-3. La cuenta de cliente sea independiente del panel empresa.
-4. El directorio y el futuro mapa se identifiquen claramente como prototipos.
-5. No se envíen reservas ni se simule que existen cuentas reales.
-6. No se conecte Supabase ni un procesador de pagos todavía.
-7. Las arquitecturas de módulos y operaciones se mantengan separadas.
-
-Entrega un resumen de archivos cambiados, comandos ejecutados, posibles errores y cómo ver el proyecto. No avances al Hito 1 sin mi aprobación.
-```
-
-## 2. SEGUNDO PROMPT (solo después de aprobar Hito 0)
+## Revisión del Hito 0
 
 ```text
-Ahora inicia el Hito 1 según docs/ROADMAP.md. Diseña primero el esquema de organizaciones, usuarios globales, membresías y configuración de módulos. Usa Supabase Auth/PostgreSQL con controles RLS reales. Antes de aplicar migraciones explica el diseño y propone pruebas de aislamiento entre empresas. No uses datos de producción ni claves secretas en el cliente. Conecta únicamente registro/login y creación de empresa, y para cuando las pruebas de autorización pasen.
+Lee AGENTS.md, README.md y todos los documentos de docs/. Inspecciona las funciones existentes antes de cambiar su arquitectura o sustituirlas.
+
+Actualiza el prototipo según la especificación maestra: AutonoService como marca principal, Cliente como experiencia gratuita de la misma aplicación y AutonoSuite como mejora premium profesional. Diseña la primera entrada con las dos opciones, onboarding profesional y personal, selector Mi negocio/Modo cliente, paneles y Mi plan. Mantén las interacciones de perfiles, catálogo, mensajes y solicitudes de demostración.
+
+No implementes autenticación real, compras, marketplace completo, facturación real ni todas las capacidades del catálogo. No describas los menús locales como permisos de producción. Documenta identidad global, roles contextuales, módulos, estrategia local-first y arquitectura web/iOS/Android. Explica cómo probar la web en iPhone y distingue ese recorrido de Expo Go, Development Builds y TestFlight futuros.
+
+Instala las dependencias apropiadamente al lockfile y ejecuta typecheck, unitarias, build y E2E relevantes. Registra lo que pasó, falló o quedó sin ejecutar. Termina con los cambios, límites y pasos para revisar. No avances al Hito 1 sin aprobación.
 ```
 
-## 3. TERCER PROMPT (solo después de aprobar Hito 1)
+## Hito 1 — Sólo después de aprobación explícita
 
 ```text
-Implementa el Hito 2: CRM mínimo + servicios y reservas. Asegura que una reserva pertenece a una empresa y recurso, con validación de permisos, concurrencia, zona horaria, descansos y cancelaciones. Escribe pruebas que intenten reservar simultáneamente el mismo recurso. No agregues pagos, marketplace ni mapa.
+Inicia el Hito 1 de ROADMAP.md: una identidad global, perfiles, organizaciones, sedes, membresías, roles, sectores y configuración de módulos. Diseña primero permisos de servidor y RLS, vínculos verificados con contactos y acceso a archivos privados.
+
+No confíes en organization_id, perspectiva o rol enviados por el navegador. Escribe pruebas con varias personas y empresas para impedir lecturas, cambios y descargas cruzadas y elevación de privilegios. Mantén Cliente gratuito y el cálculo de derechos premium separado de permisos y habilitación de módulos. No conectes todos los dominios empresariales ni pagos por terminar autenticación.
 ```
+
+## Hito 2 — Sólo tras revisión del núcleo
+
+```text
+Desarrolla las herramientas básicas autorizadas: CRM, agenda local, trabajos, proyectos sencillos y presupuestos básicos. Usa los permisos del núcleo y adaptadores de persistencia con contratos compartibles con móvil. Define los datos offline, exportación, copias y migraciones de lo implementado.
+
+No conviertas borradores locales en reservas confirmadas ni documentos fiscales reales. Ejecuta las pruebas de dominio, aislamiento y recuperación pertinentes. Detente al cumplir el alcance revisable de este hito.
+```
+
+## Hitos posteriores
+
+Utiliza la numeración y dependencias actuales de `ROADMAP.md`: reservas y conexión con clientes (3), sectores especializados (4), directorio (5), mapa (6), AutonoSuite y monetización (7), expansión (8). Las pantallas de demostración del Hito 0 no autorizan activar sus servicios reales.

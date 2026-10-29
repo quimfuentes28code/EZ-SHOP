@@ -1,0 +1,83 @@
+.experience-control {
+  position: relative;
+  flex-shrink: 0;
+}
+.experience-select {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 11px;
+  color: var(--muted);
+  background: var(--surface);
+}
+.experience-select select {
+  min-width: 95px;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: 11px;
+  max-width: 125px;
+  cursor: pointer;
+  outline-offset: 3px;
+}
+.experience-select select option {
+  background: var(--surface);
+  color: var(--text);
+}
+.experience-control > small {
+  position: absolute;
+  z-index: 10;
+  right: 0;
+  top: 100%;
+  width: 220px;
+  padding: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  font-size: 10px;
+  color: var(--muted);
+  border-radius: 8px;
+}
+.organization-control {
+  padding: 12px 10px;
+  margin: 0 0 27px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.organization-control > label {
+  display: block;
+  font-size: 9px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.organization-control select {
+  max-width: 100%;
+  width: 100%;
+  border: 0;
+  color: var(--text);
+  font-size: 12px;
+  background: var(--surface-2);
+  cursor: pointer;
+}
+.organization-control > small {
+  display: block;
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 10px;
+}
+@media (max-width: 700px) {
+  .experience-select {
+    padding: 7px 8px;
+    gap: 5px;
+  }
+  .experience-select svg {
+    width: 13px;
+  }
+  .experience-select select {
+    font-size: 10px;
+    min-width: 84px;
+    max-width: 94px;
+  }
+}
