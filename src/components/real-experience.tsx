@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, UserRound, ArrowLeft, UsersRound } from "lucide-react";
+import { LayoutDashboard, UserRound, ArrowLeft, UsersRound, Settings2, ShoppingBag, ClipboardList, Blocks } from "lucide-react";
+import { BusinessHome, BusinessTools, type BusinessArea } from "@/components/business-home";
 import { Brand } from "@/components/brand";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useEffect, useState, type FormEvent } from "react";
@@ -31,12 +32,13 @@ export function RealExperience({accountType}:{accountType:"business"|"customer"}
  const [ready,setReady]=useState(false);
  const [accountRole,setAccountRole]=useState<"business"|"customer"|null|undefined>(undefined);
  const [mode,setMode]=useState<"login"|"signup">("signup");
- const [tab,setTab]=useState<"perfil"|"empresa"|"explorar"|"solicitudes">(accountType==="business"?"empresa":"explorar");
+ const [tab,setTab]=useState<BusinessArea|"explorar"|"solicitudes">(accountType==="business"?"inicio":"explorar");
  const [form,setForm]=useState({first:"",last:"",email:"",password:"",phone:"",city:""});
  const [profile,setProfile]=useState<Profile>(emptyProfile);
  const [businessName,setBusinessName]=useState("");
  const [businessCategory,setBusinessCategory]=useState("Servicios profesionales");
  const [businessCity,setBusinessCity]=useState("");
+ const [companyDraft,setCompanyDraft]=useState({name:"",category:"",city:"",description:""});
  const [orgs,setOrgs]=useState<Organization[]>([]);
  const [publicOrgs,setPublicOrgs]=useState<Organization[]>([]);
  const [selectedOrg,setSelectedOrg]=useState("");
@@ -63,6 +65,10 @@ export function RealExperience({accountType}:{accountType:"business"|"customer"}
    }
  },[ready,pathname,router,registrationPath,homePath,session,accountRole,accountType]);
  const refresh=()=>setReload(v=>v+1);
+ useEffect(()=>{
+   const org=orgs.find(o=>o.id===selectedOrg);
+   if(org) setCompanyDraft({name:org.name,category:org.category,city:org.city,description:org.description});
+ },[orgs,selectedOrg]);
 
  useEffect(()=>{
    if(!db){setReady(true);return;}
@@ -172,7 +178,17 @@ export function RealExperience({accountType}:{accountType:"business"|"customer"}
  })};
  const addOrg=(e:FormEvent)=>{e.preventDefault();if(!db||!session)return;void work(async()=>{
    const {error}=await db.from("organizations").insert({owner_id:session.user.id,name:businessName.trim(),category:businessCategory,city:businessCity.trim()});
-   if(error)throw error;setBusinessName("");refresh();setTab("empresa");setNotice("Negocio creado en privado. Puedes publicarlo cuando añadas tus servicios.");
+   if(error)throw error;setBusinessName("");refresh();setTab("inicio");setNotice("Negocio creado. Ya puedes completar el perfil y añadir servicios.");
+ })};
+ const saveCompany=(e:FormEvent)=>{e.preventDefault();if(!db||!selectedOrg)return;void work(async()=>{
+    if(companyDraft.name.trim().length<2)throw Error("El nombre comercial debe tener al menos 2 caracteres.");
+    const {data,error}=await db.from("organizations").update({
+      name:companyDraft.name.trim(),category:companyDraft.category.trim()||"Otros",
+      city:companyDraft.city.trim(),description:companyDraft.description.trim()
+    }).eq("id",selectedOrg).select("id").maybeSingle();
+    if(error)throw error;
+    if(!data)throw Error("No se pudo guardar el perfil. Comprueba que eres el propietario.");
+    refresh();setNotice("Perfil comercial guardado.");
  })};
  const togglePublish=(org:Organization)=>{if(!db)return;void work(async()=>{
    const {error}=await db.from("organizations").update({published:!org.published}).eq("id",org.id);
@@ -206,7 +222,7 @@ export function RealExperience({accountType}:{accountType:"business"|"customer"}
   const {error}=await db.from("account_types").insert({user_id:session.user.id,account_type:accountType});
   if(error)throw error;
   setAccountRole(accountType);
-  setTab(accountType==="business"?"empresa":"explorar");
+  setTab(accountType==="business"?"inicio":"explorar");
   setNotice("Tu cuenta anterior ha quedado registrada como "+(accountType==="business"?"Empresa":"Cliente")+". No podrás cambiar su tipo.");
  })};
  const business=orgs.find(o=>o.id===selectedOrg);
@@ -247,7 +263,7 @@ export function RealExperience({accountType}:{accountType:"business"|"customer"}
      </section>
    : <><div className="live-signed"><span>Sesión de <strong>{session.user.email}</strong></span><div className="live-session-actions"><button type="button" className="button secondary small" onClick={refresh} disabled={busy}>Actualizar datos</button><button className="button secondary small" disabled={busy} onClick={logout}>Cerrar sesión</button></div></div>
       <nav className="live-tabs" aria-label="Espacios conectados">
-       {(accountType==="business"?([["empresa","Mi negocio"],["perfil","Mis datos"]] as const):([["explorar","Explorar"],["solicitudes","Mis solicitudes"],["perfil","Mis datos"]] as const)).map(([id,label])=><button key={id} className={tab===id?"active":""} onClick={()=>setTab(id)}>{label}</button>)}
+       {(accountType==="business"?([["inicio","Inicio"],["negocio","Perfil público"],["gestion","Servicios"],["clientes","Clientes"],["solicitudes-empresa","Solicitudes"],["herramientas","Herramientas"],["perfil","Mi cuenta"]] as const):([["explorar","Explorar"],["solicitudes","Mis solicitudes"],["perfil","Mis datos"]] as const)).map(([id,label])=><button key={id} className={tab===id?"active":""} onClick={()=>setTab(id)}>{label}</button>)}
       </nav>
       {tab==="perfil" && <section className="live-card"><h2>{accountType==="business"?"Mis datos personales":"Mis datos de Cliente"}</h2><p className="live-muted">{accountType==="business"?"Estos son tus datos de contacto como propietario. Los datos comerciales se gestionan dentro de Mi negocio.":"Tu nombre, apellidos, correo, teléfono y ciudad se compartirán con el negocio únicamente cuando confirmes una solicitud."}</p>
        <form className="live-form live-columns" onSubmit={saveProfile}>
@@ -258,7 +274,16 @@ export function RealExperience({accountType}:{accountType:"business"|"customer"}
         <button className="button primary" disabled={busy}>Guardar mis datos</button>
        </form><p className="live-muted">Email verificado en tu cuenta: {session.user.email}. Los datos fiscales se solicitarán cuando haya facturación real.</p>
       </section>}
-      {accountType==="business" && tab==="empresa" && <div className="live-grid">
+      {accountType==="business" && tab==="inicio" && <BusinessHome
+         organization={business||null}
+         serviceCount={services.length}
+         customerCount={contacts.length}
+         requestCount={ownerRequests.length}
+         pendingCount={ownerRequests.filter(r=>r.status==="new").length}
+         onNavigate={setTab}
+        />}
+       {accountType==="business" && tab==="herramientas" && <BusinessTools onNavigate={setTab}/>}
+       {accountType==="business" && tab==="gestion" && <div className="live-grid">
        <section className="live-card"><h2>Mis negocios</h2>
         {orgs.length ? <><label>Empresa activa<select value={selectedOrg} onChange={e=>setSelectedOrg(e.target.value)}>{orgs.map(org=><option key={org.id} value={org.id}>{org.name}</option>)}</select></label>
         {business && <div className="live-manage"><p><strong>{business.name}</strong> · {business.city || "Sin ciudad"}</p><p>{business.published?"Visible en Explorar":"Perfil privado"}</p>
