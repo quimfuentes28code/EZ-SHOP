@@ -42,6 +42,7 @@ export function CustomerSocial({userId,email,onLogout}:{userId:string;email:stri
  const router=useRouter();
  const [tab,setTab]=useState<Tab>("explorar");
  const [organizations,setOrganizations]=useState<Organization[]>([]);
+ const [directoryLoading,setDirectoryLoading]=useState(true);
  const [services,setServices]=useState<Service[]>([]);
  const [posts,setPosts]=useState<BusinessPost[]>([]);
  const [locations,setLocations]=useState<PublicLocation[]>([]);
@@ -114,6 +115,7 @@ export function CustomerSocial({userId,email,onLogout}:{userId:string;email:stri
     db.from("organization_locations").select("id,organization_id,name,city,address,service_mode,availability_mode,published,latitude,longitude").eq("published",true)
    ]).then(([o,s,r,f,p,postResult,locationResult])=>{
      if(!active)return;
+     setDirectoryLoading(false);
      const error=o.error||s.error||r.error||f.error||p.error||postResult.error||locationResult.error;
      if(o.error){
        setNotice("No se ha podido cargar el directorio: "+o.error.message);
@@ -337,7 +339,10 @@ export function CustomerSocial({userId,email,onLogout}:{userId:string;email:stri
       </form></div>
     </>}
     </main>}
-    {detail&&!selectedOrganization&&<section className="as-social-empty-large">
+    {detail&&directoryLoading&&<section className="as-social-empty-large" role="status">
+      <h2>Cargando perfil de empresa…</h2><p>Consultando los datos publicados del negocio.</p>
+    </section>}
+    {detail&&!directoryLoading&&!selectedOrganization&&<section className="as-social-empty-large">
        <h2>Este perfil no está disponible públicamente</h2>
        <p>Puede que el negocio todavía sea privado o se haya retirado del directorio. Para ver la portada y los servicios, su propietario debe publicar el perfil.</p>
        <button type="button" className="button primary" onClick={closeBusinessProfile}>Volver a Explorar</button>
