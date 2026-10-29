@@ -1,24 +1,19 @@
 import Link from "next/link";
+import Image from "next/image";
+
 export function Brand() {
   return (
     <Link className="brand" href="/" aria-label="AutonoService, inicio">
-      <svg
-        width="30"
-        height="30"
-        viewBox="0 0 32 32"
-        fill="none"
-        aria-hidden="true"
-      >
-        <path
-          d="M4 25 13 7h6l9 18M9 17h14M13 25h6"
-          stroke="currentColor"
-          strokeWidth="3.2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
-      <span>
-        Autono<span className="brand-service">Service</span>
+      <Image
+        className="brand-mark"
+        src="/branding/autonoservice-mark.svg"
+        alt=""
+        width={38}
+        height={29}
+        priority
+      />
+      <span className="brand-wordmark" aria-hidden="true">
+        <strong>autono</strong><span>service</span><i className="brand-dot">.</i>
       </span>
     </Link>
   );
