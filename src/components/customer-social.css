@@ -148,3 +148,61 @@
 .as-social-privacy-note{display:flex;gap:9px;align-items:flex-start;font-size:11px;color:var(--muted);margin-top:18px;}
 @media(max-width:950px){.as-social-business-grid{grid-template-columns:repeat(2,minmax(0,1fr));}.as-social-hero{grid-template-columns:1fr;}.as-social-hero-decoration{display:none;}}
 @media(max-width:650px){.as-social-client{padding:14px 15px 30px;}.as-social-client-tabs button{padding:12px 10px;font-size:11px;gap:5px;}.as-social-client-tabs button svg{width:15px;}.as-social-business-grid,.as-social-mini-stats,.as-social-profile-grid,.as-social-two-fields{grid-template-columns:1fr;}.as-social-mini-stats{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;}.as-social-mini-stats>div{padding:12px;}.as-social-mini-stats strong{font-size:21px;}.as-social-hero{padding:29px 22px;min-height:260px;}.as-social-discovery-heading{align-items:stretch;flex-direction:column;}.as-social-city-filter{max-width:100%;}.as-social-chat-grid{grid-template-columns:1fr;}.as-social-thread-list{border-right:0;border-bottom:1px solid var(--border);max-height:175px;overflow-y:auto;}.as-social-chat-compose{flex-wrap:wrap;}.as-social-modal-backdrop{padding:9px;}.as-social-public-body{padding:23px 17px;}.as-social-activity-row{align-items:flex-start;flex-wrap:wrap;}.as-social-request-state{margin-left:auto;}}
+
+
+/* Social business customization, posts, and location cards */
+.social-business-editor{display:grid;gap:21px;margin-top:18px;}
+.social-business-cover{height:198px;position:relative;border-radius:16px;overflow:visible;display:flex;align-items:center;justify-content:center;color:white;}
+.social-business-cover>img{width:100%;height:100%;object-fit:cover;border-radius:16px;}
+.social-business-cover-placeholder{display:grid;place-items:center;gap:7px;opacity:.72;}
+.social-business-cover-placeholder span{font-size:14px;letter-spacing:.12em;text-transform:uppercase;}
+.social-business-logo{width:86px;height:86px;background:var(--surface);border:4px solid var(--surface);border-radius:20px;position:absolute;bottom:-38px;left:26px;overflow:hidden;display:grid;place-items:center;box-shadow:0 6px 20px #0003;color:var(--accent);}
+.social-business-logo img{width:100%;height:100%;object-fit:cover;}
+.social-business-logo span{font-size:32px;font-weight:700;}
+.social-business-upload-actions{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:17px 0 0 125px;}
+.social-business-upload-actions label,.social-publish-actions label.button{cursor:pointer;}
+.social-business-upload-actions input,.social-publish-actions input[type=file]{display:none;}
+.social-brand-form{display:grid;gap:13px;background:var(--surface-2);border:1px solid var(--border);border-radius:15px;padding:20px;}
+.social-brand-form>label{display:grid;gap:8px;font-size:12px;}
+.social-brand-form input{width:100%;min-height:43px;padding:12px;border:1px solid var(--border);border-radius:10px;background:var(--field-bg);color:var(--text);}
+.social-brand-palette{display:flex;gap:13px;align-items:center;flex-wrap:wrap;}
+.social-brand-palette strong{display:flex;align-items:center;gap:8px;font-size:12px;}
+.social-brand-palette>div{display:flex;gap:8px;}
+.social-brand-palette button{width:27px;height:27px;border:2px solid transparent;border-radius:50%;cursor:pointer;}
+.social-brand-palette button.selected{outline:2px solid var(--text);outline-offset:3px;}
+.social-brand-form>.button{justify-self:start;}
+.social-business-divider{height:1px;background:var(--border);}
+.social-publish-form{display:grid;gap:12px;border:1px solid var(--border);border-radius:16px;padding:17px;background:var(--surface-2);}
+.social-publish-form textarea{width:100%;resize:vertical;border:1px solid var(--border);border-radius:12px;background:var(--field-bg);color:var(--text);font:inherit;font-size:13px;padding:14px;}
+.social-publish-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;}
+.social-publish-toggle{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted);}
+.social-business-posts{display:grid;gap:13px;}
+.social-post-card{border:1px solid var(--border);border-radius:15px;padding:18px;display:grid;gap:13px;min-width:0;}
+.social-post-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.social-post-top strong{font-size:12px;}
+.social-post-top small{color:var(--muted);font-size:10px;}
+.social-post-top span{margin-left:auto;background:var(--accent-dim);border-radius:8px;padding:5px 8px;color:var(--accent);font-size:10px;}
+.social-post-card p{font-size:13px;line-height:1.6;white-space:pre-wrap;}
+.social-post-card img,.social-post-card video{display:block;max-width:100%;width:100%;max-height:430px;object-fit:contain;border-radius:11px;background:var(--surface-2);}
+.social-post-actions{display:flex;gap:9px;flex-wrap:wrap;}
+.as-social-cover-image,.as-social-public-cover-image{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;}
+.as-social-business-art .as-social-art-label,.as-social-business-art .as-social-art-end{background:#fff9;border-radius:7px;padding:4px 7px;color:#2b2923;}
+.as-social-mini-avatar{width:30px;height:30px;object-fit:cover;border-radius:9px;vertical-align:middle;margin-right:9px;}
+.as-social-public-avatar{width:45px;height:45px;object-fit:cover;border-radius:12px;vertical-align:middle;margin-right:9px;}
+.as-social-public-cover-image{z-index:0;}
+.as-social-profile-cover>span{z-index:1;background:#fff9;border-radius:7px;padding:5px 8px;}
+.as-social-business-tagline{color:var(--accent)!important;font-size:15px!important;font-weight:600;}
+.as-social-news-feed{width:min(750px,100%);display:grid;gap:17px;}
+.as-social-news-post{background:var(--surface);border:1px solid var(--border);border-radius:17px;overflow:hidden;padding:20px;display:grid;gap:13px;}
+.as-social-news-author{display:flex;align-items:center;gap:11px;background:transparent;border:0;text-align:left;color:var(--text);cursor:pointer;}
+.as-social-news-author img,.as-social-news-author span{width:39px;height:39px;border-radius:12px;object-fit:cover;display:grid;place-items:center;color:var(--accent);background:var(--accent-dim);}
+.as-social-news-author strong{font-size:13px;}
+.as-social-news-author small{font-size:11px;color:var(--muted);margin-left:auto;}
+.as-social-news-post>p{font-size:13px;line-height:1.6;white-space:pre-wrap;}
+.as-social-news-media{width:100%;max-height:450px;object-fit:contain;border-radius:12px;background:var(--surface-2);}
+.as-social-news-post>.button{justify-self:start;}
+.as-social-public-locations,.as-social-public-posts{margin-top:24px;border-top:1px solid var(--border);}
+.as-social-public-location{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 0;border-top:1px solid var(--border);}
+.as-social-public-location strong{font-size:12px;}
+.as-social-public-location p{font-size:11px;color:var(--muted);}
+@media(max-width:620px){.social-business-upload-actions{margin:17px 0 0;}.as-social-public-location{align-items:flex-start;flex-direction:column;}.as-social-news-post{padding:13px;}}
