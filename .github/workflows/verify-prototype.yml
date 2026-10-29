@@ -29,6 +29,8 @@ jobs:
           test -f out/explorar.html
           test -f out/registro/empresa.html
           test -f out/registro/cliente.html
+          test -f out/demo/empresa.html
+          test -f out/demo/cliente.html
           test -f out/real.html
           test -f out/negocio/photo.html
           test -f out/negocio/beauty.html
