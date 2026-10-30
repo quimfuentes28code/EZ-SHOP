@@ -63,8 +63,11 @@ export function BusinessSocialEditor({organizationId,onVisibilityChange}:{organi
   void execute(async()=>{
     if(!file.type.startsWith("image/"))throw Error("La portada y el avatar deben ser imágenes.");
     const url=await upload(file);
-    const {error}=await db.from("organizations").update({[field]:url}).eq("id",organizationId);
+    const {data:updated,error}=await db.from("organizations").update({[field]:url})
+      .eq("id",organizationId).select("id,avatar_url,cover_url").maybeSingle();
     if(error)throw error;
+    if(!updated)throw Error("La imagen se ha subido, pero no se ha confirmado su guardado en el perfil.");
+    setCompany(prev=>prev?{...prev,[field]:updated[field]}:prev);
     setMessage(
       (field==="avatar_url"?"Imagen de perfil actualizada.":"Portada actualizada.")+
       (company?.published?" Visible para los clientes al actualizar el directorio.":" El negocio sigue siendo privado. Pulsa «Publicar mi empresa» para verlo desde Cliente.")
@@ -150,10 +153,11 @@ export function BusinessSocialEditor({organizationId,onVisibilityChange}:{organi
  return <section className="live-card social-business-editor">
   <div className="business-live-section-head"><div><span className="eyebrow">MI MARCA Y MI COMUNIDAD</span>
     <h2>Personaliza tu perfil público</h2>
-    <p className="live-muted">Haz reconocible tu negocio. Los cambios se guardan en tu cuenta y las publicaciones aparecen en la experiencia Cliente cuando las publicas.</p>
+    <p className="live-muted">Estás editando el perfil de <strong>{company?.name||"tu empresa"}</strong>. La portada, el logo y las publicaciones se guardan por separado para cada negocio.</p>
   </div></div>
   {company&&<div className="business-profile-publication-state" role="status">
     <div><strong>{company.name}: {company.published?"perfil público":"perfil privado"}</strong>
+      <p className="as-company-editor-media-status">Portada: {company.cover_url?"imagen guardada":"sin imagen"} · Logo: {company.avatar_url?"imagen guardada":"sin imagen"}</p>
       <p>{company.published
         ?"Los clientes pueden encontrar esta empresa, ver su portada y abrir el perfil completo."
         :"Tus cambios están guardados, pero los clientes no pueden verlos hasta que publiques esta empresa."}</p>
