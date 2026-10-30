@@ -36,3 +36,11 @@ jobs:
           test -f out/negocio/beauty.html
           test -f out/negocio/bakery.html
           test -f out/negocio/repairs.html
+          test -f out/apple-touch-icon.png
+          test -f out/apple-icon.png
+          test -f out/manifest.webmanifest
+          test -f out/icons/autonoservice-192.png
+          test -f out/icons/autonoservice-512.png
+          grep -q 'rel="apple-touch-icon"' out/index.html
+          grep -q 'apple-touch-icon.png' out/index.html
+          grep -q 'manifest.webmanifest' out/index.html
