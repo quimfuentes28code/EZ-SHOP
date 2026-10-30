@@ -1,6 +1,6 @@
 "use client";
 import { useEffect,useState,type FormEvent } from "react";
-import { Building2, MapPin, Plus, Store, Clock3, ShieldCheck } from "lucide-react";
+import { Building2, MapPin, Plus, Store, Clock3, ShieldCheck, Trash2 } from "lucide-react";
 import { getSupabase } from "@/lib/supabase/client";
 import { BusinessMap } from "@/components/business-map";
 
@@ -24,6 +24,8 @@ export function BusinessLocations({organizationId}:{organizationId:string}){
  const [draft,setDraft]=useState(empty);
  const [editing,setEditing]=useState("");
  const [adding,setAdding]=useState(false);
+ const [deleting,setDeleting]=useState<Location|null>(null);
+ const [deleteConfirmation,setDeleteConfirmation]=useState("");
  const [busy,setBusy]=useState(false);
  const [message,setMessage]=useState("");
  const [reload,setReload]=useState(0);
@@ -43,6 +45,35 @@ export function BusinessLocations({organizationId}:{organizationId:string}){
    weekdays:l.weekdays,published:l.published,latitude:l.latitude,longitude:l.longitude
  });};
  const cancel=()=>{setEditing("");setAdding(false);setDraft(empty);};
+ const startDelete=(location:Location)=>{
+   setDeleting(location);
+   setDeleteConfirmation("");
+   setMessage("");
+ };
+ const cancelDelete=()=>{
+   setDeleting(null);
+   setDeleteConfirmation("");
+ };
+ const deleteLocation=async()=>{
+   if(!db||busy||!deleting||deleteConfirmation.trim()!==deleting.name)return;
+   const target=deleting;
+   setBusy(true);setMessage("");
+   try{
+     // Scope the deletion to the selected business; Supabase RLS additionally
+     // restricts DELETE to the authenticated business owner.
+     const {data,error}=await db.from("organization_locations")
+       .delete().eq("id",target.id).eq("organization_id",organizationId)
+       .select("id").maybeSingle();
+     if(error)throw error;
+     if(!data)throw Error("No se ha eliminado la tienda. Comprueba tus permisos y vuelve a intentarlo.");
+     if(editing===target.id)cancel();
+     cancelDelete();
+     setReload(n=>n+1);
+     setMessage("Tienda «"+target.name+"» eliminada. Tu empresa y las demás sedes siguen intactas.");
+   }catch(error){
+     setMessage(error instanceof Error?error.message:"No se pudo eliminar la tienda.");
+   }finally{setBusy(false);}
+ };
  const submit=async(e:FormEvent)=>{
    e.preventDefault();if(!db||busy)return;
    setBusy(true);setMessage("");
@@ -83,10 +114,38 @@ export function BusinessLocations({organizationId}:{organizationId:string}){
         <p><Clock3 size={13}/>{({horario:"Horario fijo",cita:"Solo con cita",flexible:"Horario flexible","24h":"Atención 24 h"} as const)[l.availability_mode]} · {({local:"En establecimiento",domicilio:"A domicilio",online:"Online",mixto:"Mixto"} as const)[l.service_mode]}</p>
         <small>{l.published?"Sede visible en el perfil público":"Sede privada"} · {l.latitude!==null?"Ubicación marcada en mapa":"Sin pin exacto"}</small>
       </div>
-      <button className="button secondary small" type="button" onClick={()=>startEdit(l)}>Editar</button>
+      <div className="location-card-actions">
+        <button className="button secondary small" type="button" disabled={busy} onClick={()=>startEdit(l)}>Editar</button>
+        <button className="button secondary small location-delete-action" type="button"
+          disabled={busy} onClick={()=>startDelete(l)} aria-label={"Eliminar tienda "+l.name}>
+          <Trash2 size={14}/> Eliminar
+        </button>
+      </div>
     </article>)}
     {locations.length===0&&!message&&<p className="live-muted">Aún no hay sedes registradas.</p>}
   </div>
+  {deleting&&<section className="location-delete-confirmation" aria-labelledby="location-delete-title">
+    <div className="location-delete-confirmation-heading">
+      <Trash2 size={20}/>
+      <div>
+        <h3 id="location-delete-title">Eliminar tienda «{deleting.name}»</h3>
+        <p>Esta acción eliminará definitivamente esta sede, su dirección, horario y ubicación en el mapa.
+          No borrará tu empresa, otras tiendas, servicios, clientes ni conversaciones.</p>
+        {deleting.is_primary&&<p className="location-delete-primary-warning">
+          Es tu sede principal. Si la eliminas, no quedará ninguna sede principal asignada automáticamente.
+        </p>}
+      </div>
+    </div>
+    <label htmlFor="location-delete-name">Para confirmar, escribe exactamente <strong>{deleting.name}</strong>
+      <input id="location-delete-name" type="text" autoComplete="off" maxLength={120}
+        value={deleteConfirmation} onChange={e=>setDeleteConfirmation(e.target.value)} />
+    </label>
+    <div className="live-session-actions">
+      <button className="button secondary" type="button" disabled={busy} onClick={cancelDelete}>Cancelar</button>
+      <button className="button primary location-delete-confirm-button" type="button" disabled={busy||deleteConfirmation.trim()!==deleting.name}
+        onClick={()=>void deleteLocation()}><Trash2 size={15}/> Eliminar definitivamente</button>
+    </div>
+  </section>}
   {adding&&<form className="location-form" onSubmit={submit}>
     <h3>{editing?"Editar tienda":"Añadir otra tienda"}</h3>
     <div className="location-fields">
