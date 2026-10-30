@@ -26,6 +26,10 @@ La migración 0012 y la UI de enlaces firmados forman una misma entrega. La migr
 La instalación usa el lockfile existente, sin nuevas dependencias de aplicación. La compilación local con Webpack funciona; Turbopack quedó bloqueado en el aislamiento local y se detuvo. La prueba local usa Chromium y transporte Supabase simulado, sin contactar cuentas del propietario. Los tests SQL usan PostgreSQL 17 desechable, sin puertos publicados.
 
 - 74 comprobaciones SQL pasan tras combinar las 18 migraciones, con propietario A/B, Cliente y anónimo. Cubren doble consentimiento, retirada, coordenadas, borrado de sede, permisos cruzados, medios privados y mensajes.
-- Los resultados definitivos de TypeScript, unitarias, E2E y despliegue se añaden al cerrar la entrega.
+- TypeScript y 69 unitarias pasan; se conservan además las comprobaciones de iconos móviles y de contratos de la auditoría.
+- Navegador: 52/53 casos pasaron en la primera ejecución. El caso restante detectó que el simulador omitía valores NOT NULL por defecto de PostgreSQL al crear empresas. Corregido el fixture, pasan los 4 casos de sedes, incluido el recorrido completo. No se modificó la aplicación para ocultar el fallo. Las antiguas comprobaciones de texto de perfiles/borrado se sustituyeron por E2E y SQL.
+- `npm run build` pasa con Turbopack al habilitar red en el sandbox local: 21 páginas estáticas con el icono recuperado. El bloqueo inicial se debía al aislamiento de la ejecución, no a una dependencia nueva.
+- Migraciones remotas `media_privacy_and_profile_permissions` y `reconcile_media_cleanup_policy` aplicadas correctamente tras las pruebas, bajo la autorización de despliegue del propietario. No se publicaron sus sedes ni se alteró contenido de cuentas existentes.
+- Entrega de código y CI: [PR 21](https://github.com/quimfuentes28code/EZ-SHOP/pull/21). Cloudflare Workers Builds despliega la rama `main`; la comprobación de `/version.json` permite verificar qué commit está sirviendo.
 
 Los mocks no certifican envío ni confirmación de correo, GoTrue, caché de Storage ni Safari físico. La confirmación por correo sigue habilitada en el backend; la protección de contraseñas filtradas continúa pendiente en la configuración de Auth. Esta entrega no añade reservas automáticas, facturación, pagos ni módulos nuevos.

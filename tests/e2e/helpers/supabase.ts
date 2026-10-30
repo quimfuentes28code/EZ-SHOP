@@ -129,7 +129,11 @@ export async function installSupabaseMock(page: Page, options: { session?: boole
         const existing = request.headers().prefer?.includes("resolution=merge-duplicates")
           ? tables[table].find((row) => keys.every((key) => incoming[key] !== undefined && row[key] === incoming[key])) : undefined;
         if (existing) { Object.assign(existing, incoming); return existing; }
-        const row = { id: randomUUID(), created_at: new Date().toISOString(), ...incoming };
+        // Match the database's NOT NULL defaults when exercising creation.
+        const defaults = table === "organizations" ? {
+          description: "", published: false, tagline: "", accent_color: "#A47B53", avatar_url: "", cover_url: "",
+        } : {};
+        const row = { id: randomUUID(), created_at: new Date().toISOString(), ...defaults, ...incoming };
         tables[table].push(row);
         return row;
       });
