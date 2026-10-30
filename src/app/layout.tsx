@@ -8,6 +8,17 @@ export const metadata: Metadata = {
   description:
     "AutonoService: gestión modular para profesionales y experiencia Cliente gratuita. Prototipo de arquitectura y navegación.",
   robots: { index: false, follow: false },
+  applicationName: "AutonoService",
+  manifest: "/manifest.webmanifest",
+  icons: {
+    // Safari / iOS home screen. The SVG favicon remains in src/app/icon.svg.
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+  },
+  appleWebApp: {
+    capable: true,
+    title: "AutonoService",
+    statusBarStyle: "default",
+  },
 };
 
 export default function RootLayout({
