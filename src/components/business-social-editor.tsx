@@ -1,13 +1,14 @@
 "use client";
 import { useEffect,useState,type ChangeEvent,type FormEvent } from "react";
-import { ImagePlus, Camera, Send, ShieldCheck, Trash2, Eye, EyeOff, Palette } from "lucide-react";
+import { ImagePlus, Camera, Send, ShieldCheck, Trash2, Eye, EyeOff, Palette, ChevronUp, ChevronDown, LayoutGrid } from "lucide-react";
 import { getSupabase } from "@/lib/supabase/client";
 import { BusinessVideo } from "@/components/business-video";
 import { createUploadId } from "@/lib/upload-id";
 import { BUSINESS_MEDIA_BUCKET, BUSINESS_MEDIA_URL_TTL_SECONDS, businessMediaPath, businessMediaReference, resolveBusinessMediaUrls } from "@/lib/business-media";
 import "./customer-social.css";
+import { DEFAULT_PROFILE_SECTIONS, PROFILE_SECTIONS, normalizeProfileSections, profileSectionPreset, type ProfileSectionId } from "@/lib/business-profile-layout";
 
-type CompanyIdentity={id:string;name:string;tagline:string;accent_color:string;avatar_url:string;cover_url:string;published:boolean};
+type CompanyIdentity={id:string;name:string;category:string;tagline:string;accent_color:string;avatar_url:string;cover_url:string;published:boolean;profile_sections:unknown};
 type Post={id:string;organization_id:string;body:string;media_url:string;media_kind:"image"|"video"|null;published:boolean;created_at:string};
 const accepted=["image/jpeg","image/png","image/webp","video/mp4","video/webm"];
 const accents=["#A47B53","#4E807C","#8A6DC2","#BB705E","#446B92","#647748"];
@@ -26,6 +27,8 @@ export function BusinessSocialEditor({organizationId,organizationPublished,onPro
  const [busy,setBusy]=useState(false);
  const [message,setMessage]=useState("");
  const [reload,setReload]=useState(0);
+ const [sectionOrder,setSectionOrder]=useState<ProfileSectionId[]>([...DEFAULT_PROFILE_SECTIONS]);
+ const [visibleSections,setVisibleSections]=useState<ProfileSectionId[]>([...DEFAULT_PROFILE_SECTIONS]);
  const [mediaUrls,setMediaUrls]=useState<Record<string,string>>({});
  useEffect(()=>{
   if(organizationPublished!==undefined)setCompany(current=>current?{...current,published:organizationPublished}:current);
@@ -49,7 +52,7 @@ export function BusinessSocialEditor({organizationId,organizationPublished,onPro
   if(!db||!organizationId)return;
   let active=true;
   Promise.all([
-    db.from("organizations").select("id,name,tagline,accent_color,avatar_url,cover_url,published").eq("id",organizationId).single(),
+    db.from("organizations").select("id,name,category,tagline,accent_color,avatar_url,cover_url,published,profile_sections").eq("id",organizationId).single(),
     db.from("business_posts").select("id,organization_id,body,media_url,media_kind,published,created_at")
        .eq("organization_id",organizationId).order("created_at",{ascending:false})
   ]).then(([c,p])=>{
@@ -57,6 +60,9 @@ export function BusinessSocialEditor({organizationId,organizationPublished,onPro
     if(c.error||p.error||!c.data){setMessage(c.error?.message||p.error?.message||"No se pudo cargar el perfil comercial.");return;}
     const next=c.data as CompanyIdentity;
     setCompany(next);setTagline(next.tagline);setAccent(next.accent_color);
+    const shown=normalizeProfileSections(next.profile_sections);
+    setVisibleSections(shown);
+    setSectionOrder([...shown,...DEFAULT_PROFILE_SECTIONS.filter(id=>!shown.includes(id))]);
     setPosts((p.data||[]) as Post[]);
   });
   return ()=>{active=false;};
@@ -165,6 +171,36 @@ export function BusinessSocialEditor({organizationId,organizationPublished,onPro
     setReload(x=>x+1);
   });
  }
+ function moveSection(index:number,delta:number){
+  setSectionOrder(items=>{
+    const next=[...items],target=index+delta;
+    if(target<0||target>=next.length)return items;
+    [next[index],next[target]]=[next[target],next[index]];
+    return next;
+  });
+ }
+ function toggleSection(id:ProfileSectionId,shown:boolean){
+  setVisibleSections(items=>shown?[...items.filter(item=>item!==id),id]:items.filter(item=>item!==id));
+ }
+ function applyProfilePreset(){
+  const preset=profileSectionPreset(company?.category||"");
+  setSectionOrder(preset);
+  setVisibleSections([...preset]);
+ }
+ function saveSectionLayout(){
+  if(!db||!company)return;
+  void execute(async()=>{
+    const orderedVisible=sectionOrder.filter(id=>visibleSections.includes(id));
+    const {data,error}=await db.from("organizations").update({profile_sections:orderedVisible})
+      .eq("id",organizationId).select("id,profile_sections").maybeSingle();
+    if(error)throw error;
+    if(!data)throw Error("No tienes permiso para editar la distribución de este negocio.");
+    setCompany(current=>current?{...current,profile_sections:data.profile_sections}:current);
+    setVisibleSections(orderedVisible);
+    onProfileChange?.();
+    setMessage("Distribución guardada. Los clientes verán las secciones en este orden.");
+  });
+ }
  return <section className="live-card social-business-editor">
   <div className="business-live-section-head"><div><span className="eyebrow">MI MARCA Y MI COMUNIDAD</span>
     <h2>Personaliza tu perfil público</h2>
@@ -198,6 +234,40 @@ export function BusinessSocialEditor({organizationId,organizationPublished,onPro
     </div></div>
     <button type="submit" className="button primary" disabled={busy}>Guardar estilo</button>
   </form>
+  <section className="as-profile-layout-editor" aria-labelledby="profile-layout-title">
+    <div className="business-live-section-head"><div>
+      <span className="eyebrow">MI ESCAPARATE</span>
+      <h2 id="profile-layout-title"><LayoutGrid size={18}/> Organizar perfil público</h2>
+      <p className="live-muted">Cambia el orden de las secciones y decide cuáles mostrar. La portada, el logo y los botones de contacto permanecen fijos.</p>
+    </div></div>
+    <div className="as-profile-layout-actions">
+      <button className="button secondary small" type="button" disabled={busy||!company} onClick={applyProfilePreset}>Distribución sugerida para mi sector</button>
+      <button className="button secondary small" type="button" disabled={busy||!company} onClick={()=>{
+        setSectionOrder([...DEFAULT_PROFILE_SECTIONS]);
+        setVisibleSections([...DEFAULT_PROFILE_SECTIONS]);
+      }}>Restablecer</button>
+      {company?.published&&<a className="button secondary small" href={"/cliente?negocio="+encodeURIComponent(organizationId)}>Previsualizar como Cliente <Eye size={14}/></a>}
+    </div>
+    <div className="as-profile-layout-items">
+      {sectionOrder.map((id,index)=>{
+        const definition=PROFILE_SECTIONS.find(entry=>entry.id===id)!;
+        return <div className="as-profile-layout-item" key={id}>
+          <label><input type="checkbox" disabled={busy||!company} checked={visibleSections.includes(id)}
+            onChange={event=>toggleSection(id,event.target.checked)}/>
+            <span>{definition.label}</span>
+          </label>
+          <div className="as-profile-layout-move">
+            <button className="button secondary small" type="button" aria-label={"Subir "+definition.label}
+              disabled={busy||index===0} onClick={()=>moveSection(index,-1)}><ChevronUp size={16}/></button>
+            <button className="button secondary small" type="button" aria-label={"Bajar "+definition.label}
+              disabled={busy||index===sectionOrder.length-1} onClick={()=>moveSection(index,1)}><ChevronDown size={16}/></button>
+          </div>
+        </div>;
+      })}
+    </div>
+    <p className="live-muted">Portfolio utiliza fotos y vídeos ya publicados; Sedes requiere ubicaciones publicadas. Las secciones sin contenido se ocultan automáticamente al cliente. Las reseñas se añadirán cuando exista un sistema de valoraciones verificadas.</p>
+    <button className="button primary" type="button" disabled={busy||!company} onClick={saveSectionLayout}>Guardar distribución del perfil</button>
+  </section>
   <div className="social-business-divider"/>
   <div className="business-live-section-head"><div><span className="eyebrow">COMPARTIR NOVEDADES</span>
     <h2>Publicaciones de tu empresa</h2>
