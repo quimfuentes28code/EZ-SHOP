@@ -112,12 +112,20 @@ export function BusinessTools({onNavigate,organizationId}:{onNavigate:(area:Busi
   const [saving,setSaving]=useState(false);
   const [notice,setNotice]=useState("");
   useEffect(()=>{
-    if(!db||!organizationId)return;
+    // Organization identity changes must never retain a previous business's
+    // module settings while this organization is loading (or has no saved row).
+    let active=true;
+    setEnabled([]);
+    setSaved(false);
+    setNotice("");
+    if(!db||!organizationId)return ()=>{active=false;};
     db.from("organization_module_settings").select("modules").eq("organization_id",organizationId).maybeSingle()
       .then(({data,error})=>{
-        if(error)setNotice("No se pudieron cargar preferencias: "+error.message);
-        else if(data){setEnabled((data.modules||[]) as string[]);setSaved(true);}
+        if(!active)return;
+        if(error){setNotice("No se pudieron cargar preferencias: "+error.message);return;}
+        if(data){setEnabled((data.modules||[]) as string[]);setSaved(true);}
       });
+    return ()=>{active=false;};
   },[db,organizationId]);
   const saveModules=async()=>{
     if(!db||!organizationId)return;
