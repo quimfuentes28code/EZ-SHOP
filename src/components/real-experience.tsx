@@ -231,6 +231,14 @@ export function RealExperience({accountType}:{accountType:"business"|"customer"}
   setTab(accountType==="business"?"inicio":"explorar");
   setNotice("Espacio "+(accountType==="business"?"Empresa":"Cliente")+" activado en tu cuenta. Ahora puedes utilizar ambos espacios con el mismo correo.");
  })};
+ const changeActiveOrganization=(next:string)=>{
+   if(next===selectedOrg)return;
+   // Prevent a stale panel showing previous-company data during the next fetch.
+   setSelectedOrg(next);
+   setServices([]);
+   setContacts([]);
+   setNotice("");
+ };
  const business=orgs.find(o=>o.id===selectedOrg);
  const ownerRequests=requests.filter(r=>r.organization_id===selectedOrg);
  const myRequests=requests.filter(r=>r.customer_id===session?.user.id);
@@ -291,7 +299,7 @@ export function RealExperience({accountType}:{accountType:"business"|"customer"}
          pendingCount={ownerRequests.filter(r=>r.status==="new").length}
          onNavigate={setTab}
         />}
-       {accountType==="business" && tab==="herramientas" && <BusinessTools onNavigate={setTab} organizationId={selectedOrg}/>}
+       {accountType==="business" && tab==="herramientas" && <BusinessTools key={selectedOrg} onNavigate={setTab} organizationId={selectedOrg}/>}
        {accountType==="business" && tab==="workboard" && (selectedOrg?<BusinessWorkboard key={selectedOrg} organizationId={selectedOrg}/>:<section className="live-card">Primero registra una empresa.</section>)}
        {accountType==="business" && tab==="sedes" && (selectedOrg?<BusinessLocations key={selectedOrg} organizationId={selectedOrg}/>:<section className="live-card"><h2>Registra tu primera empresa</h2><button type="button" className="button primary" onClick={()=>setTab("gestion")}>Crear empresa</button></section>)}
        {accountType==="business" && tab==="negocio" && <section className="live-card business-live-profile">
@@ -335,7 +343,7 @@ export function RealExperience({accountType}:{accountType:"business"|"customer"}
           organizations={orgs.map(o=>({id:o.id,name:o.name}))}/>}
        {accountType==="business" && tab==="gestion" && <div className="live-grid">
        <section className="live-card"><h2>Mis negocios</h2>
-        {orgs.length ? <><label>Empresa activa<select value={selectedOrg} onChange={e=>setSelectedOrg(e.target.value)}>{orgs.map(org=><option key={org.id} value={org.id}>{org.name}</option>)}</select></label>
+        {orgs.length ? <><label>Empresa activa<select value={selectedOrg} onChange={e=>changeActiveOrganization(e.target.value)}>{orgs.map(org=><option key={org.id} value={org.id}>{org.name}</option>)}</select></label>
         {business && <div className="live-manage"><p><strong>{business.name}</strong> · {business.city || "Sin ciudad"}</p><p>{business.published?"Visible en Explorar":"Perfil privado"}</p>
         <button className="button secondary" disabled={busy} onClick={()=>togglePublish(business)}>{business.published?"Ocultar del directorio":"Publicar negocio"}</button></div>}
         <h3>Añadir servicio</h3><form className="live-form" onSubmit={addService}>
@@ -381,7 +389,7 @@ export function RealExperience({accountType}:{accountType:"business"|"customer"}
        <div className="workspace-logo"><Brand /></div>
        <div className="live-sidebar-heading">TU NEGOCIO</div>
        {orgs.length>1 && <label className="business-live-sidebar-select">Negocios anteriores
-         <select value={selectedOrg} onChange={e=>setSelectedOrg(e.target.value)}>
+         <select value={selectedOrg} onChange={e=>changeActiveOrganization(e.target.value)}>
            {orgs.map(o=><option key={o.id} value={o.id}>{o.name}</option>)}
          </select>
        </label>}
@@ -415,7 +423,7 @@ export function RealExperience({accountType}:{accountType:"business"|"customer"}
        {orgs.length>1&&<div className="business-live-mobile-company-switcher">
          <label htmlFor="business-active-organization-mobile">Empresa activa</label>
          <select id="business-active-organization-mobile" aria-label="Cambiar de empresa activa"
-           value={selectedOrg} onChange={e=>setSelectedOrg(e.target.value)}>
+           value={selectedOrg} onChange={e=>changeActiveOrganization(e.target.value)}>
            {orgs.map(o=><option key={o.id} value={o.id}>{o.name}</option>)}
          </select>
        </div>}
