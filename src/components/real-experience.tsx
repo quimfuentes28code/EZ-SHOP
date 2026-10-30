@@ -412,6 +412,13 @@ export function RealExperience({accountType}:{accountType:"business"|"customer"}
          <div className="workspace-breadcrumb"><strong>{business?.name||"AutonoService"}</strong><span> / {tab==="inicio"?"Inicio":tab==="negocio"?"Perfil público":tab==="gestion"?"Servicios":tab==="clientes"?"Clientes":tab==="solicitudes-empresa"?"Solicitudes":tab==="mensajes"?"Mensajes":tab==="sedes"?"Sedes":tab==="workboard"?"Proyectos y agenda":tab==="herramientas"?"Herramientas":"Mi cuenta"}</span></div>
          <ThemeToggle/>
        </header>
+       {orgs.length>1&&<div className="business-live-mobile-company-switcher">
+         <label htmlFor="business-active-organization-mobile">Empresa activa</label>
+         <select id="business-active-organization-mobile" aria-label="Cambiar de empresa activa"
+           value={selectedOrg} onChange={e=>setSelectedOrg(e.target.value)}>
+           {orgs.map(o=><option key={o.id} value={o.id}>{o.name}</option>)}
+         </select>
+       </div>}
        {content}
      </div>
    </div>;
