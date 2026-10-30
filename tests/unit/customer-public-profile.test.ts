@@ -24,4 +24,14 @@ assert.match(editor,/\.eq\("id",organizationId\)/);
 assert.match(editor,/\?negocio=/);
 
 assert.match(css,/\.as-social-full-profile/);
+
+assert.match(customer,/as-company-cover-photo/);
+assert.match(customer,/as-company-page-grid/);
+assert.match(customer,/as-company-posts/);
+assert.match(customer,/as-company-avatar/);
+assert.match(editor,/\.select\("id,avatar_url,cover_url"\)\.maybeSingle\(\)/);
+assert.match(editor,/Portada: /);
+assert.match(css,/\.as-company-hero/);
+assert.match(css,/\.as-company-page-grid/);
+
 console.log("Customer public profile navigation, reload, owner publication and full-screen styles: OK");
