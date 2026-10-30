@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+const businessShell=readFileSync("src/components/real-experience.tsx","utf8");
+const businessCss=readFileSync("src/app/real/real.css","utf8");
 
 const customer=readFileSync("src/components/customer-social.tsx","utf8");
 const editor=readFileSync("src/components/business-social-editor.tsx","utf8");
@@ -33,5 +35,14 @@ assert.match(editor,/\.select\("id,avatar_url,cover_url"\)\.maybeSingle\(\)/);
 assert.match(editor,/Portada: /);
 assert.match(css,/\.as-company-hero/);
 assert.match(css,/\.as-company-page-grid/);
+
+
+assert.match(businessShell,/orgs\.length>1&&<div className="business-live-mobile-company-switcher"/);
+assert.match(businessShell,/id="business-active-organization-mobile"/);
+assert.match(businessShell,/aria-label="Cambiar de empresa activa"/);
+assert.match(businessShell,/value=\{selectedOrg\} onChange=\{e=>setSelectedOrg\(e\.target\.value\)\}/);
+assert.match(businessCss,/\.business-live-mobile-company-switcher\{display:none;\}/);
+assert.match(businessCss,/@media\(max-width:860px\)/);
+assert.match(businessCss,/\.live-integrated-shell \.business-live-mobile-company-switcher/);
 
 console.log("Customer public profile navigation, reload, owner publication and full-screen styles: OK");
