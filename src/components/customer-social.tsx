@@ -347,69 +347,132 @@ export function CustomerSocial({userId,email,onLogout}:{userId:string;email:stri
        <p>Puede que el negocio todavía sea privado o se haya retirado del directorio. Para ver la portada y los servicios, su propietario debe publicar el perfil.</p>
        <button type="button" className="button primary" onClick={closeBusinessProfile}>Volver a Explorar</button>
      </section>}
-    {detail&&selectedOrganization&&<div className="as-social-full-profile">
-      <div className="as-social-profile-back">
-        <button type="button" className="button secondary" onClick={closeBusinessProfile}>← Volver a Explorar</button>
-        <span>Perfil público completo</span>
+    {detail&&selectedOrganization&&<main className="as-social-full-profile as-company-page">
+      <div className="as-company-breadcrumb">
+        <button type="button" className="as-company-back" onClick={closeBusinessProfile}><ArrowRight size={16}/> Volver a explorar</button>
+        <span>Explorar <span aria-hidden="true">/</span> {selectedOrganization.name}</span>
       </div>
-      <section className="as-social-public-profile" aria-label={"Perfil de "+selectedOrganization.name}>
 
-        <div className={`as-social-profile-cover ${categoryTheme(selectedOrganization.category)}`} style={{backgroundColor:selectedOrganization.cover_url?undefined:selectedOrganization.accent_color}}>
-          <span>{selectedOrganization.category}</span>{selectedOrganization.cover_url?<img className="as-social-public-cover-image" src={selectedOrganization.cover_url} alt={"Portada de "+selectedOrganization.name}/>:<strong>{selectedOrganization.name.slice(0,1).toUpperCase()}</strong>}
-        </div>
-        <div className="as-social-public-body">
-          <span className="eyebrow">PERFIL COMERCIAL</span>
-          <h2>{selectedOrganization.avatar_url&&<img className="as-social-public-avatar" src={selectedOrganization.avatar_url} alt=""/>}{selectedOrganization.name}</h2>{selectedOrganization.tagline&&<p className="as-social-business-tagline">{selectedOrganization.tagline}</p>}
-          <p className="as-social-location"><MapPin size={15}/>{selectedOrganization.city||"Localidad no indicada"}</p>
-          <p>{selectedOrganization.description||"Este negocio todavía no ha añadido su presentación."}</p>
-          <div className="as-social-profile-share">
-            <button type="button" className="button secondary small" onClick={()=>{
-              const url=new URL(window.location.href);
-              url.searchParams.set("negocio",selectedOrganization.id);
-              void navigator.clipboard?.writeText(url.toString())
-                .then(()=>setNotice("Enlace de perfil copiado."))
-                .catch(()=>setNotice("No se pudo copiar el enlace en este navegador."));
-            }}>Compartir perfil</button>
-          </div>
-          <div className="as-social-business-actions">
-           <button type="button" className="button secondary" onClick={()=>toggleFavorite(selectedOrganization.id)}>
-            <Heart size={15} fill={favorites.includes(selectedOrganization.id)?"currentColor":"none"}/>{favorites.includes(selectedOrganization.id)?"Guardado":"Guardar"}
-           </button>
-           <button type="button" className="button primary" onClick={()=>openMessages(selectedOrganization.id)}><MessageCircle size={15}/> Enviar mensaje</button>
-          </div>
-          {locations.filter(l=>l.organization_id===selectedOrganization.id).length>0&&<section className="as-social-public-locations">
-            <h3>Tiendas y sedes</h3>
-            {locations.filter(l=>l.organization_id===selectedOrganization.id).map(l=><div key={l.id} className="as-social-public-location">
-              <div><strong>{l.name}</strong><p>{[l.address,l.city].filter(Boolean).join(" · ")||"Ubicación por concretar"} · {l.availability_mode==="cita"?"Con cita previa":"Consultar disponibilidad"}</p></div>
-              {(l.address||l.city)&&<a className="button secondary small" target="_blank" rel="noopener noreferrer"
-               href={"https://www.openstreetmap.org/search?query="+encodeURIComponent([l.address,l.city].filter(Boolean).join(", "))}>Ver mapa</a>}
-            </div>)}
-          </section>}
-          {posts.filter(p=>p.organization_id===selectedOrganization.id).length>0&&<section className="as-social-public-posts">
-            <h3>Publicaciones</h3>
-            {posts.filter(p=>p.organization_id===selectedOrganization.id).slice(0,8).map(post=><article key={post.id} className="as-social-news-post">
-              <small>{new Date(post.created_at).toLocaleDateString("es-ES")}</small>
-              {post.body&&<p>{post.body}</p>}
-              {post.media_url&&post.media_kind==="image"&&<img className="as-social-news-media" src={post.media_url} alt="Foto publicada por el negocio"/>}
-              {post.media_url&&post.media_kind==="video"&&<video className="as-social-news-media" controls preload="metadata" src={post.media_url}/>}
-            </article>)}
-          </section>}
-          <h3>Servicios disponibles</h3>
-          {currentServices.length===0?<p>Este negocio todavía no tiene servicios publicados.</p>:
-           currentServices.map(s=><div key={s.id} className="as-social-service-row">
-             <div><strong>{s.title}</strong>{s.description&&<p>{s.description}</p>}<small>{formatMoney(s.price_eur)}</small></div>
-             <button type="button" className="button secondary small" onClick={()=>setChosenService(s.id)}>Solicitar <ArrowRight size={13}/></button>
-           </div>)}
-          {chosenService&&<form className="as-social-request-form" onSubmit={sendRequest}>
-            <h3>Solicitar {selectedService?.title}</h3>
-            <label>Fecha deseada (opcional)<input type="date" value={requestDate} onChange={e=>setRequestDate(e.target.value)}/></label>
-            <label>Cuéntanos qué necesitas<textarea rows={3} maxLength={2000} value={requestNotes} onChange={e=>setRequestNotes(e.target.value)}/></label>
-            <p>Al enviar, se compartirán los datos de contacto de tu perfil con este negocio para gestionar el servicio.</p>
-            <button type="submit" className="button primary" disabled={busy}>Confirmar solicitud <ArrowRight size={15}/></button>
-          </form>}
+      <section className={"as-company-hero "+categoryTheme(selectedOrganization.category)}
+        aria-label={"Portada de "+selectedOrganization.name}
+        style={{backgroundColor:selectedOrganization.accent_color||undefined}}>
+        <span className="as-company-hero-monogram" aria-hidden="true">{selectedOrganization.name.slice(0,1).toUpperCase()}</span>
+        {selectedOrganization.cover_url&&<img className="as-company-cover-photo"
+          key={selectedOrganization.cover_url} src={selectedOrganization.cover_url}
+          alt={"Portada publicada por "+selectedOrganization.name}
+          onError={e=>{e.currentTarget.style.display="none";}}/>}
+        <div className="as-company-hero-overlay"/>
+        <div className="as-company-hero-caption">
+          <span>EMPRESA EN AUTONOSERVICE</span>
+          <strong>{selectedOrganization.category}</strong>
         </div>
       </section>
-    </div>}
+
+      <header className="as-company-identity">
+        <div className="as-company-avatar">
+          <span aria-hidden="true">{selectedOrganization.name.slice(0,1).toUpperCase()}</span>
+          {selectedOrganization.avatar_url&&<img src={selectedOrganization.avatar_url}
+            alt={"Logo de "+selectedOrganization.name}
+            onError={e=>{e.currentTarget.style.display="none";}}/>}
+        </div>
+        <div className="as-company-identity-copy">
+          <h1>{selectedOrganization.name}</h1>
+          {selectedOrganization.tagline&&<p className="as-company-tagline">{selectedOrganization.tagline}</p>}
+          <div className="as-company-meta"><span><MapPin size={15}/>{selectedOrganization.city||"Ubicación no indicada"}</span>
+            <span><Building2 size={15}/>{selectedOrganization.category}</span></div>
+        </div>
+        <div className="as-company-primary-actions">
+          <button type="button" className="button primary" onClick={()=>openMessages(selectedOrganization.id)}>
+            <MessageCircle size={17}/> Contactar
+          </button>
+          <button type="button" className="button secondary" disabled={busy} aria-pressed={favorites.includes(selectedOrganization.id)}
+            onClick={()=>toggleFavorite(selectedOrganization.id)}>
+            <Heart size={17} fill={favorites.includes(selectedOrganization.id)?"currentColor":"none"}/>
+            {favorites.includes(selectedOrganization.id)?"Guardado":"Seguir"}
+          </button>
+          <button type="button" className="button secondary" onClick={()=>{
+            const url=new URL(window.location.href);
+            url.searchParams.set("negocio",selectedOrganization.id);
+            if(!navigator.clipboard){setNotice("No se puede copiar el enlace en este navegador.");return;}
+            void navigator.clipboard.writeText(url.toString())
+              .then(()=>setNotice("Enlace del perfil copiado."))
+              .catch(()=>setNotice("No se pudo copiar el enlace."));
+          }}>Compartir</button>
+        </div>
+      </header>
+
+      <div className="as-company-page-grid">
+        <div className="as-company-page-main">
+          <section className="as-company-section" aria-labelledby="company-about">
+            <div className="as-company-section-title"><span>01 / PRESENTACIÓN</span><h2 id="company-about">Conoce el negocio</h2></div>
+            <p className="as-company-about-text">{selectedOrganization.description||"Este negocio todavía no ha añadido una presentación."}</p>
+          </section>
+
+          <section className="as-company-section" aria-labelledby="company-services">
+            <div className="as-company-section-title"><span>02 / SERVICIOS</span><h2 id="company-services">Qué podemos hacer por ti</h2></div>
+            {currentServices.length===0
+              ?<p className="as-company-muted">Este negocio todavía no tiene servicios publicados.</p>
+              :<div className="as-company-service-list">{currentServices.map(s=><div key={s.id} className="as-company-service">
+                <div><strong>{s.title}</strong>{s.description&&<p>{s.description}</p>}<span>{formatMoney(s.price_eur)}</span></div>
+                <button type="button" className="button secondary small" onClick={()=>setChosenService(s.id)}>
+                  Solicitar <ArrowRight size={14}/>
+                </button>
+              </div>)}</div>}
+            {chosenService&&<form className="as-social-request-form as-company-request-form" onSubmit={sendRequest}>
+              <div className="as-company-section-title"><span>HACER UNA SOLICITUD</span><h3>Solicitar {selectedService?.title}</h3></div>
+              <label>Fecha deseada (opcional)<input type="date" value={requestDate} onChange={e=>setRequestDate(e.target.value)}/></label>
+              <label>Cuéntanos qué necesitas<textarea rows={3} maxLength={2000} value={requestNotes} onChange={e=>setRequestNotes(e.target.value)}/></label>
+              <p>Compartiremos los datos de contacto de tu perfil con este negocio para gestionar la solicitud.</p>
+              <div className="as-company-request-actions">
+                <button type="button" className="button secondary" onClick={()=>setChosenService(null)}>Cancelar</button>
+                <button type="submit" className="button primary" disabled={busy}>Confirmar solicitud <ArrowRight size={15}/></button>
+              </div>
+            </form>}
+          </section>
+
+          {locations.some(l=>l.organization_id===selectedOrganization.id)&&<section className="as-company-section" aria-labelledby="company-locations">
+            <div className="as-company-section-title"><span>03 / DÓNDE ENCONTRARNOS</span><h2 id="company-locations">Sedes y ubicaciones</h2></div>
+            <div className="as-company-location-list">
+              {locations.filter(l=>l.organization_id===selectedOrganization.id).map(l=><div key={l.id} className="as-company-location">
+                <MapPin size={20}/>
+                <div><strong>{l.name}</strong><p>{[l.address,l.city].filter(Boolean).join(" · ")||"Ubicación por concretar"}</p>
+                  <small>{l.availability_mode==="cita"?"Con cita previa":"Consultar disponibilidad"}</small></div>
+                {(l.address||l.city)&&<a className="button secondary small" target="_blank" rel="noopener noreferrer"
+                  href={"https://www.openstreetmap.org/search?query="+encodeURIComponent([l.address,l.city].filter(Boolean).join(", "))}>Ver mapa</a>}
+              </div>)}
+            </div>
+          </section>}
+        </div>
+
+        <aside className="as-company-page-side">
+          <div className="as-company-contact-panel">
+            <span>¿HABLAMOS?</span><h2>Tu próximo proyecto empieza aquí.</h2>
+            <p>Consulta disponibilidad, pide información o habla directamente con este negocio.</p>
+            <button type="button" className="button primary" onClick={()=>openMessages(selectedOrganization.id)}>
+              <MessageCircle size={17}/> Enviar mensaje <ArrowRight size={16}/>
+            </button>
+          </div>
+          <section className="as-company-updates" aria-label="Novedades del negocio">
+            <div className="as-company-section-title"><span>COMUNIDAD</span><h2>Últimas novedades</h2></div>
+            {posts.filter(p=>p.organization_id===selectedOrganization.id).length===0
+              ?<p className="as-company-muted">Todavía no hay publicaciones de esta empresa.</p>
+              :<div className="as-company-posts">
+                {posts.filter(p=>p.organization_id===selectedOrganization.id).slice(0,8).map(post=><article key={post.id} className="as-company-post">
+                  <div className="as-company-post-author">
+                    <span className="as-company-post-avatar">{selectedOrganization.avatar_url
+                      ?<img src={selectedOrganization.avatar_url} alt="" onError={e=>{e.currentTarget.style.display="none";}}/>
+                      :selectedOrganization.name.slice(0,1).toUpperCase()}</span>
+                    <div><strong>{selectedOrganization.name}</strong><small>{new Date(post.created_at).toLocaleDateString("es-ES")}</small></div>
+                  </div>
+                  {post.body&&<p>{post.body}</p>}
+                  {post.media_url&&post.media_kind==="image"&&<img className="as-company-post-media" src={post.media_url} alt={"Publicación de "+selectedOrganization.name}/>}
+                  {post.media_url&&post.media_kind==="video"&&<video className="as-company-post-media" controls preload="metadata" src={post.media_url}/>}
+                </article>)}
+              </div>}
+          </section>
+        </aside>
+      </div>
+    </main>}
     {notice&&<div className="as-social-notice" role="status">{notice}<button type="button" onClick={()=>setNotice("")} aria-label="Cerrar mensaje">×</button></div>}
     <footer className="as-social-footer"><ShieldCheck size={14}/> Los negocios, servicios, mensajes, favoritos y publicaciones son reales. Las reservas automáticas todavía están en desarrollo. El mapa muestra únicamente sedes con coordenadas verificadas por sus propietarios.</footer>
   </div>;
