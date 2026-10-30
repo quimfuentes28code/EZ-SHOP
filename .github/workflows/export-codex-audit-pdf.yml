@@ -1,0 +1,43 @@
+name: Export full Codex report to PDF in GitHub
+on:
+  push:
+    branches:
+      - docs/codex-informe-unico-pdf-20261030
+    paths:
+      - docs/AUTONOSERVICE_INFORME_UNICO_CODEX_2026-10-30.md
+      - scripts/export-codex-audit-pdf.py
+      - .github/workflows/export-codex-audit-pdf.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install PDF exporter and verification tools
+        run: python -m pip install --quiet "mistune==3.2.0" "weasyprint==68.0" "pypdf==5.9.0"
+      - name: Render and verify single complete PDF
+        run: python scripts/export-codex-audit-pdf.py
+      - name: Commit PDF to GitHub branch
+        run: |
+          git add docs/AUTONOSERVICE_INFORME_UNICO_CODEX_2026-10-30.pdf
+          if git diff --cached --quiet; then
+            echo "PDF already up to date"
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -m "Publicar PDF único de auditoría para Codex"
+            git push origin HEAD:refs/heads/docs/codex-informe-unico-pdf-20261030
+          fi
+      - name: Publish downloadable build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: autonoservice-informe-completo-pdf
+          path: docs/AUTONOSERVICE_INFORME_UNICO_CODEX_2026-10-30.pdf
+          if-no-files-found: error
+          retention-days: 30
