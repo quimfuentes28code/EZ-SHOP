@@ -1,0 +1,29 @@
+name: Deep external browser review 2026-10-30
+on:
+  push:
+    branches: ["audit/full-review-20261030"]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  browser-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium firefox webkit
+      - name: Audit deployed site on Chromium Firefox WebKit
+        run: node scripts/audit-deep-20261030.mjs
+      - name: Upload evidence and JSON report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: deep-live-audit-20261030
+          path: audit-deep-artifacts/
+          retention-days: 30
+          if-no-files-found: warn
