@@ -8,6 +8,8 @@ El código actual incluye acceso con Supabase, perfil personal compartido, negoc
 
 **Rama publicada de referencia: `main`. Rama de esta revisión: `codex/pulido-integracion`.** Esta revisión corrige integración, privacidad y navegación sobre lo que ya existe; no abre una nueva fase funcional. Consulta [PULIDO_20261029.md](docs/PULIDO_20261029.md), [NOTAS_PRUEBAS.md](docs/NOTAS_PRUEBAS.md) y [AGENTS.md](AGENTS.md).
 
+La continuación autorizada del 30/10 corrige y despliega el recorrido Empresa → sede → mapa de Cliente. Los cambios, las pruebas y los límites están en [RECORRIDO_MAPA_20261030.md](docs/RECORRIDO_MAPA_20261030.md). La versión publicada se puede comprobar en `/version.json`.
+
 ## Abrir en VS Code
 
 1. Descarga la rama que quieras revisar: `main` para la referencia publicada o `codex/pulido-integracion` para estos cambios cuando estén disponibles en GitHub. Descomprime el ZIP y abre la carpeta que contiene `package.json`, `package-lock.json` y `src`.

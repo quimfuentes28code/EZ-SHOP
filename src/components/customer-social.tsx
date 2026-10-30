@@ -229,6 +229,7 @@ export function CustomerSocial({userId,email,onLogout}:{userId:string;email:stri
    </article>;
  };
 
+ const feedback=notice?<div className="as-social-notice" role="status">{notice}<button type="button" onClick={()=>setNotice("")} aria-label="Cerrar mensaje">×</button></div>:null;
  return <div className="as-social-client">
     <div className="as-social-client-top">
       <div className="as-social-client-identity"><span className="as-social-client-avatar">{initials}</span>
@@ -433,7 +434,7 @@ export function CustomerSocial({userId,email,onLogout}:{userId:string;email:stri
               <div className="as-company-section-title"><span>HACER UNA SOLICITUD</span><h3>Solicitar {selectedService?.title}</h3></div>
               <label>Fecha deseada (opcional)<input type="date" value={requestDate} onChange={e=>setRequestDate(e.target.value)}/></label>
               <label>Cuéntanos qué necesitas<textarea rows={3} maxLength={2000} value={requestNotes} onChange={e=>setRequestNotes(e.target.value)}/></label>
-              <p>Compartiremos los datos de contacto de tu perfil con este negocio para gestionar la solicitud.</p>
+              <p>Compartiremos los datos de contacto de tu perfil con este negocio para gestionar la solicitud. El negocio deberá confirmar la disponibilidad.</p>
               <div className="as-company-request-actions">
                 <button type="button" className="button secondary" onClick={()=>setChosenService(null)}>Cancelar</button>
                 <button type="submit" className="button primary" disabled={busy}>Confirmar solicitud <ArrowRight size={15}/></button>
@@ -484,8 +485,9 @@ export function CustomerSocial({userId,email,onLogout}:{userId:string;email:stri
         </aside>
       </div>
         </div>}
+      {feedback}
     </Modal>}
-    {notice&&<div className="as-social-notice" role="status">{notice}<button type="button" onClick={()=>setNotice("")} aria-label="Cerrar mensaje">×</button></div>}
-    <footer className="as-social-footer"><ShieldCheck size={14}/> Los negocios, servicios, mensajes, favoritos y publicaciones son reales. Las reservas automáticas todavía están en desarrollo. El mapa muestra únicamente sedes con coordenadas verificadas por sus propietarios.</footer>
+    {!detail&&feedback}
+    <footer className="as-social-footer"><ShieldCheck size={14}/> Los negocios, servicios, mensajes, favoritos y publicaciones son reales. Las reservas automáticas todavía están en desarrollo. El mapa muestra únicamente ubicaciones elegidas y publicadas por sus propietarios.</footer>
   </div>;
 }
