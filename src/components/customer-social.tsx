@@ -4,7 +4,7 @@ import { useEffect,useMemo,useState,type FormEvent } from "react";
 import {
  ArrowRight, CalendarDays, Camera, Check, Compass, Heart, LayoutGrid, MapPin,
  MessageCircle, Search, ShieldCheck, Sparkles, UserRound, RefreshCw,
- Bookmark, SlidersHorizontal, MapPinned, LogOut, Settings2
+ Bookmark, SlidersHorizontal, MapPinned, LogOut, Settings2, Building2
 } from "lucide-react";
 import { getSupabase } from "@/lib/supabase/client";
 import { BusinessVideo } from "@/components/business-video";
@@ -13,7 +13,7 @@ import { BusinessMap } from "@/components/business-map";
 import { AccountExperienceSwitcher } from "@/components/account-experience-switcher";
 import { Modal } from "@/components/modal";
 import { useBusinessMedia } from "@/components/use-business-media";
-import { matchesBusinessLocation, matchesBusinessQuery } from "@/lib/business-discovery";
+import { getBusinessMapPoints, hasValidCoordinates, matchesBusinessLocation, matchesBusinessQuery } from "@/lib/business-discovery";
 import "./customer-social.css";
 
 type Organization={id:string;name:string;category:string;city:string;description:string;tagline:string;accent_color:string;avatar_url:string;cover_url:string;published:boolean};
@@ -62,6 +62,42 @@ export function CustomerSocial({userId,email,onLogout}:{userId:string;email:stri
  const [busy,setBusy]=useState(false);
  const [notice,setNotice]=useState("");
  const [reload,setReload]=useState(0);
+ const [directoryLoading,setDirectoryLoading]=useState(true);
+ const [directoryError,setDirectoryError]=useState("");
+ useEffect(()=>{
+   const sync=()=>{
+     const url=new URL(window.location.href);
+     const next=url.searchParams.get("vista");
+     setTab(next&&["explorar","mapa","novedades","actividad","favoritos","mensajes","perfil"].includes(next)?next as Tab:"explorar");
+     setDetail(url.searchParams.get("negocio"));setChosenService(null);
+   };
+   sync();window.addEventListener("popstate",sync);
+   return ()=>window.removeEventListener("popstate",sync);
+ },[]);
+ function navigate(next:Tab,businessId:string|null,replace=false){
+   const url=new URL(window.location.href);
+   if(next==="explorar")url.searchParams.delete("vista");else url.searchParams.set("vista",next);
+   if(businessId)url.searchParams.set("negocio",businessId);else url.searchParams.delete("negocio");
+   if(url.href!==window.location.href){
+     const state={...window.history.state,autonoProfileOrigin:businessId?window.location.href:null};
+     if(replace)window.history.replaceState(state,"",url);else window.history.pushState(state,"",url);
+   }
+   setTab(next);setDetail(businessId);setChosenService(null);
+ }
+ function openBusinessProfile(id:string){navigate(tab,id);}
+ function closeBusinessProfile(){
+   if(!detail)return;
+   // Only go back when this view was opened inside Cliente. A shared direct
+   // link closes in place, without sending the visitor to another website.
+   if(window.history.state?.autonoProfileOrigin)window.history.back();
+   else navigate(tab,null,true);
+ }
+ function selectTab(next:Tab){navigate(next,null,Boolean(detail));}
+ useEffect(()=>{
+   const refreshOnFocus=()=>setReload(v=>v+1);
+   window.addEventListener("focus",refreshOnFocus);
+   return ()=>window.removeEventListener("focus",refreshOnFocus);
+ },[]);
  const refresh=()=>setReload(v=>v+1);
  const mediaUrl=useBusinessMedia([...organizations.flatMap(o=>[o.avatar_url,o.cover_url]),...posts.map(p=>p.media_url)],reload);
  const displayName=profile.first_name.trim()||email.split("@")[0]||"Hola";
@@ -72,8 +108,9 @@ export function CustomerSocial({userId,email,onLogout}:{userId:string;email:stri
  const orgName=(id:string)=>organizations.find(o=>o.id===id)?.name||"Negocio";
 
  useEffect(()=>{
-   if(!db)return;
+   if(!db){setDirectoryLoading(false);setDirectoryError("No hay conexión con la base de datos.");return;}
    let active=true;
+   setDirectoryLoading(true);setDirectoryError("");
    Promise.all([
     db.from("organizations").select("id,name,category,city,description,tagline,accent_color,avatar_url,cover_url,published").eq("published",true).order("name"),
     db.from("organization_services").select("id,organization_id,title,description,price_eur,active").eq("active",true),
@@ -85,15 +122,19 @@ export function CustomerSocial({userId,email,onLogout}:{userId:string;email:stri
     db.from("organization_locations").select("id,organization_id,name,city,address,service_mode,availability_mode,published,latitude,longitude").eq("published",true)
    ]).then(([o,s,r,f,p,postResult,locationResult])=>{
      if(!active)return;
-     const error=o.error||s.error||r.error||f.error||p.error||postResult.error||locationResult.error;
-     if(error){setNotice("No se han podido cargar algunos datos: "+error.message);return;}
-     setOrganizations((o.data||[]) as Organization[]);
-     setServices((s.data||[]) as Service[]);
-     setPosts((postResult.data||[]) as BusinessPost[]);
-     setLocations((locationResult.data||[]) as PublicLocation[]);
-     setRequests((r.data||[]) as Request[]);
-     setFavorites((f.data||[]).map(x=>x.organization_id as string));
-     if(p.data)setProfile(p.data as Profile);
+     setDirectoryLoading(false);
+     if(o.error){setOrganizations([]);setDirectoryError("No se ha podido cargar el directorio: "+o.error.message);}
+     else setOrganizations(((o.data||[]) as Organization[]).filter(org=>org.published));
+     const secondaryErrors=[s.error,r.error,f.error,p.error,postResult.error,locationResult.error].filter(Boolean);
+     if(secondaryErrors.length)setNotice("Algunos datos no se han podido cargar: "+secondaryErrors.map(error=>error!.message).join("; "));
+     if(!s.error)setServices(((s.data||[]) as Service[]).filter(service=>service.active));
+     if(!postResult.error)setPosts((postResult.data||[]) as BusinessPost[]);
+     if(!locationResult.error)setLocations(((locationResult.data||[]) as PublicLocation[]).filter(location=>location.published));
+     if(!r.error)setRequests((r.data||[]) as Request[]);
+     if(!f.error)setFavorites((f.data||[]).map(x=>x.organization_id as string));
+     if(!p.error&&p.data)setProfile(p.data as Profile);
+   }).catch(error=>{
+     if(active){setDirectoryLoading(false);setOrganizations([]);setDirectoryError(error instanceof Error?error.message:"No se pudo cargar el directorio.");}
    });
    return ()=>{active=false;};
  },[db,userId,reload]);
@@ -104,6 +145,7 @@ export function CustomerSocial({userId,email,onLogout}:{userId:string;email:stri
    && matchesBusinessQuery(o,locations,services.filter(s=>s.organization_id===o.id).map(s=>s.title),query)
  ),[organizations,category,city,query,services,locations]);
  const favoriteOrgs=organizations.filter(o=>favorites.includes(o.id));
+ const mapPoints=useMemo(()=>getBusinessMapPoints(listed,locations,city),[listed,locations,city]);
 
  async function operation(fn:()=>Promise<void>){
    setBusy(true);setNotice("");
@@ -142,13 +184,13 @@ export function CustomerSocial({userId,email,onLogout}:{userId:string;email:stri
        notes:requestNotes.trim(),requested_date:requestDate||null
      });
      if(error)throw error;
-     setChosenService(null);setDetail(null);setRequestNotes("");setRequestDate("");
-     setTab("actividad");refresh();
+     setRequestNotes("");setRequestDate("");
+     navigate("actividad",null,true);refresh();
      setNotice("Solicitud enviada. El negocio podrá consultarla desde su área Empresa.");
    });
  }
  function openMessages(id:string){
-   setTargetChatOrg(id);setDetail(null);setTab("mensajes");
+   setTargetChatOrg(id);selectTab("mensajes");
  }
  const nav=[
   {id:"explorar" as Tab,label:"Explorar",Icon:Compass},
@@ -164,7 +206,7 @@ export function CustomerSocial({userId,email,onLogout}:{userId:string;email:stri
   const followed=favorites.includes(org.id);
   return <article key={org.id} className="as-social-business-card">
      <button type="button" className={`as-social-business-art ${categoryTheme(org.category)}`}
-      onClick={()=>{setDetail(org.id);setChosenService(null);}} aria-label={"Ver negocio "+org.name}>
+      onClick={()=>openBusinessProfile(org.id)} aria-label={"Ver negocio "+org.name}>
       <span className="as-social-art-label">{org.category}</span>
       {mediaUrl(org.cover_url)?<img className="as-social-cover-image" src={mediaUrl(org.cover_url)} alt={"Portada de "+org.name}/>:<span className="as-social-art-monogram">{org.name.slice(0,1).toUpperCase()}</span>}
       <span className="as-social-art-end"><MapPin size={13}/>{[...new Set([org.city,...locations.filter(l=>l.organization_id===org.id&&l.published).map(l=>l.city)])].filter(Boolean).join(" · ")||"Servicio sin localidad"}</span>
@@ -180,7 +222,7 @@ export function CustomerSocial({userId,email,onLogout}:{userId:string;email:stri
       <p>{org.tagline||org.description||"Descubre los servicios que ofrece este negocio."}</p>
       <div className="as-social-tags">{offers.slice(0,3).map(s=><span key={s.id}>{s.title}</span>)}</div>
       <div className="as-social-business-actions">
-       <button className="button primary small" type="button" onClick={()=>{setDetail(org.id);setChosenService(null);}}>Ver perfil <ArrowRight size={14}/></button>
+       <button className="button primary small" type="button" onClick={()=>openBusinessProfile(org.id)}>Ver perfil <ArrowRight size={14}/></button>
        <button className="button secondary small" type="button" onClick={()=>openMessages(org.id)}><MessageCircle size={14}/> Mensaje</button>
       </div>
      </div>
@@ -198,11 +240,13 @@ export function CustomerSocial({userId,email,onLogout}:{userId:string;email:stri
       </div>
     </div>
     <nav className="as-social-client-tabs" aria-label="Navegación Cliente">
-      {nav.map(({id,label,Icon})=><button key={id} type="button" onClick={()=>{setTab(id);setDetail(null);}} className={tab===id?"is-active":""} aria-current={tab===id?"page":undefined}>
+      {nav.map(({id,label,Icon})=><button key={id} type="button" onClick={()=>selectTab(id)} className={tab===id?"is-active":""} aria-current={tab===id?"page":undefined}>
         <Icon size={17}/><span>{label}</span>
       </button>)}
     </nav>
     <div className="as-social-client-content">
+    {directoryLoading&&<p role="status">Cargando negocios publicados…</p>}
+    {directoryError&&<div role="alert"><p>{directoryError}</p><button className="button secondary" type="button" onClick={refresh}>Reintentar carga</button></div>}
     {tab==="explorar" && <>
       <section className="as-social-hero">
         <div><span className="eyebrow"><Sparkles size={12}/> TU CIUDAD, TUS SERVICIOS</span>
@@ -225,17 +269,25 @@ export function CustomerSocial({userId,email,onLogout}:{userId:string;email:stri
       <div className="as-social-business-grid">
         {listed.map(renderBusinessCard)}
       </div>
-      {listed.length===0&&<div className="as-social-empty-large"><SlidersHorizontal size={23}/><h3>No hemos encontrado negocios con esos filtros</h3><p>Prueba otro sector, servicio o localidad.</p></div>}
-      <div className="as-social-map-preview"><MapPinned size={20}/><div><strong>Mapa de tiendas y servicios</strong><p>Explora únicamente sedes que hayan publicado su ubicación exacta.</p><button className="button secondary small" type="button" onClick={()=>setTab("mapa")}>Abrir mapa interactivo <ArrowRight size={14}/></button></div></div>
+      {!directoryLoading&&!directoryError&&listed.length===0&&<div className="as-social-empty-large"><SlidersHorizontal size={23}/><h3>No hemos encontrado negocios con esos filtros</h3><p>Prueba otro sector, servicio o localidad.</p></div>}
+      <div className="as-social-map-preview"><MapPinned size={20}/><div><strong>Mapa de tiendas y servicios</strong><p>Explora únicamente sedes que hayan publicado su ubicación exacta.</p><button className="button secondary small" type="button" onClick={()=>selectTab("mapa")}>Abrir mapa interactivo <ArrowRight size={14}/></button></div></div>
     </>}
     {tab==="mapa"&&<>
   <div className="as-social-section-title"><span className="eyebrow">NEGOCIOS CERCA DE TI</span><h1>Explora tiendas en el mapa.</h1>
     <p>Solo aparecen ubicaciones que sus propietarios han colocado y publicado expresamente. No inferimos direcciones ni mostramos pines ficticios.</p>
   </div>
-  <BusinessMap height={470} points={locations
-    .filter(l=>l.latitude!==null&&l.longitude!==null&&organizations.some(o=>o.id===l.organization_id))
-    .map(l=>({id:l.organization_id,name:orgName(l.organization_id)+" · "+l.name,latitude:l.latitude as number,longitude:l.longitude as number}))}
-    onSelect={id=>{setDetail(id);setChosenService(null);}}/>
+  <div className="as-social-map-filters">
+    <label><span>Buscar negocios o servicios</span><input aria-label="Buscar negocios o servicios" value={query} onChange={e=>setQuery(e.target.value)}/></label>
+    <label><span>Localidad</span><input aria-label="Filtrar por localidad" value={city} onChange={e=>setCity(e.target.value)}/></label>
+  </div>
+  <div className="as-social-category-scroll" aria-label="Filtrar por categoría">
+    {categories.map(c=><button key={c} type="button" className={category===c?"is-active":""} aria-pressed={category===c} onClick={()=>setCategory(c)}>{c}</button>)}
+  </div>
+  <BusinessMap height={470} points={mapPoints}
+    onSelect={id=>{const point=mapPoints.find(point=>point.id===id);if(point)openBusinessProfile(point.organizationId);}}/>
+  <div className="as-social-map-results" aria-label="Sedes del mapa">
+    {mapPoints.map(point=><button key={point.id} type="button" className="button secondary small" onClick={()=>openBusinessProfile(point.organizationId)}>Ver perfil de {point.name}</button>)}
+  </div>
   <p className="live-muted">Utiliza el buscador de Explorar si un negocio no ha publicado su ubicación. El mapa no solicita tu ubicación personal.</p>
  </>}
  {tab==="novedades"&&<>
@@ -244,9 +296,9 @@ export function CustomerSocial({userId,email,onLogout}:{userId:string;email:stri
    <p>Publicaciones auténticas de las empresas que has guardado como favoritas.</p></div>
   {posts.filter(p=>favorites.includes(p.organization_id)).length===0
     ?<div className="as-social-empty-large"><Sparkles size={26}/><h3>Todavía no tienes novedades</h3><p>Guarda un negocio en favoritos y verás sus publicaciones aquí.</p>
-      <button className="button primary" type="button" onClick={()=>setTab("explorar")}>Descubrir negocios</button></div>
+      <button className="button primary" type="button" onClick={()=>selectTab("explorar")}>Descubrir negocios</button></div>
     :<div className="as-social-news-feed">{posts.filter(p=>favorites.includes(p.organization_id)).map(post=><article key={post.id} className="as-social-news-post">
-      <button type="button" className="as-social-news-author" onClick={()=>{setDetail(post.organization_id);setChosenService(null);}}>
+      <button type="button" className="as-social-news-author" onClick={()=>openBusinessProfile(post.organization_id)}>
        {mediaUrl(organizations.find(o=>o.id===post.organization_id)?.avatar_url)
          ?<img src={mediaUrl(organizations.find(o=>o.id===post.organization_id)?.avatar_url)} alt=""/>
          :<span>{orgName(post.organization_id).slice(0,1)}</span>}
@@ -265,7 +317,7 @@ export function CustomerSocial({userId,email,onLogout}:{userId:string;email:stri
         <div><Check size={20}/><strong>{requests.filter(r=>r.status==="accepted"||r.status==="completed").length}</strong><span>Aceptadas o completadas</span></div>
         <div><Bookmark size={20}/><strong>{favorites.length}</strong><span>Negocios guardados</span></div>
       </div>
-      {requests.length===0?<div className="as-social-empty-large"><CalendarDays size={27}/><h3>Tu actividad empieza aquí</h3><p>Explora un negocio y solicita uno de sus servicios. Verás su estado en esta sección.</p><button className="button primary" type="button" onClick={()=>setTab("explorar")}>Explorar negocios <ArrowRight size={15}/></button></div>
+      {requests.length===0?<div className="as-social-empty-large"><CalendarDays size={27}/><h3>Tu actividad empieza aquí</h3><p>Explora un negocio y solicita uno de sus servicios. Verás su estado en esta sección.</p><button className="button primary" type="button" onClick={()=>selectTab("explorar")}>Explorar negocios <ArrowRight size={15}/></button></div>
       :<div className="as-social-activity-list">{requests.map(r=><article key={r.id} className="as-social-activity-row">
         <span className="as-social-activity-icon"><CalendarDays size={22}/></span>
         <div><small>{orgName(r.organization_id)}</small><strong>{services.find(s=>s.id===r.service_id)?.title||"Solicitud de servicio"}</strong>
@@ -276,7 +328,7 @@ export function CustomerSocial({userId,email,onLogout}:{userId:string;email:stri
     {tab==="favoritos"&&<>
       <div className="as-social-section-title"><span className="eyebrow">TUS FAVORITOS</span><h1>Los negocios que te gustan.</h1><p>Guárdalos y encuéntralos siempre desde tu cuenta, incluso si cambias de dispositivo.</p></div>
       {favoriteOrgs.length?<div className="as-social-business-grid">{favoriteOrgs.map(renderBusinessCard)}</div>
-       :<div className="as-social-empty-large"><Heart size={27}/><h3>Todavía no has guardado negocios</h3><p>Marca el corazón en cualquier negocio para añadirlo a favoritos.</p><button type="button" className="button primary" onClick={()=>setTab("explorar")}>Descubrir negocios</button></div>}
+       :<div className="as-social-empty-large"><Heart size={27}/><h3>Todavía no has guardado negocios</h3><p>Marca el corazón en cualquier negocio para añadirlo a favoritos.</p><button type="button" className="button primary" onClick={()=>selectTab("explorar")}>Descubrir negocios</button></div>}
     </>}
     {tab==="mensajes"&&<SocialInbox userId={userId} role="customer" organizations={organizations}
       targetOrganizationId={targetChatOrg}/>}
@@ -301,55 +353,137 @@ export function CustomerSocial({userId,email,onLogout}:{userId:string;email:stri
     </>}
     </div>
 
-    {detail&&selectedOrganization&&<Modal title={"Perfil de "+selectedOrganization.name} className="as-social-profile-dialog"
-      onClose={()=>{setDetail(null);setChosenService(null);}}>
-      <div className="as-social-public-profile">
-        <div className={`as-social-profile-cover ${categoryTheme(selectedOrganization.category)}`} style={{backgroundColor:mediaUrl(selectedOrganization.cover_url)?undefined:selectedOrganization.accent_color}}>
-          <span>{selectedOrganization.category}</span>{mediaUrl(selectedOrganization.cover_url)?<img className="as-social-public-cover-image" src={mediaUrl(selectedOrganization.cover_url)} alt={"Portada de "+selectedOrganization.name}/>:<strong>{selectedOrganization.name.slice(0,1).toUpperCase()}</strong>}
-        </div>
-        <div className="as-social-public-body">
-          <span className="eyebrow">PERFIL COMERCIAL</span>
-          <h2>{mediaUrl(selectedOrganization.avatar_url)&&<img className="as-social-public-avatar" src={mediaUrl(selectedOrganization.avatar_url)} alt=""/>}{selectedOrganization.name}</h2>{selectedOrganization.tagline&&<p className="as-social-business-tagline">{selectedOrganization.tagline}</p>}
-          <p className="as-social-location"><MapPin size={15}/>{selectedOrganization.city||"Localidad no indicada"}</p>
-          <p>{selectedOrganization.description||"Este negocio todavía no ha añadido su presentación."}</p>
-          <div className="as-social-business-actions">
-           <button type="button" className="button secondary" onClick={()=>toggleFavorite(selectedOrganization.id)}>
-            <Heart size={15} fill={favorites.includes(selectedOrganization.id)?"currentColor":"none"}/>{favorites.includes(selectedOrganization.id)?"Guardado":"Guardar"}
-           </button>
-           <button type="button" className="button primary" onClick={()=>openMessages(selectedOrganization.id)}><MessageCircle size={15}/> Enviar mensaje</button>
-          </div>
-          {locations.filter(l=>l.organization_id===selectedOrganization.id).length>0&&<section className="as-social-public-locations">
-            <h3>Tiendas y sedes</h3>
-            {locations.filter(l=>l.organization_id===selectedOrganization.id).map(l=><div key={l.id} className="as-social-public-location">
-              <div><strong>{l.name}</strong><p>{[l.address,l.city].filter(Boolean).join(" · ")||"Ubicación por concretar"} · {l.availability_mode==="cita"?"Con cita previa":"Consultar disponibilidad"}</p></div>
-              {(l.address||l.city)&&<a className="button secondary small" target="_blank" rel="noopener noreferrer"
-               href={"https://www.openstreetmap.org/search?query="+encodeURIComponent([l.address,l.city].filter(Boolean).join(", "))}>Ver mapa</a>}
-            </div>)}
-          </section>}
-          {posts.filter(p=>p.organization_id===selectedOrganization.id).length>0&&<section className="as-social-public-posts">
-            <h3>Publicaciones</h3>
-            {posts.filter(p=>p.organization_id===selectedOrganization.id).slice(0,8).map(post=><article key={post.id} className="as-social-news-post">
-              <small>{new Date(post.created_at).toLocaleDateString("es-ES")}</small>
-              {post.body&&<p>{post.body}</p>}
-              {mediaUrl(post.media_url)&&post.media_kind==="image"&&<img className="as-social-news-media" src={mediaUrl(post.media_url)} alt="Foto publicada por el negocio"/>}
-              {mediaUrl(post.media_url)&&post.media_kind==="video"&&<BusinessVideo className="as-social-news-media" controls preload="metadata" src={mediaUrl(post.media_url)}/>}
-            </article>)}
-          </section>}
-          <h3>Servicios disponibles</h3>
-          {currentServices.length===0?<p>Este negocio todavía no tiene servicios publicados.</p>:
-           currentServices.map(s=><div key={s.id} className="as-social-service-row">
-             <div><strong>{s.title}</strong>{s.description&&<p>{s.description}</p>}<small>{formatMoney(s.price_eur)}</small></div>
-             <button type="button" className="button secondary small" onClick={()=>setChosenService(s.id)}>Solicitar <ArrowRight size={13}/></button>
-           </div>)}
-          {chosenService&&<form className="as-social-request-form" onSubmit={sendRequest}>
-            <h3>Solicitar {selectedService?.title}</h3>
-            <label>Fecha deseada (opcional)<input type="date" value={requestDate} onChange={e=>setRequestDate(e.target.value)}/></label>
-            <label>Cuéntanos qué necesitas<textarea rows={3} maxLength={2000} value={requestNotes} onChange={e=>setRequestNotes(e.target.value)}/></label>
-            <p>Al enviar, se compartirán los datos de contacto de tu perfil con este negocio para gestionar el servicio.</p>
-            <button type="submit" className="button primary" disabled={busy}>Confirmar solicitud <ArrowRight size={15}/></button>
-          </form>}
-        </div>
+    {detail&&<Modal title={selectedOrganization?"Perfil de "+selectedOrganization.name:"Perfil comercial"} className="as-social-profile-dialog as-social-company-dialog"
+      onClose={closeBusinessProfile}>
+      {directoryLoading&&!selectedOrganization?<div role="status"><h3>Cargando perfil de empresa…</h3></div>
+        :directoryError?<div role="alert"><p>{directoryError}</p><button className="button secondary" type="button" onClick={refresh}>Reintentar carga</button></div>
+        :!selectedOrganization?<section className="as-social-empty-large"><h3>Este perfil no está disponible públicamente</h3><p>El negocio puede ser privado o haberse retirado del directorio.</p><button className="button primary" type="button" onClick={closeBusinessProfile}>Volver al directorio</button></section>
+        :<div className="as-company-page">
+      <div className="as-company-breadcrumb">
+        <button type="button" className="as-company-back" onClick={closeBusinessProfile}><ArrowRight size={16}/> Volver al directorio</button>
+        <span>Explorar <span aria-hidden="true">/</span> {selectedOrganization.name}</span>
       </div>
+
+      <section className={"as-company-hero "+categoryTheme(selectedOrganization.category)}
+        aria-label={"Portada de "+selectedOrganization.name}
+        style={{backgroundColor:selectedOrganization.accent_color||undefined}}>
+        <span className="as-company-hero-monogram" aria-hidden="true">{selectedOrganization.name.slice(0,1).toUpperCase()}</span>
+        {mediaUrl(selectedOrganization.cover_url)&&<img className="as-company-cover-photo"
+          key={mediaUrl(selectedOrganization.cover_url)} src={mediaUrl(selectedOrganization.cover_url)}
+          alt={"Portada publicada por "+selectedOrganization.name}
+          onError={e=>{e.currentTarget.style.display="none";}}/>}
+        <div className="as-company-hero-overlay"/>
+        <div className="as-company-hero-caption">
+          <span>EMPRESA EN AUTONOSERVICE</span>
+          <strong>{selectedOrganization.category}</strong>
+        </div>
+      </section>
+
+      <header className="as-company-identity">
+        <div className="as-company-avatar">
+          <span aria-hidden="true">{selectedOrganization.name.slice(0,1).toUpperCase()}</span>
+          {mediaUrl(selectedOrganization.avatar_url)&&<img src={mediaUrl(selectedOrganization.avatar_url)}
+            alt={"Logo de "+selectedOrganization.name}
+            onError={e=>{e.currentTarget.style.display="none";}}/>}
+        </div>
+        <div className="as-company-identity-copy">
+          <h1>{selectedOrganization.name}</h1>
+          {selectedOrganization.tagline&&<p className="as-company-tagline">{selectedOrganization.tagline}</p>}
+          <div className="as-company-meta"><span><MapPin size={15}/>{selectedOrganization.city||"Ubicación no indicada"}</span>
+            <span><Building2 size={15}/>{selectedOrganization.category}</span></div>
+        </div>
+        <div className="as-company-primary-actions">
+          <button type="button" className="button primary" onClick={()=>openMessages(selectedOrganization.id)}>
+            <MessageCircle size={17}/> Contactar
+          </button>
+          <button type="button" className="button secondary" disabled={busy} aria-pressed={favorites.includes(selectedOrganization.id)}
+            onClick={()=>toggleFavorite(selectedOrganization.id)}>
+            <Heart size={17} fill={favorites.includes(selectedOrganization.id)?"currentColor":"none"}/>
+            {favorites.includes(selectedOrganization.id)?"Guardado":"Seguir"}
+          </button>
+          <button type="button" className="button secondary" onClick={()=>{
+            const url=new URL(window.location.href);
+            url.searchParams.set("negocio",selectedOrganization.id);
+            if(!navigator.clipboard){setNotice("No se puede copiar el enlace en este navegador.");return;}
+            void navigator.clipboard.writeText(url.toString())
+              .then(()=>setNotice("Enlace del perfil copiado."))
+              .catch(()=>setNotice("No se pudo copiar el enlace."));
+          }}>Compartir</button>
+        </div>
+      </header>
+
+      <div className="as-company-page-grid">
+        <div className="as-company-page-main">
+          <section className="as-company-section" aria-labelledby="company-about">
+            <div className="as-company-section-title"><span>01 / PRESENTACIÓN</span><h2 id="company-about">Conoce el negocio</h2></div>
+            <p className="as-company-about-text">{selectedOrganization.description||"Este negocio todavía no ha añadido una presentación."}</p>
+          </section>
+
+          <section className="as-company-section" aria-labelledby="company-services">
+            <div className="as-company-section-title"><span>02 / SERVICIOS</span><h2 id="company-services">Qué podemos hacer por ti</h2></div>
+            {currentServices.length===0
+              ?<p className="as-company-muted">Este negocio todavía no tiene servicios publicados.</p>
+              :<div className="as-company-service-list">{currentServices.map(s=><div key={s.id} className="as-company-service">
+                <div><strong>{s.title}</strong>{s.description&&<p>{s.description}</p>}<span>{formatMoney(s.price_eur)}</span></div>
+                <button type="button" className="button secondary small" onClick={()=>setChosenService(s.id)}>
+                  Solicitar <ArrowRight size={14}/>
+                </button>
+              </div>)}</div>}
+            {chosenService&&<form className="as-social-request-form as-company-request-form" onSubmit={sendRequest}>
+              <div className="as-company-section-title"><span>HACER UNA SOLICITUD</span><h3>Solicitar {selectedService?.title}</h3></div>
+              <label>Fecha deseada (opcional)<input type="date" value={requestDate} onChange={e=>setRequestDate(e.target.value)}/></label>
+              <label>Cuéntanos qué necesitas<textarea rows={3} maxLength={2000} value={requestNotes} onChange={e=>setRequestNotes(e.target.value)}/></label>
+              <p>Compartiremos los datos de contacto de tu perfil con este negocio para gestionar la solicitud.</p>
+              <div className="as-company-request-actions">
+                <button type="button" className="button secondary" onClick={()=>setChosenService(null)}>Cancelar</button>
+                <button type="submit" className="button primary" disabled={busy}>Confirmar solicitud <ArrowRight size={15}/></button>
+              </div>
+            </form>}
+          </section>
+
+          {locations.some(l=>l.organization_id===selectedOrganization.id)&&<section className="as-company-section" aria-labelledby="company-locations">
+            <div className="as-company-section-title"><span>03 / DÓNDE ENCONTRARNOS</span><h2 id="company-locations">Sedes y ubicaciones</h2></div>
+            <div className="as-company-location-list">
+              {locations.filter(l=>l.organization_id===selectedOrganization.id).map(l=><div key={l.id} className="as-company-location">
+                <MapPin size={20}/>
+                <div><strong>{l.name}</strong><p>{[l.address,l.city].filter(Boolean).join(" · ")||"Ubicación por concretar"}</p>
+                  <small>{l.availability_mode==="cita"?"Con cita previa":"Consultar disponibilidad"}</small></div>
+                {(hasValidCoordinates(l.latitude,l.longitude)||l.address||l.city)&&<a className="button secondary small" target="_blank" rel="noopener noreferrer"
+                  href={hasValidCoordinates(l.latitude,l.longitude)?`https://www.openstreetmap.org/?mlat=${l.latitude}&mlon=${l.longitude}#map=17/${l.latitude}/${l.longitude}`:"https://www.openstreetmap.org/search?query="+encodeURIComponent([l.address,l.city].filter(Boolean).join(", "))}>Ver mapa</a>}
+              </div>)}
+            </div>
+          </section>}
+        </div>
+
+        <aside className="as-company-page-side">
+          <div className="as-company-contact-panel">
+            <span>¿HABLAMOS?</span><h2>Tu próximo proyecto empieza aquí.</h2>
+            <p>Consulta disponibilidad, pide información o habla directamente con este negocio.</p>
+            <button type="button" className="button primary" onClick={()=>openMessages(selectedOrganization.id)}>
+              <MessageCircle size={17}/> Enviar mensaje <ArrowRight size={16}/>
+            </button>
+          </div>
+          <section className="as-company-updates" aria-label="Novedades del negocio">
+            <div className="as-company-section-title"><span>COMUNIDAD</span><h2>Últimas novedades</h2></div>
+            {posts.filter(p=>p.organization_id===selectedOrganization.id).length===0
+              ?<p className="as-company-muted">Todavía no hay publicaciones de esta empresa.</p>
+              :<div className="as-company-posts">
+                {posts.filter(p=>p.organization_id===selectedOrganization.id).slice(0,8).map(post=><article key={post.id} className="as-company-post">
+                  <div className="as-company-post-author">
+                    <span className="as-company-post-avatar">{mediaUrl(selectedOrganization.avatar_url)
+                      ?<img src={mediaUrl(selectedOrganization.avatar_url)} alt="" onError={e=>{e.currentTarget.style.display="none";}}/>
+                      :selectedOrganization.name.slice(0,1).toUpperCase()}</span>
+                    <div><strong>{selectedOrganization.name}</strong><small>{new Date(post.created_at).toLocaleDateString("es-ES")}</small></div>
+                  </div>
+                  {post.body&&<p>{post.body}</p>}
+                  {mediaUrl(post.media_url)&&post.media_kind==="image"&&<img className="as-company-post-media" src={mediaUrl(post.media_url)} alt="Foto publicada por el negocio"/>}
+                  {mediaUrl(post.media_url)&&post.media_kind==="video"&&<BusinessVideo className="as-company-post-media" controls preload="metadata" src={mediaUrl(post.media_url)}/>}
+                </article>)}
+              </div>}
+          </section>
+        </aside>
+      </div>
+        </div>}
     </Modal>}
     {notice&&<div className="as-social-notice" role="status">{notice}<button type="button" onClick={()=>setNotice("")} aria-label="Cerrar mensaje">×</button></div>}
     <footer className="as-social-footer"><ShieldCheck size={14}/> Los negocios, servicios, mensajes, favoritos y publicaciones son reales. Las reservas automáticas todavía están en desarrollo. El mapa muestra únicamente sedes con coordenadas verificadas por sus propietarios.</footer>

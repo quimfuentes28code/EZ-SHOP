@@ -12,7 +12,9 @@ type Post={id:string;organization_id:string;body:string;media_url:string;media_k
 const accepted=["image/jpeg","image/png","image/webp","video/mp4","video/webm"];
 const accents=["#A47B53","#4E807C","#8A6DC2","#BB705E","#446B92","#647748"];
 
-export function BusinessSocialEditor({organizationId}:{organizationId:string}){
+export function BusinessSocialEditor({organizationId,organizationPublished,onProfileChange}:{
+ organizationId:string;organizationPublished?:boolean;onProfileChange?:()=>void;
+}){
  const db=getSupabase();
  const [company,setCompany]=useState<CompanyIdentity|null>(null);
  const [posts,setPosts]=useState<Post[]>([]);
@@ -25,6 +27,9 @@ export function BusinessSocialEditor({organizationId}:{organizationId:string}){
  const [message,setMessage]=useState("");
  const [reload,setReload]=useState(0);
  const [mediaUrls,setMediaUrls]=useState<Record<string,string>>({});
+ useEffect(()=>{
+  if(organizationPublished!==undefined)setCompany(current=>current?{...current,published:organizationPublished}:current);
+ },[organizationPublished]);
  const mediaReferences=JSON.stringify([company?.avatar_url||"",company?.cover_url||"",...posts.map(post=>post.media_url)]);
  useEffect(()=>{
   if(!db)return;
@@ -49,7 +54,7 @@ export function BusinessSocialEditor({organizationId}:{organizationId:string}){
        .eq("organization_id",organizationId).order("created_at",{ascending:false})
   ]).then(([c,p])=>{
     if(!active)return;
-    if(c.error||p.error){setMessage(c.error?.message||p.error?.message||"Error al cargar la información.");return;}
+    if(c.error||p.error||!c.data){setMessage(c.error?.message||p.error?.message||"No se pudo cargar el perfil comercial.");return;}
     const next=c.data as CompanyIdentity;
     setCompany(next);setTagline(next.tagline);setAccent(next.accent_color);
     setPosts((p.data||[]) as Post[]);
@@ -98,15 +103,28 @@ export function BusinessSocialEditor({organizationId}:{organizationId:string}){
     if(error||!data){await cleanupMedia(url);throw error||Error("No se pudo guardar la imagen.");}
     const clean=await cleanupMedia(previous);
     setMessage((field==="avatar_url"?"Imagen de perfil actualizada.":"Portada actualizada.")+(clean?"":" No se pudo retirar el archivo anterior; vuelve a intentarlo más tarde."));
+    onProfileChange?.();
     setReload(x=>x+1);
   });
  }
+ const changeVisibility=()=>{
+  if(!db||!company)return;
+  void execute(async()=>{
+    const published=!company.published;
+    const {data,error}=await db.from("organizations").update({published}).eq("id",organizationId).select("id,published").maybeSingle();
+    if(error||!data||data.published!==published)throw error||Error("No se pudo cambiar la visibilidad. Comprueba tus permisos y vuelve a intentarlo.");
+    setCompany(current=>current?{...current,published}:current);
+    onProfileChange?.();
+    setMessage(published?"Perfil publicado. Ya puedes verlo desde Cliente → Explorar. Las sedes con pin y visibilidad autorizada aparecen en el mapa.":"Perfil privado. Ya no aparecerá en Explorar ni en el mapa para otros clientes.");
+  });
+ };
  const saveIdentity=(e:FormEvent)=>{
   e.preventDefault();if(!db)return;
   void execute(async()=>{
     const {data,error}=await db.from("organizations").update({tagline:tagline.trim(),accent_color:accent}).eq("id",organizationId).select("id").single();
     if(error||!data)throw error||Error("No se pudo guardar la identidad visual.");
     setMessage("Identidad visual guardada.");
+    onProfileChange?.();
     setReload(x=>x+1);
   });
  };
@@ -150,8 +168,18 @@ export function BusinessSocialEditor({organizationId}:{organizationId:string}){
  return <section className="live-card social-business-editor">
   <div className="business-live-section-head"><div><span className="eyebrow">MI MARCA Y MI COMUNIDAD</span>
     <h2>Personaliza tu perfil público</h2>
-    <p className="live-muted">Haz reconocible tu negocio. Los cambios se guardan en tu cuenta y las publicaciones aparecen en la experiencia Cliente cuando las publicas.</p>
+    <p className="live-muted">Estás editando el perfil de <strong>{company?.name||"tu empresa"}</strong>. La portada, el logo y las publicaciones se guardan por separado para cada negocio.</p>
   </div></div>
+  {company&&<div className="business-live-publication" role="status">
+    <div><strong>{company.name}: {company.published?"perfil público":"perfil privado"}</strong>
+      <p>Portada: {company.cover_url?"imagen guardada":"sin imagen"} · Logo: {company.avatar_url?"imagen guardada":"sin imagen"}</p>
+      <p>{company.published?"Los clientes pueden encontrar esta empresa y abrir su perfil comercial.":"Tus cambios están guardados. Publicar el negocio mostrará su perfil y las sedes y publicaciones que hayas marcado como públicas."}</p>
+    </div>
+    <div className="live-session-actions">
+      <button className="button secondary" type="button" disabled={busy} onClick={changeVisibility}>{company.published?"Ocultar mi empresa":"Publicar mi empresa"}</button>
+      {company.published&&<a className="button secondary" href={"/cliente?negocio="+encodeURIComponent(company.id)}>Ver como Cliente</a>}
+    </div>
+  </div>}
   <div className="social-business-cover" style={{backgroundColor:company?.accent_color||accent}}>
     {company?.cover_url&&mediaUrls[company.cover_url]?<img src={mediaUrls[company.cover_url]} alt={"Portada de "+company.name}/>:<div className="social-business-cover-placeholder"><Camera size={38}/><span>Tu marca, tu historia</span></div>}
     <div className="social-business-logo">

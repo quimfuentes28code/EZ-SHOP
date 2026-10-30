@@ -23,6 +23,7 @@ type Organization = { id:string; owner_id?:string; name:string; category:string;
 type Service = { id:string; organization_id:string; title:string; description:string; price_eur:number|null; active:boolean };
 type Request = { id:string; organization_id:string; customer_id:string; service_id:string; customer_name:string; customer_email:string; customer_phone:string; notes:string; requested_date:string|null; status:string; created_at:string };
 type Contact = { customer_id:string; display_name:string; email:string; phone:string; city:string; last_contact_at:string };
+type OrganizationData={organizationId:string;userId:string;services:Service[];contacts:Contact[];requests:Request[];loading:boolean;error:string};
 const emptyProfile:Profile={first_name:"",last_name:"",city:"",phone:""};
 const errors:Record<string,string>={};
 const message=(e:unknown)=> e instanceof Error ? e.message : String(e);
@@ -48,7 +49,7 @@ export function RealExperience({accountType}:{accountType:"business"|"customer"}
  const [orgs,setOrgs]=useState<Organization[]>([]);
  const [publicOrgs,setPublicOrgs]=useState<Organization[]>([]);
  const [selectedOrg,setSelectedOrg]=useState("");
- const [services,setServices]=useState<Service[]>([]);
+ const [organizationData,setOrganizationData]=useState<OrganizationData|null>(null);
  const [publicServices,setPublicServices]=useState<Service[]>([]);
  const [serviceName,setServiceName]=useState("");
  const [servicePrice,setServicePrice]=useState("");
@@ -56,7 +57,10 @@ export function RealExperience({accountType}:{accountType:"business"|"customer"}
  const [requestDate,setRequestDate]=useState("");
  const [requestNotes,setRequestNotes]=useState("");
  const [requests,setRequests]=useState<Request[]>([]);
- const [contacts,setContacts]=useState<Contact[]>([]);
+ const contextMatches=organizationData?.organizationId===selectedOrg&&organizationData?.userId===session?.user.id;
+ const contextReady=Boolean(contextMatches&&!organizationData?.loading&&!organizationData?.error);
+ const services=contextReady?organizationData!.services:[];
+ const contacts=contextReady?organizationData!.contacts:[];
  const [busy,setBusy]=useState(false);
  const [notice,setNotice]=useState("");
  const [reload,setReload]=useState(0);
@@ -124,20 +128,22 @@ export function RealExperience({accountType}:{accountType:"business"|"customer"}
  },[db,session?.user?.id,reload]);
 
  useEffect(()=>{
-  if(!db||!session||!selectedOrg){setServices([]);setContacts([]);return;}
+  if(!db||!session||!selectedOrg){setOrganizationData(null);return;}
   let active=true;
+  const context={organizationId:selectedOrg,userId:session.user.id};
+  setOrganizationData({...context,services:[],contacts:[],requests:[],loading:true,error:""});
+  setServiceName("");setServicePrice("");
   Promise.all([
    db.from("organization_services").select("*").eq("organization_id",selectedOrg).order("created_at",{ascending:false}),
    db.from("organization_customers").select("customer_id,display_name,email,phone,city,last_contact_at").eq("organization_id",selectedOrg).order("last_contact_at",{ascending:false}),
    db.from("service_requests").select("*").eq("organization_id",selectedOrg).order("created_at",{ascending:false})
   ]).then(([s,c,r])=>{
    if(!active)return;
-   setServices((s.data||[]) as Service[]);
-   setContacts((c.data||[]) as Contact[]);
-   setRequests(current=>{
-      const own=(r.data||[]) as Request[];
-      return [...own,...current.filter(x=>x.organization_id!==selectedOrg)];
-   });
+   const error=s.error||c.error||r.error;
+   setOrganizationData({...context,
+     services:error?[]:(s.data||[]) as Service[],contacts:error?[]:(c.data||[]) as Contact[],
+     requests:error?[]:(r.data||[]) as Request[],loading:false,
+     error:error?"No se pudieron cargar los servicios, clientes y solicitudes de esta empresa.":""});
   });
   return ()=>{active=false};
  },[db,session,selectedOrg,reload]);
@@ -198,10 +204,15 @@ export function RealExperience({accountType}:{accountType:"business"|"customer"}
     refresh();setNotice("Perfil comercial guardado.");
  })};
  const togglePublish=(org:Organization)=>{if(!db)return;void work(async()=>{
-   const {error}=await db.from("organizations").update({published:!org.published}).eq("id",org.id);
-   if(error)throw error;refresh();setNotice(!org.published?"Negocio visible en Explorar.":"Negocio oculto del directorio.");
+   const published=!org.published;
+   const {data,error}=await db.from("organizations").update({published}).eq("id",org.id).select("id,published").maybeSingle();
+   if(error)throw error;
+   if(!data||data.published!==published)throw Error("No se pudo cambiar la visibilidad. Comprueba tus permisos y vuelve a intentarlo.");
+   setOrgs(current=>current.map(item=>item.id===org.id?{...item,published}:item));
+   refresh();setNotice(published?"Negocio visible en Explorar. Las sedes con pin y visibilidad autorizada aparecen en el mapa de Cliente.":"Negocio oculto del directorio y del mapa de Cliente.");
  })};
  const addService=(e:FormEvent)=>{e.preventDefault();if(!db||!selectedOrg)return;void work(async()=>{
+   if(!contextReady)throw Error("Espera a que se carguen los datos de la empresa activa antes de añadir un servicio.");
    if(serviceName.trim().length<2)throw Error("Indica un nombre de servicio válido.");
    const price=servicePrice.trim()?Number(servicePrice):null;
    if(price!==null&&(!Number.isFinite(price)||price<0||price>1000000))throw Error("Precio no válido.");
@@ -221,10 +232,11 @@ export function RealExperience({accountType}:{accountType:"business"|"customer"}
    setNotice("Solicitud enviada al negocio. Su CRM ha recibido tu ficha de contacto.");
  })};
  const changeStatus=(request:Request,status:string)=>{if(!db)return;void work(async()=>{
-  const {error}=await db.from("service_requests").update({status}).eq("id",request.id);
+  if(!contextReady||request.organization_id!==selectedOrg)throw Error("La solicitud no pertenece a la empresa activa.");
+  const {error}=await db.from("service_requests").update({status}).eq("id",request.id).eq("organization_id",selectedOrg);
   if(error)throw error;refresh();setNotice("Estado actualizado.");
  })};
- const logout=()=>{if(!db)return;void work(async()=>{const {error}=await db.auth.signOut();if(error)throw error;setSession(null);setAccountRole(undefined);setOrgs([]);setRequests([]);setContacts([]);setSelectedOrg("");setNotice("Sesión cerrada.");})};
+ const logout=()=>{if(!db)return;void work(async()=>{const {error}=await db.auth.signOut();if(error)throw error;setSession(null);setAccountRole(undefined);setOrgs([]);setRequests([]);setOrganizationData(null);setSelectedOrg("");setNotice("Sesión cerrada.");})};
  const enrollExisting=()=>{if(!db||!session)return;void work(async()=>{
   const {error}=await db.from("account_types").insert({user_id:session.user.id,account_type:accountType});
   if(error)throw error;
@@ -233,7 +245,7 @@ export function RealExperience({accountType}:{accountType:"business"|"customer"}
   setNotice("Espacio "+(accountType==="business"?"Empresa":"Cliente")+" activado en tu cuenta. Ahora puedes utilizar ambos espacios con el mismo correo.");
  })};
  const business=orgs.find(o=>o.id===selectedOrg);
- const ownerRequests=requests.filter(r=>r.organization_id===selectedOrg);
+ const ownerRequests=contextReady?organizationData!.requests:[];
  const myRequests=requests.filter(r=>r.customer_id===session?.user.id);
  const content = <div className="container live-app" id="live-app">
    <header className="live-top">
@@ -276,6 +288,10 @@ export function RealExperience({accountType}:{accountType:"business"|"customer"}
       <nav className="live-tabs" aria-label="Espacios conectados">
        {(accountType==="business"?([["inicio","Inicio"],["negocio","Perfil público"],["gestion","Servicios"],["clientes","Clientes"],["solicitudes-empresa","Solicitudes"],["mensajes","Mensajes"],["sedes","Sedes"],["workboard","Gestión"],["herramientas","Herramientas"],["perfil","Mi cuenta"]] as const):([["explorar","Explorar"],["solicitudes","Mis solicitudes"],["perfil","Mis datos"]] as const)).map(([id,label])=><button key={id} className={tab===id?"active":""} onClick={()=>setTab(id)}>{label}</button>)}
       </nav>
+      {accountType==="business"&&selectedOrg&&["inicio","gestion","clientes","solicitudes-empresa"].includes(tab)&&(
+        !contextMatches||organizationData?.loading?<p role="status">Cargando datos de la empresa activa...</p>
+        :organizationData?.error?<div className="live-alert" role="status"><p>{organizationData.error}</p><button className="button secondary" type="button" onClick={refresh}>Reintentar carga de empresa</button></div>:null
+      )}
       {tab==="perfil" && <section className="live-card"><h2>{accountType==="business"?"Mis datos personales":"Mis datos de Cliente"}</h2><p className="live-muted">{accountType==="business"?"Estos son tus datos de contacto como propietario. Los datos comerciales se gestionan dentro de Mi negocio.":"Tu nombre, apellidos, correo, teléfono y ciudad se compartirán con el negocio únicamente cuando confirmes una solicitud."}</p>
        <form className="live-form live-columns" onSubmit={saveProfile}>
         <label>Nombre<input required value={profile.first_name} onChange={e=>setProfile(x=>({...x,first_name:e.target.value}))} maxLength={80}/></label>
@@ -295,7 +311,9 @@ export function RealExperience({accountType}:{accountType:"business"|"customer"}
         />}
        {accountType==="business" && tab==="herramientas" && <BusinessTools key={selectedOrg} onNavigate={setTab} organizationId={selectedOrg}/>}
        {accountType==="business" && tab==="workboard" && (selectedOrg?<BusinessWorkboard key={selectedOrg} organizationId={selectedOrg}/>:<section className="live-card">Primero registra una empresa.</section>)}
-       {accountType==="business" && tab==="sedes" && (selectedOrg?<BusinessLocations key={selectedOrg} organizationId={selectedOrg}/>:<section className="live-card"><h2>Registra tu primera empresa</h2><button type="button" className="button primary" onClick={()=>setTab("gestion")}>Crear empresa</button></section>)}
+       {accountType==="business" && tab==="sedes" && (selectedOrg?<BusinessLocations key={selectedOrg} organizationId={selectedOrg}
+         organizationPublished={business?.published??false} publishing={busy}
+         onPublishOrganization={business?()=>togglePublish(business):undefined}/>:<section className="live-card"><h2>Registra tu primera empresa</h2><button type="button" className="button primary" onClick={()=>setTab("gestion")}>Crear empresa</button></section>)}
        {accountType==="business" && tab==="negocio" && <section className="live-card business-live-profile">
         <h2>Perfil de {business?.name||"tu negocio"}</h2>
         <p className="live-muted">Estos datos se guardan en tu negocio. Cuando lo publiques, tus clientes podrán ver su nombre, sector, localidad y descripción.</p>
@@ -313,7 +331,8 @@ export function RealExperience({accountType}:{accountType:"business"|"customer"}
           </div>
         </>:<button type="button" className="button primary" onClick={()=>setTab("gestion")}>Registrar mi negocio</button>}
        </section>}
-       {accountType==="business" && tab==="negocio" && selectedOrg && <BusinessSocialEditor key={selectedOrg} organizationId={selectedOrg}/>}
+       {accountType==="business" && tab==="negocio" && selectedOrg && <BusinessSocialEditor key={selectedOrg} organizationId={selectedOrg}
+         organizationPublished={business?.published} onProfileChange={refresh}/>}
        {accountType==="business" && tab==="clientes" && <section className="live-card">
          <h2>Clientes de {business?.name||"tu negocio"}</h2>
          <p className="live-muted">Contactos reales vinculados a las solicitudes recibidas por este negocio. Los clientes de otras empresas permanecen privados.</p>
@@ -343,7 +362,7 @@ export function RealExperience({accountType}:{accountType:"business"|"customer"}
         <h3>Añadir servicio</h3><form className="live-form" onSubmit={addService}>
         <label>Servicio<input value={serviceName} onChange={e=>setServiceName(e.target.value)} required maxLength={120} placeholder="Ej. Sesión de fotografía"/></label>
         <label>Precio (€) — opcional<input type="number" min="0" step="0.01" value={servicePrice} onChange={e=>setServicePrice(e.target.value)} placeholder="Consultar"/></label>
-        <button className="button primary" disabled={busy}>Guardar servicio</button></form>
+        <button className="button primary" disabled={busy||!contextReady}>Guardar servicio</button></form>
         {services.map(s=><div key={s.id} className="live-row"><strong>{s.title}</strong><span>{money(s.price_eur)}</span></div>)}</> : <p className="live-muted">Todavía no tienes negocios registrados.</p>}
         {orgs.length===0&&<details className="business-live-add-another" open><summary>Registrar mi primera empresa</summary><form className="live-form" onSubmit={addOrg}>
         <label>Nombre comercial<input value={businessName} onChange={e=>setBusinessName(e.target.value)} required minLength={2} maxLength={120}/></label>
@@ -414,6 +433,13 @@ export function RealExperience({accountType}:{accountType:"business"|"customer"}
          <div className="workspace-breadcrumb"><strong>{business?.name||"AutonoService"}</strong><span> / {tab==="inicio"?"Inicio":tab==="negocio"?"Perfil público":tab==="gestion"?"Servicios":tab==="clientes"?"Clientes":tab==="solicitudes-empresa"?"Solicitudes":tab==="mensajes"?"Mensajes":tab==="sedes"?"Sedes":tab==="workboard"?"Proyectos y agenda":tab==="herramientas"?"Herramientas":"Mi cuenta"}</span></div>
          <div className="live-session-actions"><AccountExperienceSwitcher experience="business"/><ThemeToggle/></div>
        </header>
+       {orgs.length>1&&<div className="business-live-mobile-company-switcher">
+         <label htmlFor="business-active-organization-mobile">Empresa activa</label>
+         <select id="business-active-organization-mobile" aria-label="Cambiar de empresa activa"
+           value={selectedOrg} disabled={busy} onChange={e=>setSelectedOrg(e.target.value)}>
+           {orgs.map(o=><option key={o.id} value={o.id}>{o.name}</option>)}
+         </select>
+       </div>}
        {content}
      </div>
    </div>;

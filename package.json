@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "prebuild": "node scripts/build-info.mjs",
     "build": "next build",
     "start": "node scripts/serve-static.mjs",
     "typecheck": "next typegen && tsc --noEmit",
