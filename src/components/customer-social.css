@@ -364,3 +364,31 @@
 .as-social-map-filters label{display:grid;gap:7px;font-size:12px;color:var(--muted);}
 .as-social-map-results{display:flex;flex-wrap:wrap;gap:8px;margin:15px 0;}
 @media(max-width:650px){.as-social-map-filters{grid-template-columns:1fr;}.modal.as-social-company-dialog{width:100%;max-width:100%;max-height:100dvh;border-radius:0;}}
+
+
+/* Reorderable company sections: reuse AutonoService tokens and existing cards. */
+.as-company-section-nav{display:flex;align-items:center;gap:9px;overflow-x:auto;scrollbar-width:thin;padding:17px 0 12px;border-bottom:1px solid var(--border);margin-top:9px;}
+.as-company-section-nav button{border:1px solid var(--border);background:var(--surface);color:var(--text);border-radius:999px;padding:10px 16px;font:inherit;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;flex:0 0 auto;}
+.as-company-section-nav button:hover,.as-company-section-nav button:focus-visible{border-color:var(--accent);outline-offset:2px;}
+.as-company-section{scroll-margin-top:100px;}
+.as-company-portfolio-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px;}
+.as-company-portfolio-grid figure{border:1px solid var(--border);border-radius:16px;overflow:hidden;background:var(--surface);margin:0;min-width:0;}
+.as-company-portfolio-media{width:100%;height:205px;object-fit:cover;background:var(--surface-2);display:block;}
+.as-company-portfolio-grid figcaption{font-size:12px;line-height:1.55;color:var(--muted);padding:10px 14px;overflow-wrap:anywhere;}
+.as-profile-layout-editor{display:grid;gap:15px;border:1px solid var(--border);padding:22px;border-radius:17px;background:var(--surface);}
+.as-profile-layout-editor h2{display:flex;align-items:center;gap:9px;}
+.as-profile-layout-actions{display:flex;flex-wrap:wrap;gap:9px;}
+.as-profile-layout-items{display:grid;gap:8px;}
+.as-profile-layout-item{display:flex;justify-content:space-between;align-items:center;gap:10px;border:1px solid var(--border);background:var(--surface-2);border-radius:12px;padding:10px 13px;}
+.as-profile-layout-item label{display:flex;align-items:center;gap:12px;flex:1;min-width:0;cursor:pointer;font-size:13px;font-weight:600;}
+.as-profile-layout-item input{width:17px;height:17px;accent-color:var(--accent);flex-shrink:0;}
+.as-profile-layout-move{display:flex;gap:6px;}
+.as-profile-layout-move .button{padding:7px;min-width:32px;min-height:32px;display:grid;place-items:center;}
+@media(max-width:650px){
+  .as-company-section-nav{margin-top:5px;gap:7px;}
+  .as-company-section-nav button{padding:9px 12px;font-size:11px;}
+  .as-company-portfolio-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
+  .as-company-portfolio-media{height:138px;}
+  .as-profile-layout-editor{padding:15px;}
+  .as-profile-layout-item{padding:9px;}
+}
