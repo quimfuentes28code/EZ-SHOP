@@ -430,7 +430,7 @@ export function CustomerSocial({userId,email,onLogout}:{userId:string;email:stri
         }}>{companySectionLabel(id)}</button>)}
       </nav>}
       <div className="as-company-page-grid">
-        <main className="as-company-page-main">
+        <div className="as-company-page-main">
           {publicSections.map((section,index)=>{
             if(section==="about")return <section key={section} id="as-company-section-about" className="as-company-section" aria-labelledby="company-about">
               <div className="as-company-section-title"><span>{String(index+1).padStart(2,"0")} / PRESENTACIÓN</span><h2 id="company-about">Conoce el negocio</h2></div>
@@ -489,16 +489,18 @@ export function CustomerSocial({userId,email,onLogout}:{userId:string;email:stri
               <div className="as-company-section-title"><span>{String(index+1).padStart(2,"0")} / TRABAJOS</span><h2 id="company-portfolio">Portfolio</h2></div>
               <div className="as-company-portfolio-grid">
                 {currentCompanyPosts.filter(post=>post.media_url&&post.media_kind).map(post=><figure key={post.id}>
-                  {post.media_kind==="video"
-                    ?<BusinessVideo controls preload="metadata" src={mediaUrl(post.media_url)} className="as-company-portfolio-media"/>
-                    :<img src={mediaUrl(post.media_url)} className="as-company-portfolio-media" alt={post.body||"Trabajo publicado por el negocio"}/>}
+                  {mediaUrl(post.media_url)
+                    ?post.media_kind==="video"
+                      ?<BusinessVideo controls preload="metadata" src={mediaUrl(post.media_url)} className="as-company-portfolio-media"/>
+                      :<img src={mediaUrl(post.media_url)} className="as-company-portfolio-media" alt={post.body||"Trabajo publicado por el negocio"}/>
+                    :<div className="as-company-portfolio-media as-company-portfolio-loading" role="status">Cargando contenido…</div>}
                   {post.body&&<figcaption>{post.body}</figcaption>}
                 </figure>)}
               </div>
             </section>;
             return null;
           })}
-        </main>
+        </div>
         <aside className="as-company-page-side">
           <div className="as-company-contact-panel">
             <span>¿HABLAMOS?</span><h2>Tu próximo proyecto empieza aquí.</h2>
