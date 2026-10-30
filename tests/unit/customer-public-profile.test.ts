@@ -40,7 +40,7 @@ assert.match(css,/\.as-company-page-grid/);
 assert.match(businessShell,/orgs\.length>1&&<div className="business-live-mobile-company-switcher"/);
 assert.match(businessShell,/id="business-active-organization-mobile"/);
 assert.match(businessShell,/aria-label="Cambiar de empresa activa"/);
-assert.match(businessShell,/value=\{selectedOrg\} onChange=\{e=>setSelectedOrg\(e\.target\.value\)\}/);
+assert.match(businessShell,/value=\{selectedOrg\} onChange=\{e=>changeActiveOrganization\(e\.target\.value\)\}/);
 assert.match(businessCss,/\.business-live-mobile-company-switcher\{display:none;\}/);
 assert.match(businessCss,/@media\(max-width:860px\)/);
 assert.match(businessCss,/\.live-integrated-shell \.business-live-mobile-company-switcher/);
