@@ -203,7 +203,7 @@ export function BusinessSocialEditor({organizationId,organizationPublished,onPro
  }
  return <section className="live-card social-business-editor">
   <div className="business-live-section-head"><div><span className="eyebrow">MI MARCA Y MI COMUNIDAD</span>
-    <h2>Personaliza tu perfil público</h2>
+    <h2>Diseño del perfil público</h2>
     <p className="live-muted">Estás editando el perfil de <strong>{company?.name||"tu empresa"}</strong>. La portada, el logo y las publicaciones se guardan por separado para cada negocio.</p>
   </div></div>
   {company&&<div className="business-live-publication" role="status">
@@ -216,24 +216,6 @@ export function BusinessSocialEditor({organizationId,organizationPublished,onPro
       {company.published&&<a className="button secondary" href={"/cliente?negocio="+encodeURIComponent(company.id)}>Ver como Cliente</a>}
     </div>
   </div>}
-  <div className="social-business-cover" style={{backgroundColor:company?.accent_color||accent}}>
-    {company?.cover_url&&mediaUrls[company.cover_url]?<img src={mediaUrls[company.cover_url]} alt={"Portada de "+company.name}/>:<div className="social-business-cover-placeholder"><Camera size={38}/><span>Tu marca, tu historia</span></div>}
-    <div className="social-business-logo">
-      {company?.avatar_url&&mediaUrls[company.avatar_url]?<img src={mediaUrls[company.avatar_url]} alt={"Logo de "+company.name}/>:<span>{company?.name.slice(0,1)||"A"}</span>}
-    </div>
-  </div>
-  <div className="social-business-upload-actions">
-    <label className="button secondary"><Camera size={15}/> Cambiar logo<input type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>onImageUpload(e,"avatar_url")} disabled={busy}/></label>
-    <label className="button secondary"><ImagePlus size={15}/> Cambiar portada<input type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>onImageUpload(e,"cover_url")} disabled={busy}/></label>
-  </div>
-  <form className="social-brand-form" onSubmit={saveIdentity}>
-    <label>Frase de presentación<input maxLength={180} value={tagline} disabled={busy} onChange={e=>setTagline(e.target.value)} placeholder="Ej. Capturamos momentos que importan"/></label>
-    <div className="social-brand-palette"><strong><Palette size={15}/> Color de marca</strong><div>
-      {accents.map(color=><button key={color} type="button" className={accent===color?"selected":""} style={{backgroundColor:color}}
-        aria-label={"Seleccionar color "+color} aria-pressed={accent===color} disabled={busy} onClick={()=>setAccent(color)}/>)}
-    </div></div>
-    <button type="submit" className="button primary" disabled={busy}>Guardar estilo</button>
-  </form>
   <section className="as-profile-layout-editor" aria-labelledby="profile-layout-title">
     <div className="business-live-section-head"><div>
       <span className="eyebrow">MI ESCAPARATE</span>
@@ -268,6 +250,24 @@ export function BusinessSocialEditor({organizationId,organizationPublished,onPro
     <p className="live-muted">Portfolio utiliza fotos y vídeos ya publicados; Sedes requiere ubicaciones publicadas. Las secciones sin contenido se ocultan automáticamente al cliente. Las reseñas se añadirán cuando exista un sistema de valoraciones verificadas.</p>
     <button className="button primary" type="button" disabled={busy||!company} onClick={saveSectionLayout}>Guardar distribución del perfil</button>
   </section>
+  <div className="social-business-cover" style={{backgroundColor:company?.accent_color||accent}}>
+    {company?.cover_url&&mediaUrls[company.cover_url]?<img src={mediaUrls[company.cover_url]} alt={"Portada de "+company.name}/>:<div className="social-business-cover-placeholder"><Camera size={38}/><span>Tu marca, tu historia</span></div>}
+    <div className="social-business-logo">
+      {company?.avatar_url&&mediaUrls[company.avatar_url]?<img src={mediaUrls[company.avatar_url]} alt={"Logo de "+company.name}/>:<span>{company?.name.slice(0,1)||"A"}</span>}
+    </div>
+  </div>
+  <div className="social-business-upload-actions">
+    <label className="button secondary"><Camera size={15}/> Cambiar logo<input type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>onImageUpload(e,"avatar_url")} disabled={busy}/></label>
+    <label className="button secondary"><ImagePlus size={15}/> Cambiar portada<input type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>onImageUpload(e,"cover_url")} disabled={busy}/></label>
+  </div>
+  <form className="social-brand-form" onSubmit={saveIdentity}>
+    <label>Frase de presentación<input maxLength={180} value={tagline} disabled={busy} onChange={e=>setTagline(e.target.value)} placeholder="Ej. Capturamos momentos que importan"/></label>
+    <div className="social-brand-palette"><strong><Palette size={15}/> Color de marca</strong><div>
+      {accents.map(color=><button key={color} type="button" className={accent===color?"selected":""} style={{backgroundColor:color}}
+        aria-label={"Seleccionar color "+color} aria-pressed={accent===color} disabled={busy} onClick={()=>setAccent(color)}/>)}
+    </div></div>
+    <button type="submit" className="button primary" disabled={busy}>Guardar estilo</button>
+  </form>
   <div className="social-business-divider"/>
   <div className="business-live-section-head"><div><span className="eyebrow">COMPARTIR NOVEDADES</span>
     <h2>Publicaciones de tu empresa</h2>
