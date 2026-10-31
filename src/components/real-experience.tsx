@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, UserRound, ArrowLeft, UsersRound, Settings2, ShoppingBag, ClipboardList, Blocks, MessageCircle } from "lucide-react";
+import { LayoutDashboard, UserRound, ArrowLeft, UsersRound, Settings2, ShoppingBag, ClipboardList, Blocks, MessageCircle, LayoutGrid, ArrowRight } from "lucide-react";
 import { CustomerSocial } from "@/components/customer-social";
 import { BusinessLocations } from "@/components/business-locations";
 import { BusinessWorkboard } from "@/components/business-workboard";
@@ -286,7 +286,7 @@ export function RealExperience({accountType}:{accountType:"business"|"customer"}
      </section>
    : <><div className="live-signed"><span>Sesión de <strong>{session.user.email}</strong></span><div className="live-session-actions"><button type="button" className="button secondary small" onClick={refresh} disabled={busy}>Actualizar datos</button><button className="button secondary small" disabled={busy} onClick={logout}>Cerrar sesión</button></div></div>
       <nav className="live-tabs" aria-label="Espacios conectados">
-       {(accountType==="business"?([["inicio","Inicio"],["negocio","Perfil público"],["gestion","Servicios"],["clientes","Clientes"],["solicitudes-empresa","Solicitudes"],["mensajes","Mensajes"],["sedes","Sedes"],["workboard","Gestión"],["herramientas","Herramientas"],["perfil","Mi cuenta"]] as const):([["explorar","Explorar"],["solicitudes","Mis solicitudes"],["perfil","Mis datos"]] as const)).map(([id,label])=><button key={id} className={tab===id?"active":""} onClick={()=>setTab(id)}>{label}</button>)}
+       {(accountType==="business"?([["inicio","Inicio"],["negocio","Perfil público"],["diseno","Diseño del perfil"],["gestion","Servicios"],["clientes","Clientes"],["solicitudes-empresa","Solicitudes"],["mensajes","Mensajes"],["sedes","Sedes"],["workboard","Gestión"],["herramientas","Herramientas"],["perfil","Mi cuenta"]] as const):([["explorar","Explorar"],["solicitudes","Mis solicitudes"],["perfil","Mis datos"]] as const)).map(([id,label])=><button key={id} className={tab===id?"active":""} onClick={()=>setTab(id)}>{label}</button>)}
       </nav>
       {accountType==="business"&&selectedOrg&&["inicio","gestion","clientes","solicitudes-empresa"].includes(tab)&&(
         !contextMatches||organizationData?.loading?<p role="status">Cargando datos de la empresa activa...</p>
@@ -315,6 +315,11 @@ export function RealExperience({accountType}:{accountType:"business"|"customer"}
          organizationPublished={business?.published??false} publishing={busy}
          onPublishOrganization={business?()=>togglePublish(business):undefined}/>:<section className="live-card"><h2>Registra tu primera empresa</h2><button type="button" className="button primary" onClick={()=>setTab("gestion")}>Crear empresa</button></section>)}
        {accountType==="business" && tab==="negocio" && <section className="live-card business-live-profile">
+        {selectedOrg&&<div className="as-profile-design-callout">
+          <div><span className="eyebrow">NUEVA DISTRIBUCIÓN</span><h2>Diseña el escaparate de tu empresa</h2>
+          <p>Ordena Servicios, Portfolio, Publicaciones, Sedes y Presentación. Decide qué mostrar en tu perfil público.</p></div>
+          <button className="button primary" type="button" onClick={()=>setTab("diseno")}>Abrir diseño del perfil <ArrowRight size={17}/></button>
+        </div>}
         <h2>Perfil de {business?.name||"tu negocio"}</h2>
         <p className="live-muted">Estos datos se guardan en tu negocio. Cuando lo publiques, tus clientes podrán ver su nombre, sector, localidad y descripción.</p>
         {business ? <>
@@ -331,8 +336,11 @@ export function RealExperience({accountType}:{accountType:"business"|"customer"}
           </div>
         </>:<button type="button" className="button primary" onClick={()=>setTab("gestion")}>Registrar mi negocio</button>}
        </section>}
-       {accountType==="business" && tab==="negocio" && selectedOrg && <BusinessSocialEditor key={selectedOrg} organizationId={selectedOrg}
-         organizationPublished={business?.published} onProfileChange={refresh}/>}
+       {accountType==="business" && tab==="diseno" && (selectedOrg
+          ? <BusinessSocialEditor key={selectedOrg} organizationId={selectedOrg}
+              organizationPublished={business?.published} onProfileChange={refresh}/>
+          : <section className="live-card"><h2>Diseño del perfil</h2><p>Registra primero una empresa para personalizar su escaparate.</p><button className="button primary" type="button" onClick={()=>setTab("gestion")}>Crear empresa</button></section>
+        )}
        {accountType==="business" && tab==="clientes" && <section className="live-card">
          <h2>Clientes de {business?.name||"tu negocio"}</h2>
          <p className="live-muted">Contactos reales vinculados a las solicitudes recibidas por este negocio. Los clientes de otras empresas permanecen privados.</p>
@@ -410,6 +418,7 @@ export function RealExperience({accountType}:{accountType:"business"|"customer"}
          {([
            ["inicio","Inicio",LayoutDashboard],
            ["negocio","Perfil público",Settings2],
+           ["diseno","Diseño del perfil",LayoutGrid],
            ["gestion","Servicios",ShoppingBag],
            ["clientes","Clientes",UsersRound],
            ["solicitudes-empresa","Solicitudes",ClipboardList],
@@ -430,7 +439,7 @@ export function RealExperience({accountType}:{accountType:"business"|"customer"}
      </aside>
      <div className="workspace-body live-workspace-body">
        <header className="workspace-topbar live-workspace-topbar">
-         <div className="workspace-breadcrumb"><strong>{business?.name||"AutonoService"}</strong><span> / {tab==="inicio"?"Inicio":tab==="negocio"?"Perfil público":tab==="gestion"?"Servicios":tab==="clientes"?"Clientes":tab==="solicitudes-empresa"?"Solicitudes":tab==="mensajes"?"Mensajes":tab==="sedes"?"Sedes":tab==="workboard"?"Proyectos y agenda":tab==="herramientas"?"Herramientas":"Mi cuenta"}</span></div>
+         <div className="workspace-breadcrumb"><strong>{business?.name||"AutonoService"}</strong><span> / {tab==="inicio"?"Inicio":tab==="negocio"?"Perfil público":tab==="diseno"?"Diseño del perfil":tab==="gestion"?"Servicios":tab==="clientes"?"Clientes":tab==="solicitudes-empresa"?"Solicitudes":tab==="mensajes"?"Mensajes":tab==="sedes"?"Sedes":tab==="workboard"?"Proyectos y agenda":tab==="herramientas"?"Herramientas":"Mi cuenta"}</span></div>
          <div className="live-session-actions"><AccountExperienceSwitcher experience="business"/><ThemeToggle/></div>
        </header>
        {orgs.length>1&&<div className="business-live-mobile-company-switcher">
