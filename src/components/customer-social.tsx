@@ -445,8 +445,54 @@ export function CustomerSocial({userId,email,onLogout}:{userId:string;email:stri
           onClick={()=>setCompanyTab("more")}>Más</button>}
       </nav>
       <div className="as-company-page-grid">
+
         <div className="as-company-page-main">
-          {publicSections.map((section,index)=>{
+          {companyTab==="inicio"&&<div className="as-company-home" role="region" aria-label="Inicio del perfil">
+            {publicSections.filter(id=>id==="services"||id==="posts").map(id=>{
+              if(id==="services")return <section key={id} className="as-company-section">
+                <div className="as-company-section-title"><h2>Qué podemos hacer por ti</h2>
+                  <p className="as-company-muted">Servicios destacados</p></div>
+                {currentServices.length===0
+                  ?<p className="as-company-muted">Este negocio todavía no tiene servicios publicados.</p>
+                  :<div className="as-company-featured-services">{currentServices.slice(0,2).map(service=><button key={service.id}
+                    type="button" className="as-company-featured-service" onClick={()=>{
+                      setChosenService(service.id);setCompanyTab("services");
+                    }}>
+                    <div className="as-company-featured-media"><LayoutGrid size={26} aria-hidden="true"/></div>
+                    <strong>{service.title}</strong><span>{formatMoney(service.price_eur)}</span>
+                    <small>Ver detalles <ArrowRight size={13}/></small>
+                  </button>)}</div>}
+                {currentServices.length>2&&<button type="button" className="as-company-inline-more" onClick={()=>setCompanyTab("services")}>
+                  Ver todos los servicios <ArrowRight size={15}/>
+                </button>}
+              </section>;
+              if(id==="posts"&&currentCompanyPosts.length>0)return <section key={id} className="as-company-section">
+                <div className="as-company-section-title"><h2>Últimas publicaciones</h2></div>
+                <div className="as-company-posts">{currentCompanyPosts.slice(0,2).map(post=><article key={post.id} className="as-company-post">
+                  <div className="as-company-post-author">
+                    <span className="as-company-post-avatar">{mediaUrl(selectedOrganization.avatar_url)
+                      ?<img src={mediaUrl(selectedOrganization.avatar_url)} alt=""/>
+                      :selectedOrganization.name.slice(0,1).toUpperCase()}</span>
+                    <div><strong>{selectedOrganization.name}</strong><small>{new Date(post.created_at).toLocaleDateString("es-ES")}</small></div>
+                  </div>
+                  {post.body&&<p>{post.body}</p>}
+                  {mediaUrl(post.media_url)&&post.media_kind==="image"&&<img className="as-company-post-media" src={mediaUrl(post.media_url)} alt="Foto publicada por el negocio"/>}
+                  {mediaUrl(post.media_url)&&post.media_kind==="video"&&<BusinessVideo className="as-company-post-media" controls preload="metadata" src={mediaUrl(post.media_url)}/>}
+                </article>)}</div>
+                <button type="button" className="as-company-inline-more" onClick={()=>setCompanyTab("posts")}>
+                  Todas las publicaciones <ArrowRight size={15}/>
+                </button>
+              </section>;
+              return null;
+            })}
+            {!publicSections.some(id=>id==="services"||id==="posts")&&
+              <p className="as-company-muted">Consulta las demás secciones del perfil para conocer este negocio.</p>}
+          </div>}
+          {publicSections.filter(section=>(
+            (companyTab==="services"&&section==="services") ||
+            (companyTab==="posts"&&section==="posts") ||
+            (companyTab==="more"&&["about","locations","portfolio"].includes(section))
+          )).map((section,index)=>{
             if(section==="about")return <section key={section} id="as-company-section-about" className="as-company-section" aria-labelledby="company-about">
               <div className="as-company-section-title"><span>{String(index+1).padStart(2,"0")} / PRESENTACIÓN</span><h2 id="company-about">Conoce el negocio</h2></div>
               <p className="as-company-about-text">{selectedOrganization.description||"Este negocio todavía no ha añadido una presentación."}</p>
@@ -518,11 +564,21 @@ export function CustomerSocial({userId,email,onLogout}:{userId:string;email:stri
         </div>
         <aside className="as-company-page-side">
           <div className="as-company-contact-panel">
-            <span>¿HABLAMOS?</span><h2>Tu próximo proyecto empieza aquí.</h2>
-            <p>Consulta disponibilidad, pide información o habla directamente con este negocio.</p>
+            <span>CONTACTO</span><h2>Habla con {selectedOrganization.name}</h2>
+            <p>Pregunta por sus servicios o solicita información directamente al negocio.</p>
             <button type="button" className="button primary" onClick={()=>openMessages(selectedOrganization.id)}>
               <MessageCircle size={17}/> Enviar mensaje <ArrowRight size={16}/>
             </button>
+            {publicSections.includes("services")&&currentServices.length>0&&<button type="button" className="button secondary as-company-side-services"
+              onClick={()=>setCompanyTab("services")}><CalendarDays size={17}/> Ver servicios</button>}
+          </div>
+          <div className="as-company-facts">
+            <h3>Información del negocio</h3>
+            <p><Building2 size={16}/>{selectedOrganization.category}</p>
+            <p><MapPin size={16}/>{selectedOrganization.city||"Ubicación no indicada"}</p>
+            {currentCompanyLocations.length>0&&<p><MapPin size={16}/>{currentCompanyLocations[0].name}</p>}
+            {publicSections.includes("locations")&&currentCompanyLocations.length>0&&<button type="button"
+              className="as-company-inline-more" onClick={()=>setCompanyTab("more")}>Ver ubicaciones <ArrowRight size={14}/></button>}
           </div>
         </aside>
       </div>
