@@ -10,6 +10,19 @@ const paths = [
   "/explorar", "/demo/cliente", "/demo/empresa"
 ];
 let failures = 0;
+const expectedCommit = "4fafe52e2b453cf722c02c87f672eace7082d05c";
+try {
+  const response = await fetch(root + "/version.json", { cache: "no-store" });
+  const version = await response.json();
+  const matches = response.ok && version.commit === expectedCommit;
+  console.log("DEPLOYED_VERSION_CHECK=" + JSON.stringify({
+    status: response.status, expectedCommit, actualCommit: version.commit, builtAt: version.builtAt, matches
+  }));
+  if (!matches) failures++;
+} catch (error) {
+  failures++;
+  console.log("DEPLOYED_VERSION_CHECK=" + JSON.stringify({ expectedCommit, error: String(error) }));
+}
 const captures = [];
 const browser = await chromium.launch({ headless: true, args: ["--no-sandbox"] });
 for (const variant of ["desktop", "mobile"]) {
