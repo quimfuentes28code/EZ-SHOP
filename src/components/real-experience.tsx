@@ -336,6 +336,10 @@ export function RealExperience({accountType}:{accountType:"business"|"customer"}
           </div>
         </>:<button type="button" className="button primary" onClick={()=>setTab("gestion")}>Registrar mi negocio</button>}
        </section>}
+       {/* Keep the original public-profile workflow intact for uploads, visibility
+           and legacy deep links; Design is an additional direct entry point. */}
+       {accountType==="business" && tab==="negocio" && selectedOrg && <BusinessSocialEditor key={selectedOrg} organizationId={selectedOrg}
+         organizationPublished={business?.published} onProfileChange={refresh}/>}
        {accountType==="business" && tab==="diseno" && (selectedOrg
           ? <BusinessSocialEditor key={selectedOrg} organizationId={selectedOrg}
               organizationPublished={business?.published} onProfileChange={refresh}/>
