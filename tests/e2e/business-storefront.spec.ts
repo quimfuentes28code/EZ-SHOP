@@ -38,7 +38,7 @@ test("En móvil el perfil emplea portada, métricas, acciones y pestañas sin de
   const profile = page.getByRole("dialog");
   await expect(profile.locator(".as-company-hero")).toBeVisible();
   await expect(profile.locator(".as-company-stats")).toBeVisible();
-  await expect(profile.getByRole("button", { name: "Mensaje" })).toBeVisible();
+  await expect(profile.getByRole("button", { name: "Mensaje", exact: true })).toBeVisible();
   await expect(profile.getByRole("button", { name: "Seguir" })).toBeVisible();
   await expect(profile.getByRole("navigation", { name: /Secciones de/ })).toBeVisible();
   const widths = await profile.locator(".as-company-page").evaluate((element) => ({
