@@ -576,7 +576,9 @@ export function CustomerSocial({userId,email,onLogout}:{userId:string;email:stri
             <h3>Información del negocio</h3>
             <p><Building2 size={16}/>{selectedOrganization.category}</p>
             <p><MapPin size={16}/>{selectedOrganization.city||"Ubicación no indicada"}</p>
-            {currentCompanyLocations.length>0&&<p><MapPin size={16}/>{currentCompanyLocations[0].name}</p>}
+            {currentCompanyLocations.slice(0,3).map(location=><p key={location.id}>
+              <MapPin size={16}/><span>{[location.name,location.address,location.city].filter(Boolean).join(" · ")}</span>
+            </p>)}
             {publicSections.includes("locations")&&currentCompanyLocations.length>0&&<button type="button"
               className="as-company-inline-more" onClick={()=>setCompanyTab("more")}>Ver ubicaciones <ArrowRight size={14}/></button>}
           </div>
