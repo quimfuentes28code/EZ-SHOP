@@ -10,7 +10,7 @@ const paths = [
   "/explorar", "/demo/cliente", "/demo/empresa"
 ];
 let failures = 0;
-const expectedCommit = "6b0578ce32036aeeb136018f0d1eb15ca34e3abc";
+const expectedCommit = "79d6abe2f6c73b43dc131d297ca001a5937fdcc8";
 try {
   const response = await fetch(root + "/version.json", { cache: "no-store" });
   const version = await response.json();
