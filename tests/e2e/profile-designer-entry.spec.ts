@@ -11,7 +11,7 @@ test("Empresa muestra Diseño del perfil como pantalla propia y guarda el orden 
 
   await page.getByRole("button", { name: "Bajar Presentación" }).click();
   await page.getByRole("button", { name: "Guardar distribución del perfil" }).click();
-  await expect(page.getByRole("status")).toContainText("Distribución guardada");
+  await expect(page.getByText("Distribución guardada. Los clientes verán las secciones en este orden.")).toBeVisible();
   const layout = tables.organizations[0].profile_sections as string[];
   expect(layout.slice(0, 2)).toEqual(["services", "about"]);
 
@@ -22,7 +22,7 @@ test("Empresa muestra Diseño del perfil como pantalla propia y guarda el orden 
   await expect(sections.nth(1)).toHaveText("Presentación");
 });
 
-test("en pantalla móvil existe acceso directo al Diseño del perfil", async ({ page, isMobile }) => {
+test("en pantalla móvil existe acceso directo al Diseño del perfil", async ({ page }) => {
   await installSupabaseMock(page);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/empresa");
