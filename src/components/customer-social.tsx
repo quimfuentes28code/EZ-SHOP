@@ -56,6 +56,7 @@ export function CustomerSocial({userId,email,onLogout}:{userId:string;email:stri
  const [query,setQuery]=useState("");
  const [city,setCity]=useState("");
  const [detail,setDetail]=useState<string|null>(null);
+ const [companyTab,setCompanyTab]=useState<"inicio"|"services"|"posts"|"more">("inicio");
  const [targetChatOrg,setTargetChatOrg]=useState<string|null>(null);
  const [chosenService,setChosenService]=useState<string|null>(null);
  const [requestDate,setRequestDate]=useState("");
@@ -85,7 +86,7 @@ export function CustomerSocial({userId,email,onLogout}:{userId:string;email:stri
    }
    setTab(next);setDetail(businessId);setChosenService(null);
  }
- function openBusinessProfile(id:string){navigate(tab,id);}
+ function openBusinessProfile(id:string){setCompanyTab("inicio");navigate(tab,id);}
  function closeBusinessProfile(){
    if(!detail)return;
    // Only go back when this view was opened inside Cliente. A shared direct
@@ -390,29 +391,40 @@ export function CustomerSocial({userId,email,onLogout}:{userId:string;email:stri
         </div>
       </section>
 
+
       <header className="as-company-identity">
         <div className="as-company-avatar">
           <span aria-hidden="true">{selectedOrganization.name.slice(0,1).toUpperCase()}</span>
           {mediaUrl(selectedOrganization.avatar_url)&&<img src={mediaUrl(selectedOrganization.avatar_url)}
-            alt={"Logo de "+selectedOrganization.name}
-            onError={e=>{e.currentTarget.style.display="none";}}/>}
+            alt={"Logo de "+selectedOrganization.name} onError={e=>{e.currentTarget.style.display="none";}}/>}
         </div>
         <div className="as-company-identity-copy">
           <h1>{selectedOrganization.name}</h1>
+          <div className="as-company-meta">
+            <span><Building2 size={15}/>{selectedOrganization.category}</span>
+            <span><MapPin size={15}/>{selectedOrganization.city||"Ubicación no indicada"}</span>
+          </div>
           {selectedOrganization.tagline&&<p className="as-company-tagline">{selectedOrganization.tagline}</p>}
-          <div className="as-company-meta"><span><MapPin size={15}/>{selectedOrganization.city||"Ubicación no indicada"}</span>
-            <span><Building2 size={15}/>{selectedOrganization.category}</span></div>
+        </div>
+        <p className="as-company-profile-description">{selectedOrganization.description||"Este negocio todavía no ha añadido una presentación."}</p>
+        <div className="as-company-stats" aria-label="Actividad de la empresa">
+          <div><strong>{currentCompanyPosts.length}</strong><span>Publicaciones</span></div>
+          <div><strong>{currentServices.length}</strong><span>Servicios</span></div>
+          <div><strong>{currentCompanyLocations.length}</strong><span>Sedes</span></div>
         </div>
         <div className="as-company-primary-actions">
-          <button type="button" className="button primary" onClick={()=>openMessages(selectedOrganization.id)}>
-            <MessageCircle size={17}/> Contactar
+          {publicSections.includes("services")&&currentServices.length>0&&<button type="button" className="button primary" onClick={()=>setCompanyTab("services")}>
+            <CalendarDays size={17}/> Solicitar
+          </button>}
+          <button type="button" className="button secondary" onClick={()=>openMessages(selectedOrganization.id)}>
+            <MessageCircle size={17}/> Mensaje
           </button>
           <button type="button" className="button secondary" disabled={busy} aria-pressed={favorites.includes(selectedOrganization.id)}
             onClick={()=>toggleFavorite(selectedOrganization.id)}>
             <Heart size={17} fill={favorites.includes(selectedOrganization.id)?"currentColor":"none"}/>
-            {favorites.includes(selectedOrganization.id)?"Guardado":"Seguir"}
+            {favorites.includes(selectedOrganization.id)?"Siguiendo":"Seguir"}
           </button>
-          <button type="button" className="button secondary" onClick={()=>{
+          <button type="button" className="button secondary as-company-share" onClick={()=>{
             const url=new URL(window.location.href);
             url.searchParams.set("negocio",selectedOrganization.id);
             if(!navigator.clipboard){setNotice("No se puede copiar el enlace en este navegador.");return;}
@@ -423,12 +435,15 @@ export function CustomerSocial({userId,email,onLogout}:{userId:string;email:stri
         </div>
       </header>
 
-
-      {publicSections.length>0&&<nav className="as-company-section-nav" aria-label={"Secciones de "+selectedOrganization.name}>
-        {publicSections.map(id=><button key={id} type="button" onClick={()=>{
-          document.getElementById("as-company-section-"+id)?.scrollIntoView({behavior:"smooth",block:"start"});
-        }}>{companySectionLabel(id)}</button>)}
-      </nav>}
+      <nav className="as-company-section-nav" aria-label={"Secciones de "+selectedOrganization.name}>
+        <button type="button" className={companyTab==="inicio"?"is-active":""} aria-current={companyTab==="inicio"?"page":undefined} onClick={()=>setCompanyTab("inicio")}>Inicio</button>
+        {publicSections.filter(id=>id==="services"||id==="posts").map(id=><button key={id} type="button"
+          className={companyTab===id?"is-active":""} aria-current={companyTab===id?"page":undefined}
+          onClick={()=>setCompanyTab(id)}>{id==="services"?"Servicios":"Publicaciones"}</button>)}
+        {publicSections.some(id=>["about","locations","portfolio"].includes(id))&&<button type="button"
+          className={companyTab==="more"?"is-active":""} aria-current={companyTab==="more"?"page":undefined}
+          onClick={()=>setCompanyTab("more")}>Más</button>}
+      </nav>
       <div className="as-company-page-grid">
         <div className="as-company-page-main">
           {publicSections.map((section,index)=>{
