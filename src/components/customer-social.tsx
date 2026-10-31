@@ -15,8 +15,9 @@ import { Modal } from "@/components/modal";
 import { useBusinessMedia } from "@/components/use-business-media";
 import { getBusinessMapPoints, hasValidCoordinates, matchesBusinessLocation, matchesBusinessQuery } from "@/lib/business-discovery";
 import "./customer-social.css";
+import { normalizeProfileSections, PROFILE_SECTIONS } from "@/lib/business-profile-layout";
 
-type Organization={id:string;name:string;category:string;city:string;description:string;tagline:string;accent_color:string;avatar_url:string;cover_url:string;published:boolean};
+type Organization={id:string;name:string;category:string;city:string;description:string;tagline:string;accent_color:string;avatar_url:string;cover_url:string;published:boolean;profile_sections:unknown};
 type BusinessPost={id:string;organization_id:string;body:string;media_url:string;media_kind:"image"|"video"|null;created_at:string};
 type PublicLocation={id:string;organization_id:string;name:string;city:string;address:string;service_mode:string;availability_mode:string;published:boolean;latitude:number|null;longitude:number|null};
 type Service={id:string;organization_id:string;title:string;description:string;price_eur:number|null;active:boolean};
@@ -106,13 +107,22 @@ export function CustomerSocial({userId,email,onLogout}:{userId:string;email:stri
  const selectedService=services.find(s=>s.id===chosenService);
  const currentServices=services.filter(s=>s.organization_id===selectedOrganization?.id);
  const orgName=(id:string)=>organizations.find(o=>o.id===id)?.name||"Negocio";
+ const currentCompanyPosts=posts.filter(post=>post.organization_id===selectedOrganization?.id);
+ const currentCompanyLocations=locations.filter(location=>location.organization_id===selectedOrganization?.id);
+ const publicSections=normalizeProfileSections(selectedOrganization?.profile_sections).filter(id=>{
+   if(id==="locations")return currentCompanyLocations.length>0;
+   if(id==="posts")return currentCompanyPosts.length>0;
+   if(id==="portfolio")return currentCompanyPosts.some(post=>post.media_url&&post.media_kind);
+   return true;
+ });
+ const companySectionLabel=(id:string)=>PROFILE_SECTIONS.find(item=>item.id===id)?.label||id;
 
  useEffect(()=>{
    if(!db){setDirectoryLoading(false);setDirectoryError("No hay conexión con la base de datos.");return;}
    let active=true;
    setDirectoryLoading(true);setDirectoryError("");
    Promise.all([
-    db.from("organizations").select("id,name,category,city,description,tagline,accent_color,avatar_url,cover_url,published").eq("published",true).order("name"),
+    db.from("organizations").select("id,name,category,city,description,tagline,accent_color,avatar_url,cover_url,published,profile_sections").eq("published",true).order("name"),
     db.from("organization_services").select("id,organization_id,title,description,price_eur,active").eq("active",true),
     db.from("service_requests").select("id,organization_id,service_id,notes,requested_date,status,created_at")
       .eq("customer_id",userId).order("created_at",{ascending:false}),
@@ -413,63 +423,56 @@ export function CustomerSocial({userId,email,onLogout}:{userId:string;email:stri
         </div>
       </header>
 
+
+      {publicSections.length>0&&<nav className="as-company-section-nav" aria-label={"Secciones de "+selectedOrganization.name}>
+        {publicSections.map(id=><button key={id} type="button" onClick={()=>{
+          document.getElementById("as-company-section-"+id)?.scrollIntoView({behavior:"smooth",block:"start"});
+        }}>{companySectionLabel(id)}</button>)}
+      </nav>}
       <div className="as-company-page-grid">
         <div className="as-company-page-main">
-          <section className="as-company-section" aria-labelledby="company-about">
-            <div className="as-company-section-title"><span>01 / PRESENTACIÓN</span><h2 id="company-about">Conoce el negocio</h2></div>
-            <p className="as-company-about-text">{selectedOrganization.description||"Este negocio todavía no ha añadido una presentación."}</p>
-          </section>
-
-          <section className="as-company-section" aria-labelledby="company-services">
-            <div className="as-company-section-title"><span>02 / SERVICIOS</span><h2 id="company-services">Qué podemos hacer por ti</h2></div>
-            {currentServices.length===0
-              ?<p className="as-company-muted">Este negocio todavía no tiene servicios publicados.</p>
-              :<div className="as-company-service-list">{currentServices.map(s=><div key={s.id} className="as-company-service">
-                <div><strong>{s.title}</strong>{s.description&&<p>{s.description}</p>}<span>{formatMoney(s.price_eur)}</span></div>
-                <button type="button" className="button secondary small" onClick={()=>setChosenService(s.id)}>
-                  Solicitar <ArrowRight size={14}/>
-                </button>
-              </div>)}</div>}
-            {chosenService&&<form className="as-social-request-form as-company-request-form" onSubmit={sendRequest}>
-              <div className="as-company-section-title"><span>HACER UNA SOLICITUD</span><h3>Solicitar {selectedService?.title}</h3></div>
-              <label>Fecha deseada (opcional)<input type="date" value={requestDate} onChange={e=>setRequestDate(e.target.value)}/></label>
-              <label>Cuéntanos qué necesitas<textarea rows={3} maxLength={2000} value={requestNotes} onChange={e=>setRequestNotes(e.target.value)}/></label>
-              <p>Compartiremos los datos de contacto de tu perfil con este negocio para gestionar la solicitud. El negocio deberá confirmar la disponibilidad.</p>
-              <div className="as-company-request-actions">
-                <button type="button" className="button secondary" onClick={()=>setChosenService(null)}>Cancelar</button>
-                <button type="submit" className="button primary" disabled={busy}>Confirmar solicitud <ArrowRight size={15}/></button>
+          {publicSections.map((section,index)=>{
+            if(section==="about")return <section key={section} id="as-company-section-about" className="as-company-section" aria-labelledby="company-about">
+              <div className="as-company-section-title"><span>{String(index+1).padStart(2,"0")} / PRESENTACIÓN</span><h2 id="company-about">Conoce el negocio</h2></div>
+              <p className="as-company-about-text">{selectedOrganization.description||"Este negocio todavía no ha añadido una presentación."}</p>
+            </section>;
+            if(section==="services")return <section key={section} id="as-company-section-services" className="as-company-section" aria-labelledby="company-services">
+              <div className="as-company-section-title"><span>{String(index+1).padStart(2,"0")} / SERVICIOS</span><h2 id="company-services">Qué podemos hacer por ti</h2></div>
+              {currentServices.length===0
+                ?<p className="as-company-muted">Este negocio todavía no tiene servicios publicados.</p>
+                :<div className="as-company-service-list">{currentServices.map(s=><div key={s.id} className="as-company-service">
+                  <div><strong>{s.title}</strong>{s.description&&<p>{s.description}</p>}<span>{formatMoney(s.price_eur)}</span></div>
+                  <button type="button" className="button secondary small" onClick={()=>setChosenService(s.id)}>
+                    Solicitar <ArrowRight size={14}/>
+                  </button>
+                </div>)}</div>}
+              {chosenService&&<form className="as-social-request-form as-company-request-form" onSubmit={sendRequest}>
+                <div className="as-company-section-title"><span>HACER UNA SOLICITUD</span><h3>Solicitar {selectedService?.title}</h3></div>
+                <label>Fecha deseada (opcional)<input type="date" value={requestDate} onChange={e=>setRequestDate(e.target.value)}/></label>
+                <label>Cuéntanos qué necesitas<textarea rows={3} maxLength={2000} value={requestNotes} onChange={e=>setRequestNotes(e.target.value)}/></label>
+                <p>Compartiremos los datos de contacto de tu perfil con este negocio para gestionar la solicitud. El negocio deberá confirmar la disponibilidad.</p>
+                <div className="as-company-request-actions">
+                  <button type="button" className="button secondary" onClick={()=>setChosenService(null)}>Cancelar</button>
+                  <button type="submit" className="button primary" disabled={busy}>Confirmar solicitud <ArrowRight size={15}/></button>
+                </div>
+              </form>}
+            </section>;
+            if(section==="locations")return <section key={section} id="as-company-section-locations" className="as-company-section" aria-labelledby="company-locations">
+              <div className="as-company-section-title"><span>{String(index+1).padStart(2,"0")} / DÓNDE ENCONTRARNOS</span><h2 id="company-locations">Sedes y ubicaciones</h2></div>
+              <div className="as-company-location-list">
+                {currentCompanyLocations.map(l=><div key={l.id} className="as-company-location">
+                  <MapPin size={20}/>
+                  <div><strong>{l.name}</strong><p>{[l.address,l.city].filter(Boolean).join(" · ")||"Ubicación por concretar"}</p>
+                    <small>{l.availability_mode==="cita"?"Con cita previa":"Consultar disponibilidad"}</small></div>
+                  {(hasValidCoordinates(l.latitude,l.longitude)||l.address||l.city)&&<a className="button secondary small" target="_blank" rel="noopener noreferrer"
+                    href={hasValidCoordinates(l.latitude,l.longitude)?`https://www.openstreetmap.org/?mlat=${l.latitude}&mlon=${l.longitude}#map=17/${l.latitude}/${l.longitude}`:"https://www.openstreetmap.org/search?query="+encodeURIComponent([l.address,l.city].filter(Boolean).join(", "))}>Ver mapa</a>}
+                </div>)}
               </div>
-            </form>}
-          </section>
-
-          {locations.some(l=>l.organization_id===selectedOrganization.id)&&<section className="as-company-section" aria-labelledby="company-locations">
-            <div className="as-company-section-title"><span>03 / DÓNDE ENCONTRARNOS</span><h2 id="company-locations">Sedes y ubicaciones</h2></div>
-            <div className="as-company-location-list">
-              {locations.filter(l=>l.organization_id===selectedOrganization.id).map(l=><div key={l.id} className="as-company-location">
-                <MapPin size={20}/>
-                <div><strong>{l.name}</strong><p>{[l.address,l.city].filter(Boolean).join(" · ")||"Ubicación por concretar"}</p>
-                  <small>{l.availability_mode==="cita"?"Con cita previa":"Consultar disponibilidad"}</small></div>
-                {(hasValidCoordinates(l.latitude,l.longitude)||l.address||l.city)&&<a className="button secondary small" target="_blank" rel="noopener noreferrer"
-                  href={hasValidCoordinates(l.latitude,l.longitude)?`https://www.openstreetmap.org/?mlat=${l.latitude}&mlon=${l.longitude}#map=17/${l.latitude}/${l.longitude}`:"https://www.openstreetmap.org/search?query="+encodeURIComponent([l.address,l.city].filter(Boolean).join(", "))}>Ver mapa</a>}
-              </div>)}
-            </div>
-          </section>}
-        </div>
-
-        <aside className="as-company-page-side">
-          <div className="as-company-contact-panel">
-            <span>¿HABLAMOS?</span><h2>Tu próximo proyecto empieza aquí.</h2>
-            <p>Consulta disponibilidad, pide información o habla directamente con este negocio.</p>
-            <button type="button" className="button primary" onClick={()=>openMessages(selectedOrganization.id)}>
-              <MessageCircle size={17}/> Enviar mensaje <ArrowRight size={16}/>
-            </button>
-          </div>
-          <section className="as-company-updates" aria-label="Novedades del negocio">
-            <div className="as-company-section-title"><span>COMUNIDAD</span><h2>Últimas novedades</h2></div>
-            {posts.filter(p=>p.organization_id===selectedOrganization.id).length===0
-              ?<p className="as-company-muted">Todavía no hay publicaciones de esta empresa.</p>
-              :<div className="as-company-posts">
-                {posts.filter(p=>p.organization_id===selectedOrganization.id).slice(0,8).map(post=><article key={post.id} className="as-company-post">
+            </section>;
+            if(section==="posts")return <section key={section} id="as-company-section-posts" className="as-company-section" aria-labelledby="company-posts">
+              <div className="as-company-section-title"><span>{String(index+1).padStart(2,"0")} / COMUNIDAD</span><h2 id="company-posts">Publicaciones y novedades</h2></div>
+              <div className="as-company-posts">
+                {currentCompanyPosts.map(post=><article key={post.id} className="as-company-post">
                   <div className="as-company-post-author">
                     <span className="as-company-post-avatar">{mediaUrl(selectedOrganization.avatar_url)
                       ?<img src={mediaUrl(selectedOrganization.avatar_url)} alt="" onError={e=>{e.currentTarget.style.display="none";}}/>
@@ -480,8 +483,32 @@ export function CustomerSocial({userId,email,onLogout}:{userId:string;email:stri
                   {mediaUrl(post.media_url)&&post.media_kind==="image"&&<img className="as-company-post-media" src={mediaUrl(post.media_url)} alt="Foto publicada por el negocio"/>}
                   {mediaUrl(post.media_url)&&post.media_kind==="video"&&<BusinessVideo className="as-company-post-media" controls preload="metadata" src={mediaUrl(post.media_url)}/>}
                 </article>)}
-              </div>}
-          </section>
+              </div>
+            </section>;
+            if(section==="portfolio")return <section key={section} id="as-company-section-portfolio" className="as-company-section" aria-labelledby="company-portfolio">
+              <div className="as-company-section-title"><span>{String(index+1).padStart(2,"0")} / TRABAJOS</span><h2 id="company-portfolio">Portfolio</h2></div>
+              <div className="as-company-portfolio-grid">
+                {currentCompanyPosts.filter(post=>post.media_url&&post.media_kind).map(post=><figure key={post.id}>
+                  {mediaUrl(post.media_url)
+                    ?post.media_kind==="video"
+                      ?<BusinessVideo controls preload="metadata" src={mediaUrl(post.media_url)} className="as-company-portfolio-media"/>
+                      :<img src={mediaUrl(post.media_url)} className="as-company-portfolio-media" alt={post.body||"Trabajo publicado por el negocio"}/>
+                    :<div className="as-company-portfolio-media as-company-portfolio-loading" role="status">Cargando contenido…</div>}
+                  {post.body&&<figcaption>{post.body}</figcaption>}
+                </figure>)}
+              </div>
+            </section>;
+            return null;
+          })}
+        </div>
+        <aside className="as-company-page-side">
+          <div className="as-company-contact-panel">
+            <span>¿HABLAMOS?</span><h2>Tu próximo proyecto empieza aquí.</h2>
+            <p>Consulta disponibilidad, pide información o habla directamente con este negocio.</p>
+            <button type="button" className="button primary" onClick={()=>openMessages(selectedOrganization.id)}>
+              <MessageCircle size={17}/> Enviar mensaje <ArrowRight size={16}/>
+            </button>
+          </div>
         </aside>
       </div>
         </div>}
