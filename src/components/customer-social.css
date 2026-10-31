@@ -392,3 +392,12 @@
   .as-profile-layout-editor{padding:15px;}
   .as-profile-layout-item{padding:9px;}
 }
+
+
+/* Make the business profile designer a first-class professional destination. */
+.as-profile-design-callout{display:flex;justify-content:space-between;align-items:center;gap:18px;padding:22px;border:1px solid var(--border);border-radius:17px;background:var(--surface-2);margin-bottom:22px;}
+.as-profile-design-callout>div{flex:1;min-width:0;}
+.as-profile-design-callout h2{font-size:21px;line-height:1.25;letter-spacing:-.035em;margin:8px 0;}
+.as-profile-design-callout p{color:var(--muted);font-size:13px;line-height:1.6;margin:0;}
+.as-profile-design-callout .button{white-space:nowrap;flex-shrink:0;}
+@media(max-width:680px){.as-profile-design-callout{padding:16px;flex-direction:column;align-items:stretch;}.as-profile-design-callout .button{white-space:normal;width:100%;justify-content:center;}}

@@ -5,7 +5,7 @@ import { MODULES, type ModuleId } from "@/lib/catalog";
 import { useEffect,useRef,useState } from "react";
 import { getSupabase } from "@/lib/supabase/client";
 
-export type BusinessArea = "inicio" | "negocio" | "gestion" | "clientes" | "solicitudes-empresa" | "mensajes" | "sedes" | "workboard" | "herramientas" | "perfil";
+export type BusinessArea = "inicio" | "negocio" | "diseno" | "gestion" | "clientes" | "solicitudes-empresa" | "mensajes" | "sedes" | "workboard" | "herramientas" | "perfil";
 
 type Company = { name: string; category: string; city: string; description: string; published: boolean };
 type BusinessHomeProps = {
@@ -28,6 +28,7 @@ type Shortcut = {
 export function BusinessHome({organization,serviceCount,customerCount,requestCount,pendingCount,onNavigate}:BusinessHomeProps) {
   const shortcuts:Shortcut[]=[
     {label:"Perfil del negocio",desc:"Datos comerciales y visibilidad en Explorar",area:"negocio",icon:Settings2,value:organization?.published?"Publicado":"Privado"},
+    {label:"Diseño del perfil",desc:"Organiza el portfolio, los servicios y las publicaciones",area:"diseno",icon:Image,value:"Personalizar"},
     {label:"Servicios",desc:"Catálogo de servicios y precios reales",area:"gestion",icon:ShoppingBag,value:String(serviceCount)},
     {label:"Clientes",desc:"Fichas CRM vinculadas a solicitudes",area:"clientes",icon:UsersRound,value:String(customerCount)},
     {label:"Solicitudes",desc:"Revisar y actualizar estados",area:"solicitudes-empresa",icon:ClipboardList,value:String(requestCount)},
