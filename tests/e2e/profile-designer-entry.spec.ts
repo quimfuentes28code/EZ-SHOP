@@ -18,8 +18,11 @@ test("Empresa muestra Diseño del perfil como pantalla propia y guarda el orden 
   await page.goto(`/cliente?negocio=${MOCK_ORGANIZATION_ID}`);
   const profile = page.getByRole("dialog");
   const sections = profile.getByRole("navigation", { name: /Secciones de/ }).getByRole("button");
-  await expect(sections.first()).toHaveText("Servicios");
-  await expect(sections.nth(1)).toHaveText("Presentación");
+  await expect(sections.first()).toHaveText("Inicio");
+  await expect(sections.nth(1)).toHaveText("Servicios");
+  await expect(sections.nth(2)).toHaveText("Más");
+  await sections.nth(2).click();
+  await expect(profile.getByRole("heading", { name: "Conoce el negocio" })).toBeVisible();
 });
 
 test("en pantalla móvil existe acceso directo al Diseño del perfil", async ({ page }) => {
