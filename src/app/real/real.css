@@ -14,7 +14,7 @@
 .live-tabs button.active {background:var(--text);color:var(--bg);border-color:var(--text);}
 .live-form {display:grid;gap:14px;}
 .live-form label,.live-card>label {display:grid;gap:7px;font-size:12px;font-weight:600;color:var(--text);}
-.live-form input,.live-form select,.live-form textarea,.live-card select,.live-card input {width:100%; min-height:43px; border:1px solid var(--border);border-radius:10px;padding:10px 12px;background:var(--field-bg);color:var(--text);}
+.live-form input:not([type=checkbox]):not([type=radio]),.live-form select,.live-form textarea,.live-card select,.live-card input:not([type=checkbox]):not([type=radio]) {width:100%; min-height:43px; border:1px solid var(--border);border-radius:10px;padding:10px 12px;background:var(--field-bg);color:var(--text);}
 .live-form textarea {resize:vertical;min-height:85px;}
 .live-form .button {justify-self:start;}
 .live-columns {grid-template-columns:repeat(2,minmax(0,1fr));}
@@ -189,4 +189,49 @@ button.business-live-tool:hover{border-color:#c7a075;}
 }
 @media(max-width:380px){
   .live-integrated-shell .business-live-mobile-company-switcher{grid-template-columns:minmax(0,1fr);gap:7px;padding:11px 15px;}
+}
+
+/* The connected workspace uses one main navigation and one company context. */
+.live-integrated-shell .business-content-heading{display:none;}
+.live-integrated-shell .workspace-topbar{height:auto;min-height:80px;position:sticky;top:0;z-index:70;background:var(--surface);padding-top:max(12px,env(safe-area-inset-top,0px));padding-bottom:12px;}
+.business-header-identity{min-width:0;display:flex;align-items:center;gap:15px;flex-wrap:wrap;}
+.business-header-identity>strong{font-size:15px;overflow-wrap:anywhere;}
+.business-header-mobile-brand{display:none;}
+.business-active-company{display:grid;gap:4px;color:var(--muted);font-size:10px;min-width:0;max-width:300px;}
+.business-active-company select{background:var(--field-bg);color:var(--text);border:1px solid var(--border);border-radius:9px;min-height:44px;max-width:100%;padding:8px 12px;font:inherit;font-size:14px;}
+.business-current-section{font-size:12px;color:var(--muted);border-left:1px solid var(--border);padding-left:15px;}
+.business-section-back{margin:0 0 18px;}
+.business-management{display:grid;gap:18px;}
+.business-management h2{margin:0;font-size:24px;}
+.business-profile-workspace{display:grid;gap:20px;}
+.business-profile-heading h2{margin:7px 0;font-size:27px;letter-spacing:-.035em;}
+.business-profile-heading p{margin:0;}
+.business-profile-sections{display:flex;gap:7px;flex-wrap:wrap;padding-bottom:13px;border-bottom:1px solid var(--border);}
+.business-profile-sections button{display:flex;align-items:center;min-height:44px;border:1px solid var(--border);border-radius:10px;background:var(--surface);color:var(--muted);padding:10px 13px;font:inherit;font-size:12px;cursor:pointer;}
+.business-profile-sections button[aria-current="page"]{background:var(--accent-dim);border-color:var(--accent);color:var(--accent);font-weight:700;}
+.business-profile-workspace>.live-card{margin:0;}
+.business-recent-activity h3,.business-upcoming h3{margin:0;}
+@media(max-width:860px){
+ .live-integrated-shell .workspace-sidebar{display:none;}
+ .live-integrated-shell .workspace-body{margin-left:0;}
+ .live-integrated-shell .workspace-topbar{padding-inline:16px;min-height:80px;align-items:center;gap:10px;}
+ .live-integrated-shell .live-app{padding-top:22px;}
+ .live-integrated-shell .live-app>.live-tabs{display:none;}
+ .business-header-identity{gap:5px 10px;flex:1;}
+ .business-header-mobile-brand{display:block;flex:1 0 100%;}
+ .business-header-mobile-brand .brand{font-size:16px;}
+ .business-header-mobile-brand .brand svg{width:21px;height:21px;}
+ .business-header-identity>strong{font-size:13px;}
+ .business-active-company{max-width:min(260px,calc(100vw - 85px));font-size:10px;gap:2px;}
+ .business-active-company select{font-size:16px;min-height:44px;}
+ .business-current-section{font-size:11px;border:0;padding-left:0;}
+ .business-profile-heading h2{font-size:23px;}
+ .business-profile-sections{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));}
+ .business-profile-sections button{justify-content:flex-start;text-align:left;min-width:0;font-size:11px;}
+ .business-live-home .business-live-section-head{align-items:flex-start;}
+}
+@media(max-width:380px){
+ .business-profile-sections{grid-template-columns:1fr;}
+ .live-integrated-shell .workspace-topbar{padding-inline:12px;}
+ .business-header-identity>strong{max-width:180px;}
 }

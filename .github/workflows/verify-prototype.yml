@@ -41,10 +41,14 @@ jobs:
           test -f out/negocio/beauty.html
           test -f out/negocio/bakery.html
           test -f out/negocio/repairs.html
-      - name: Install Chromium for browser tests
-        run: npx playwright install --with-deps chromium
+      - name: Install Chromium and WebKit for browser tests
+        run: npx playwright install --with-deps chromium webkit
       - name: Verify public, demo and mocked account flows
         run: npm run test:e2e
+      - name: Verify navigation, profile editing and responsive flows in WebKit
+        env:
+          AUTONOSERVICE_TEST_BROWSER: webkit
+        run: npm run test:e2e -- customer-navigation.spec.ts business-navigation.spec.ts unified-profile-editor.spec.ts responsive-navigation.spec.ts video-renewal.spec.ts
       - name: Preserve browser failure evidence
         if: failure()
         uses: actions/upload-artifact@v4

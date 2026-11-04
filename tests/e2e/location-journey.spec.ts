@@ -1,11 +1,12 @@
 import { expect, test, type Page } from "@playwright/test";
 import { installSupabaseMock, MOCK_ORGANIZATION_ID, MOCK_USER_ID } from "./helpers/supabase";
 import { installLeafletMock } from "./helpers/leaflet";
+import { openAccountMenu, switchAccountExperience, openBusinessProfileSection } from "./helpers/navigation";
 
 const businessNav = (page: Page, name: string) => page.getByRole("navigation", { name: "Módulos disponibles" }).getByRole("button", { name, exact: true });
 const customerNav = (page: Page, name: string) => page.getByRole("navigation", { name: "Navegación Cliente" }).getByRole("button", { name, exact: true });
 const switchExperience = async (page: Page, experience: "business" | "customer") => {
-  await page.getByRole("combobox", { name: "Cambiar experiencia de la cuenta" }).selectOption(experience);
+  await switchAccountExperience(page, experience);
   await expect(page).toHaveURL(experience === "business" ? /\/empresa$/ : /\/cliente$/);
 };
 
@@ -100,7 +101,7 @@ test("alta Empresa → sede privada → publicación consentida → mapa Cliente
   await page.getByRole("checkbox", { name: /^Mostrar esta sede/ }).check();
   await page.getByRole("button", { name: "Guardar tienda", exact: true }).click();
   await expect.poll(() => tables.organization_locations[0].published).toBe(true);
-  await businessNav(page, "Perfil público").click();
+  await openBusinessProfileSection(page, "Visibilidad");
   await page.getByRole("button", { name: "Ocultar negocio", exact: true }).click();
   await expect.poll(() => tables.organizations[0].published).toBe(false);
   await switchExperience(page, "customer");
@@ -169,6 +170,7 @@ test("mapa y directorio comparten filtros y cada sede abre la empresa correcta",
   await page.keyboard.press("Escape");
   tables.organization_locations[0].name = "Estudio Terrassa actualizado";
   tables.organizations[0].name = "Foto QA actualizada";
+  await openAccountMenu(page);
   await page.getByRole("button", { name: "Actualizar datos", exact: true }).click();
   await expect(page.getByRole("button", { name: "Pin: Foto QA · Estudio Terrassa", exact: true })).toHaveCount(0);
   await page.getByRole("button", { name: "Pin: Foto QA actualizada · Estudio Terrassa actualizado", exact: true }).click();

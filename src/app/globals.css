@@ -521,3 +521,5 @@ textarea {
     font-size: 20px;
   }
 }
+/* Preserve native hidden semantics for kept-alive panels and drafts. */
+[hidden]{display:none!important;}

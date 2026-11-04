@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { installSupabaseMock, MOCK_ORGANIZATION_ID, MOCK_SUPABASE_URL, MOCK_USER_ID } from "./helpers/supabase";
+import { openBusinessSection, openBusinessProfileSection } from "./helpers/navigation";
 
 const second="55555555-5555-4555-8555-555555555555";
 const organizations=[
@@ -39,9 +40,11 @@ test("cambiar de empresa limpia los datos anteriores e ignora respuestas tardía
   await page.goto("/empresa");
   await modules(page).getByRole("button",{name:"Servicios",exact:true}).click();
   await expect(page.getByText("Servicio exclusivo A",{exact:true})).toBeVisible();
+  await openBusinessSection(page,"Clientes");
   await expect(page.getByText("Contacto exclusivo A",{exact:true})).toBeVisible();
+  await openBusinessSection(page,"Servicios");
   await page.getByLabel("Servicio",{exact:true}).fill("Borrador de A");
-  const selection=page.getByRole("combobox",{name:"Negocios anteriores",exact:true});
+  const selection=page.getByRole("combobox",{name:"Cambiar de empresa activa",exact:true});
   await selection.selectOption(second);
   await expect.poll(()=>pending).toBe(3);
   await expect(page.getByText("Servicio exclusivo A",{exact:true})).toHaveCount(0);
@@ -57,6 +60,7 @@ test("cambiar de empresa limpia los datos anteriores e ignora respuestas tardía
   await expect(page.getByText("Contacto exclusivo B",{exact:true})).toHaveCount(0);
   await selection.selectOption(second);
   await expect(page.getByText("Servicio exclusivo B",{exact:true})).toBeVisible();
+  await openBusinessSection(page,"Clientes");
   await expect(page.getByText("Contacto exclusivo B",{exact:true})).toBeVisible();
   await expect(page.getByText("Servicio exclusivo A",{exact:true})).toHaveCount(0);
 });
@@ -64,24 +68,27 @@ test("cambiar de empresa limpia los datos anteriores e ignora respuestas tardía
 test("la visibilidad del editor, del perfil y de las sedes permanece sincronizada",async({page})=>{
   const {tables}=await installSupabaseMock(page,{tables:{organizations:[organizations[0]]}});
   await page.goto("/empresa");
-  await modules(page).getByRole("button",{name:"Perfil público",exact:true}).click();
-  const editor=page.locator(".social-business-editor");
+  await openBusinessProfileSection(page,"Visibilidad");
   const profile=page.locator(".business-live-profile");
-  await expect(editor).toContainText("Empresa A: perfil privado");
-  await editor.getByRole("button",{name:"Publicar mi empresa",exact:true}).click();
-  await expect(editor).toContainText("Empresa A: perfil público");
+  await expect(profile).toContainText("Perfil privado");
+  await profile.getByRole("button",{name:"Publicar negocio",exact:true}).click();
   await expect(profile.getByRole("button",{name:"Ocultar negocio",exact:true})).toBeVisible();
   expect(tables.organizations[0].published).toBe(true);
+  await openBusinessProfileSection(page,"Diseño y apariencia");
+  await expect(page.locator(".social-business-editor")).toHaveCount(1);
+  await openBusinessProfileSection(page,"Visibilidad");
   await profile.getByRole("button",{name:"Ocultar negocio",exact:true}).click();
-  await expect(editor).toContainText("Empresa A: perfil privado");
-  await expect(editor.getByRole("link",{name:"Ver como Cliente",exact:true})).toHaveCount(0);
-  await modules(page).getByRole("button",{name:"Tiendas y sedes",exact:true}).click();
+  await expect(profile).toContainText("Perfil privado");
+  await openBusinessProfileSection(page,"Ver como Cliente");
+  await expect(page.getByRole("link",{name:"Abrir perfil como Cliente",exact:true})).toHaveCount(0);
+  await openBusinessSection(page,"Tiendas y sedes");
   await expect(page.locator(".live-locations")).toContainText("Negocio privado");
   await page.locator(".live-locations").getByRole("button",{name:"Publicar negocio",exact:true}).click();
   await expect(page.locator(".live-locations")).toContainText("Negocio público");
-  await modules(page).getByRole("button",{name:"Perfil público",exact:true}).click();
-  await expect(editor).toContainText("Empresa A: perfil público");
-  await editor.getByRole("link",{name:"Ver como Cliente",exact:true}).click();
+  await openBusinessProfileSection(page,"Visibilidad");
+  await expect(profile.getByRole("button",{name:"Ocultar negocio",exact:true})).toBeVisible();
+  await openBusinessProfileSection(page,"Ver como Cliente");
+  await page.getByRole("link",{name:"Abrir perfil como Cliente",exact:true}).click();
   await expect(page).toHaveURL(new RegExp(`/cliente\\?negocio=${MOCK_ORGANIZATION_ID}$`));
   await expect(page.getByRole("dialog")).toContainText("Empresa A");
 });
@@ -93,9 +100,10 @@ test("el selector de empresa sigue disponible en móvil fuera de Servicios",asyn
   const selection=page.getByRole("combobox",{name:"Cambiar de empresa activa",exact:true});
   await expect(selection).toBeVisible();
   await expect(selection).toHaveValue(MOCK_ORGANIZATION_ID);
-  await page.getByRole("navigation",{name:"Espacios conectados"}).getByRole("button",{name:"Perfil público",exact:true}).click();
+  await openBusinessProfileSection(page,"Información general");
   await selection.selectOption(second);
-  await expect(page.locator(".business-live-profile").getByRole("heading",{name:"Perfil de Empresa B",exact:true})).toBeVisible();
+  await expect(page.locator(".business-live-profile").getByRole("heading",{name:"Información general",exact:true})).toBeVisible();
+  await openBusinessProfileSection(page,"Diseño y apariencia");
   await expect(page.locator(".social-business-editor")).toContainText("Empresa B");
   await expect(page.locator(".social-business-editor")).not.toContainText("Empresa A");
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);

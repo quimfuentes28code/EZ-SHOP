@@ -3,6 +3,7 @@ import { defineConfig } from "@playwright/test";
 
 const chromiumPath =
   process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH || "/usr/bin/chromium";
+const useWebKit = process.env.AUTONOSERVICE_TEST_BROWSER === "webkit";
 
 export default defineConfig({
   testDir: "./tests/e2e",
@@ -13,12 +14,13 @@ export default defineConfig({
   expect: { timeout: 10_000 },
   reporter: "list",
   use: {
+    browserName: useWebKit ? "webkit" : "chromium",
     baseURL: "http://127.0.0.1:3000",
     viewport: { width: 1440, height: 1000 },
     headless: true,
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
-    launchOptions: {
+    launchOptions: useWebKit ? {} : {
       ...(existsSync(chromiumPath) ? { executablePath: chromiumPath } : {}),
       args: ["--no-sandbox"],
     },

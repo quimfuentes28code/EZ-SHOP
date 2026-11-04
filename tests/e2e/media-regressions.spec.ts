@@ -2,13 +2,15 @@ import { expect, test } from "@playwright/test";
 import { BUSINESS_MEDIA_BUCKET } from "../../src/lib/business-media";
 import { installSupabaseMock, MOCK_ORGANIZATION_ID, MOCK_SUPABASE_URL } from "./helpers/supabase";
 
+import { openBusinessProfileSection } from "./helpers/navigation";
+
 const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl6uH8AAAAASUVORK5CYII=", "base64");
 const image = { name: "imagen-prueba.png", mimeType: "image/png", buffer: png };
 
 test("las subidas quedan bloqueadas si la actualización de privacidad no está disponible", async ({ page }) => {
   const { requests, tables } = await installSupabaseMock(page);
   await page.goto("/empresa");
-  await page.getByRole("navigation", { name: "Módulos disponibles" }).getByRole("button", { name: "Perfil público", exact: true }).click();
+  await openBusinessProfileSection(page, "Diseño y apariencia");
   await page.locator(".social-business-upload-actions input[type=file]").first().setInputFiles(image);
   await expect(page.locator(".social-business-editor")).toContainText("desactivados hasta completar la actualización de protección de medios");
   expect(requests.some(request => request.url.includes("/rpc/autonoservice_business_media_private"))).toBe(true);
@@ -49,13 +51,14 @@ test(`los medios se guardan como referencias y ambas experiencias muestran solo 
     await route.fallback();
   });
   await page.goto("/empresa");
-  await page.getByRole("navigation", { name: "Módulos disponibles" }).getByRole("button", { name: "Perfil público", exact: true }).click();
+  await openBusinessProfileSection(page, "Diseño y apariencia");
   const editor = page.locator(".social-business-editor");
   await expect(editor.getByAltText("Portada de Estudio de prueba")).toHaveAttribute("src", /\/object\/sign\//);
   await editor.locator(".social-business-upload-actions input[type=file]").first().setInputFiles(image);
   await expect(editor).toContainText("Imagen de perfil actualizada");
   expect(tables.organizations[0].avatar_url).toMatch(new RegExp(`^storage://${BUSINESS_MEDIA_BUCKET}/${MOCK_ORGANIZATION_ID}/`));
   await expect(editor.getByAltText("Logo de Estudio de prueba")).toHaveAttribute("src", /\/object\/sign\//);
+  await openBusinessProfileSection(page, "Publicaciones y portfolio");
   const publisher = editor.locator(".social-publish-form");
   await publisher.getByRole("checkbox", { name: "Publicar en mi perfil" }).uncheck();
   await publisher.locator("textarea").fill("Imagen de borrador de prueba");

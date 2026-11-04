@@ -76,7 +76,7 @@ test("Empresa no mezcla conversaciones personales de una identidad con ambos esp
     conversations:[customerThread,threads[1]],conversation_messages:[{...chatMessage(1),sender_id:MOCK_USER_ID}],
   }});
   await page.goto("/empresa");
-  await page.getByRole("navigation",{name:"Módulos disponibles"}).getByRole("button",{name:"Mensajes",exact:true}).click();
+  await page.getByRole("navigation",{name:"Módulos disponibles"}).getByRole("button",{name:"Conversaciones",exact:true}).click();
   const list=page.getByRole("complementary",{name:"Tus conversaciones"});
   await expect(list.getByRole("button")).toHaveCount(1);
   await expect(list).toContainText("Cliente del negocio");

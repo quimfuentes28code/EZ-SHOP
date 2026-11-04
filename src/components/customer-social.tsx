@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect,useMemo,useState,type FormEvent } from "react";
+import { useEffect,useMemo,useRef,useState,type FormEvent } from "react";
 import {
  ArrowRight, CalendarDays, Camera, Check, Compass, Heart, LayoutGrid, MapPin,
  MessageCircle, Search, ShieldCheck, Sparkles, UserRound, RefreshCw,
@@ -11,6 +11,9 @@ import { BusinessVideo } from "@/components/business-video";
 import { SocialInbox } from "@/components/social-inbox";
 import { BusinessMap } from "@/components/business-map";
 import { AccountExperienceSwitcher } from "@/components/account-experience-switcher";
+import { Brand } from "@/components/brand";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { AccountActions, AppBottomNavigation, AppSectionNavigation } from "@/components/app-navigation";
 import { Modal } from "@/components/modal";
 import { useBusinessMedia } from "@/components/use-business-media";
 import { getBusinessMapPoints, hasValidCoordinates, matchesBusinessLocation, matchesBusinessQuery } from "@/lib/business-discovery";
@@ -24,6 +27,8 @@ type Service={id:string;organization_id:string;title:string;description:string;p
 type Request={id:string;organization_id:string;service_id:string;notes:string;requested_date:string|null;status:string;created_at:string};
 type Profile={first_name:string;last_name:string;phone:string;city:string};
 type Tab="explorar"|"mapa"|"novedades"|"actividad"|"favoritos"|"mensajes"|"perfil";
+type ExploreFeed="para-ti"|"siguiendo"|"cerca";
+type ProfileView="resumen"|"datos"|"actividad"|"configuracion";
 const formatMoney=(n:number|null)=>n===null?"Consultar precio":
  new Intl.NumberFormat("es-ES",{style:"currency",currency:"EUR"}).format(n);
 const categories=["Todos","Fotografía","Belleza","Gastronomía","Hogar","Otros"];
@@ -45,6 +50,10 @@ const categoryMatches=(category:string,choice:string):boolean=>{
 export function CustomerSocial({userId,email,onLogout}:{userId:string;email:string;onLogout:()=>void}){
  const db=getSupabase();
  const [tab,setTab]=useState<Tab>("explorar");
+ const [feed,setFeed]=useState<ExploreFeed>("para-ti");
+ const [profileView,setProfileView]=useState<ProfileView>("resumen");
+ const [messagesOpened,setMessagesOpened]=useState(false);
+ const searchInput=useRef<HTMLInputElement>(null);
  const [organizations,setOrganizations]=useState<Organization[]>([]);
  const [services,setServices]=useState<Service[]>([]);
  const [posts,setPosts]=useState<BusinessPost[]>([]);
@@ -70,21 +79,33 @@ export function CustomerSocial({userId,email,onLogout}:{userId:string;email:stri
    const sync=()=>{
      const url=new URL(window.location.href);
      const next=url.searchParams.get("vista");
-     setTab(next&&["explorar","mapa","novedades","actividad","favoritos","mensajes","perfil"].includes(next)?next as Tab:"explorar");
+     const canonical=next==="novedades"?"explorar":next==="actividad"?"perfil":next;
+     setTab(canonical&&["explorar","mapa","favoritos","mensajes","perfil"].includes(canonical)?canonical as Tab:"explorar");
+     const nextFeed=url.searchParams.get("feed");
+     setFeed(next==="novedades"?"siguiendo":nextFeed==="siguiendo"||nextFeed==="cerca"?nextFeed:"para-ti");
+     const nextProfile=url.searchParams.get("seccion");
+     setProfileView(next==="actividad"?"actividad":nextProfile==="datos"||nextProfile==="actividad"||nextProfile==="configuracion"?nextProfile:"resumen");
+     if(canonical==="mensajes")setMessagesOpened(true);
      setDetail(url.searchParams.get("negocio"));setChosenService(null);
    };
    sync();window.addEventListener("popstate",sync);
    return ()=>window.removeEventListener("popstate",sync);
  },[]);
- function navigate(next:Tab,businessId:string|null,replace=false){
+ function navigate(next:Tab,businessId:string|null,replace=false,options?:{feed?:ExploreFeed;profile?:ProfileView}){
+   const canonical=next==="novedades"?"explorar":next==="actividad"?"perfil":next;
+   const nextFeed=options?.feed||(next==="novedades"?"siguiendo":feed);
+   const nextProfile=options?.profile||(next==="actividad"?"actividad":profileView);
    const url=new URL(window.location.href);
-   if(next==="explorar")url.searchParams.delete("vista");else url.searchParams.set("vista",next);
+   if(canonical==="explorar")url.searchParams.delete("vista");else url.searchParams.set("vista",canonical);
+   if(canonical==="explorar"&&nextFeed!=="para-ti")url.searchParams.set("feed",nextFeed);else url.searchParams.delete("feed");
+   if(canonical==="perfil"&&nextProfile!=="resumen")url.searchParams.set("seccion",nextProfile);else url.searchParams.delete("seccion");
    if(businessId)url.searchParams.set("negocio",businessId);else url.searchParams.delete("negocio");
    if(url.href!==window.location.href){
      const state={...window.history.state,autonoProfileOrigin:businessId?window.location.href:null};
      if(replace)window.history.replaceState(state,"",url);else window.history.pushState(state,"",url);
    }
-   setTab(next);setDetail(businessId);setChosenService(null);
+   setTab(canonical);setFeed(nextFeed);setProfileView(nextProfile);setDetail(businessId);setChosenService(null);
+   if(canonical==="mensajes")setMessagesOpened(true);
  }
  function openBusinessProfile(id:string){setCompanyTab("inicio");navigate(tab,id);}
  function closeBusinessProfile(){
@@ -95,6 +116,12 @@ export function CustomerSocial({userId,email,onLogout}:{userId:string;email:stri
    else navigate(tab,null,true);
  }
  function selectTab(next:Tab){navigate(next,null,Boolean(detail));}
+ function selectFeed(next:ExploreFeed){navigate("explorar",null,false,{feed:next});}
+ function selectProfile(next:ProfileView){
+   navigate("perfil",null,false,{profile:next});
+   window.requestAnimationFrame(()=>document.getElementById("client-main")?.focus({preventScroll:true}));
+ }
+ function focusSearch(){selectTab("explorar");window.requestAnimationFrame(()=>searchInput.current?.focus());}
  useEffect(()=>{
    const refreshOnFocus=()=>setReload(v=>v+1);
    window.addEventListener("focus",refreshOnFocus);
@@ -203,15 +230,6 @@ export function CustomerSocial({userId,email,onLogout}:{userId:string;email:stri
  function openMessages(id:string){
    setTargetChatOrg(id);selectTab("mensajes");
  }
- const nav=[
-  {id:"explorar" as Tab,label:"Explorar",Icon:Compass},
-  {id:"mapa" as Tab,label:"Mapa",Icon:MapPinned},
-  {id:"novedades" as Tab,label:"Novedades",Icon:Sparkles},
-  {id:"actividad" as Tab,label:"Mi actividad",Icon:CalendarDays},
-  {id:"favoritos" as Tab,label:"Favoritos",Icon:Heart},
-  {id:"mensajes" as Tab,label:"Mensajes",Icon:MessageCircle},
-  {id:"perfil" as Tab,label:"Mi perfil",Icon:UserRound},
- ];
  const renderBusinessCard=(org:Organization)=>{
   const offers=services.filter(s=>s.organization_id===org.id);
   const followed=favorites.includes(org.id);
@@ -240,130 +258,106 @@ export function CustomerSocial({userId,email,onLogout}:{userId:string;email:stri
    </article>;
  };
 
+ const visiblePosts=posts.filter(post=>listed.some(org=>org.id===post.organization_id));
+ const followingPosts=visiblePosts.filter(post=>favorites.includes(post.organization_id));
+ const nearBusinessIds=new Set(mapPoints.map(point=>point.organizationId));
+ const displayedBusinesses=feed==="cerca"?listed.filter(org=>nearBusinessIds.has(org.id)):listed;
+ const discoveryServices=services.filter(service=>listed.some(org=>org.id===service.organization_id&&normalizeProfileSections(org.profile_sections).includes("services"))).slice(0,6);
+ const renderPost=(post:BusinessPost)=><article key={post.id} className="as-social-news-post">
+   <button type="button" className="as-social-news-author" onClick={()=>openBusinessProfile(post.organization_id)}>
+     {mediaUrl(organizations.find(org=>org.id===post.organization_id)?.avatar_url)
+       ?<img src={mediaUrl(organizations.find(org=>org.id===post.organization_id)?.avatar_url)} alt=""/>
+       :<span>{orgName(post.organization_id).slice(0,1)}</span>}
+     <strong>{orgName(post.organization_id)}</strong><small>{new Date(post.created_at).toLocaleDateString("es-ES")}</small>
+   </button>
+   {post.body&&<p>{post.body}</p>}
+   {mediaUrl(post.media_url)&&post.media_kind==="image"&&<img className="as-social-news-media" src={mediaUrl(post.media_url)} alt={"Publicación de "+orgName(post.organization_id)}/>}
+   {mediaUrl(post.media_url)&&post.media_kind==="video"&&<BusinessVideo className="as-social-news-media" controls preload="metadata" src={mediaUrl(post.media_url)}/>}
+   <button type="button" className="button secondary small" onClick={()=>openMessages(post.organization_id)}><MessageCircle size={14}/> Contactar con el negocio</button>
+ </article>;
+ const renderActivity=()=><section className="as-client-activity" aria-labelledby="client-activity-title">
+   <div className="as-social-section-title"><span className="eyebrow">TU ACTIVIDAD</span><h2 id="client-activity-title">Mi actividad</h2><p>Solicitudes enviadas desde tu identidad Cliente. Las reservas automáticas todavía no están disponibles.</p></div>
+   <div className="as-social-mini-stats">
+     <div><CalendarDays size={20}/><strong>{requests.length}</strong><span>Solicitudes</span></div>
+     <div><Check size={20}/><strong>{requests.filter(request=>request.status==="accepted"||request.status==="completed").length}</strong><span>Aceptadas o completadas</span></div>
+     <div><Bookmark size={20}/><strong>{favorites.length}</strong><span>Negocios guardados</span></div>
+   </div>
+   {requests.length===0?<div className="as-social-empty-large"><CalendarDays size={27}/><h3>Tu actividad empieza aquí</h3><p>Explora un negocio y solicita uno de sus servicios. Verás su estado en esta sección.</p><button className="button primary" type="button" onClick={()=>selectTab("explorar")}>Explorar negocios <ArrowRight size={15}/></button></div>
+    :<div className="as-social-activity-list">{requests.map(request=><article key={request.id} className="as-social-activity-row">
+      <span className="as-social-activity-icon"><CalendarDays size={22}/></span>
+      <div><small>{orgName(request.organization_id)}</small><strong>{services.find(service=>service.id===request.service_id)?.title||"Solicitud de servicio"}</strong><p>{request.notes||"Sin comentarios"}{request.requested_date?" · Fecha deseada: "+request.requested_date:""}</p></div>
+      <span className={"as-social-request-state "+request.status}>{({new:"Pendiente",accepted:"Aceptada",rejected:"Rechazada",completed:"Completada"} as Record<string,string>)[request.status]||request.status}</span>
+    </article>)}</div>}
+ </section>;
  const feedback=notice?<div className="as-social-notice" role="status">{notice}<button type="button" onClick={()=>setNotice("")} aria-label="Cerrar mensaje">×</button></div>:null;
- return <div className="as-social-client">
-    <div className="as-social-client-top">
-      <div className="as-social-client-identity"><span className="as-social-client-avatar">{initials}</span>
-        <div><strong>{displayName}</strong><small>Tu espacio personal · Gratis</small></div></div>
+ return <div className="as-social-client app-has-bottom-nav">
+    <a href="#client-main" className="skip-link">Saltar al contenido</a>
+    <header className="as-social-client-top as-client-app-header">
+      <div className="as-client-brand"><Brand/><small>Tu espacio personal · Gratis</small></div>
       <div className="as-social-client-tools">
-        <button className="as-social-utility" onClick={refresh} aria-label="Actualizar datos" title="Actualizar datos"><RefreshCw size={18}/></button>
-        <AccountExperienceSwitcher experience="customer"/>
-        <button className="as-social-utility" onClick={onLogout} aria-label="Cerrar sesión" title="Cerrar sesión"><LogOut size={18}/></button>
+        <button className="as-social-utility" type="button" onClick={focusSearch} aria-label="Ir a búsqueda" title="Buscar negocios"><Search size={19}/></button>
+        <AccountActions experience="customer" onLogout={onLogout} onRefresh={refresh} onAccount={()=>selectProfile("configuracion")}/>
       </div>
-    </div>
-    <nav className="as-social-client-tabs" aria-label="Navegación Cliente">
-      {nav.map(({id,label,Icon})=><button key={id} type="button" onClick={()=>selectTab(id)} className={tab===id?"is-active":""} aria-current={tab===id?"page":undefined}>
-        <Icon size={17}/><span>{label}</span>
-      </button>)}
-    </nav>
-    <div className="as-social-client-content">
+    </header>
+    <AppSectionNavigation experience="customer" active={tab} onNavigate={id=>selectTab(id as Tab)}/>
+    <main className="as-social-client-content" id="client-main" tabIndex={-1}>
     {directoryLoading&&<p role="status">Cargando negocios publicados…</p>}
     {directoryError&&<div role="alert"><p>{directoryError}</p><button className="button secondary" type="button" onClick={refresh}>Reintentar carga</button></div>}
-    {tab==="explorar" && <>
+    {tab==="explorar"&&<>
       <section className="as-social-hero">
         <div><span className="eyebrow"><Sparkles size={12}/> TU CIUDAD, TUS SERVICIOS</span>
           <h1>Encuentra lo que necesitas.<br/><em>Cerca de ti.</em></h1>
-          <p>Descubre profesionales y negocios, guarda tus favoritos y habla con ellos desde AutonoService.</p>
-          <div className="as-social-hero-search"><Search size={19}/>
-           <input aria-label="Buscar negocios o servicios" placeholder="Buscar negocio, servicio, sector…" value={query} onChange={e=>setQuery(e.target.value)}/>
-          </div>
+          <p>Descubre negocios publicados, sus servicios y sus novedades.</p>
+          <div className="as-social-hero-search"><Search size={19}/><input ref={searchInput} aria-label="Buscar negocios o servicios" placeholder="Buscar negocio, servicio, sector…" value={query} onChange={event=>setQuery(event.target.value)}/></div>
         </div>
         <div className="as-social-hero-decoration" aria-hidden="true"><MapPinned size={85}/><span>DESCUBRE</span><i/></div>
       </section>
+      <nav className="as-client-discovery-tabs" aria-label="Contenido de Explorar">
+        {([{id:"para-ti",label:"Para ti"},{id:"siguiendo",label:"Siguiendo"},{id:"cerca",label:"Cerca de mí"}] as const).map(item=><button key={item.id} type="button" aria-current={feed===item.id?"page":undefined} className={feed===item.id?"is-active":""} onClick={()=>selectFeed(item.id)}>{item.label}</button>)}
+      </nav>
       <section className="as-social-discovery-heading">
-        <div><span className="eyebrow">EXPLORAR</span><h2>Negocios para descubrir</h2><p>Perfiles reales publicados por empresas inscritas.</p></div>
-        <label className="as-social-city-filter"><MapPin size={15}/>
-         <input placeholder="Filtrar localidad" aria-label="Filtrar por localidad" value={city} onChange={e=>setCity(e.target.value)}/></label>
+        <div><span className="eyebrow">EXPLORAR</span><h2>{feed==="siguiendo"?"Novedades de tus negocios":feed==="cerca"?"Negocios por localidad":"Negocios para descubrir"}</h2><p>{feed==="para-ti"?"Empresas por nombre y publicaciones recientes. Sin recomendaciones personalizadas.":feed==="siguiendo"?"Publicaciones de los negocios que guardas en Favoritos.":"Sedes con coordenadas reales publicadas por sus propietarios. No solicitamos tu ubicación."}</p></div>
+        <label className="as-social-city-filter"><MapPin size={15}/><input placeholder="Filtrar localidad" aria-label="Filtrar por localidad" value={city} onChange={event=>setCity(event.target.value)}/></label>
       </section>
       <div className="as-social-category-scroll" aria-label="Filtrar por categoría">
-        {categories.map(c=><button type="button" key={c} className={category===c?"is-active":""} aria-pressed={category===c} onClick={()=>setCategory(c)}>{c}</button>)}
+        {categories.map(item=><button type="button" key={item} className={category===item?"is-active":""} aria-pressed={category===item} onClick={()=>setCategory(item)}>{item}</button>)}
       </div>
-      <div className="as-social-business-grid">
-        {listed.map(renderBusinessCard)}
-      </div>
-      {!directoryLoading&&!directoryError&&listed.length===0&&<div className="as-social-empty-large"><SlidersHorizontal size={23}/><h3>No hemos encontrado negocios con esos filtros</h3><p>Prueba otro sector, servicio o localidad.</p></div>}
-      <div className="as-social-map-preview"><MapPinned size={20}/><div><strong>Mapa de tiendas y servicios</strong><p>Explora únicamente sedes que hayan publicado su ubicación exacta.</p><button className="button secondary small" type="button" onClick={()=>selectTab("mapa")}>Abrir mapa interactivo <ArrowRight size={14}/></button></div></div>
+      {feed==="siguiendo"?<>
+        {followingPosts.length?<div className="as-social-news-feed" aria-label="Publicaciones de negocios guardados">{followingPosts.map(renderPost)}</div>
+          :!directoryLoading&&<div className="as-social-empty-large"><Sparkles size={26}/><h3>Todavía no hay novedades con estos filtros</h3><p>Guarda negocios en Favoritos para seguir sus publicaciones, o cambia la búsqueda.</p><button className="button primary" type="button" onClick={()=>selectFeed("para-ti")}>Descubrir negocios</button></div>}
+      </>:<>
+        <div className="as-social-business-grid">{displayedBusinesses.map(renderBusinessCard)}</div>
+        {!directoryLoading&&!directoryError&&displayedBusinesses.length===0&&<div className="as-social-empty-large"><SlidersHorizontal size={23}/><h3>No hemos encontrado negocios con esos filtros</h3><p>{feed==="cerca"?"Prueba otra localidad. Aquí solo aparecen negocios con sedes y coordenadas publicadas.":"Prueba otro sector, servicio o localidad."}</p></div>}
+        {feed==="para-ti"&&discoveryServices.length>0&&<section className="as-client-discovery-section" aria-labelledby="discovery-services-title"><h2 id="discovery-services-title">Servicios para descubrir</h2><p className="live-muted">Servicios activos de los negocios que coinciden con tus filtros.</p><div className="as-client-services-grid">{discoveryServices.map(service=><button key={service.id} type="button" className="as-client-service-card" onClick={()=>{openBusinessProfile(service.organization_id);setCompanyTab("services");setChosenService(service.id);}}><span>{orgName(service.organization_id)}</span><strong>{service.title}</strong><small>{formatMoney(service.price_eur)}</small><span>Ver servicio <ArrowRight size={14}/></span></button>)}</div></section>}
+        {feed==="para-ti"&&visiblePosts.length>0&&<section className="as-client-discovery-section" aria-labelledby="discovery-posts-title"><h2 id="discovery-posts-title">Publicaciones recientes</h2><div className="as-social-news-feed">{visiblePosts.slice(0,6).map(renderPost)}</div></section>}
+        <div className="as-social-map-preview"><MapPinned size={20}/><div><strong>Mapa de tiendas y servicios</strong><p>Explora sedes que hayan publicado su ubicación exacta.</p><button className="button secondary small" type="button" onClick={()=>selectTab("mapa")}>Abrir mapa interactivo <ArrowRight size={14}/></button></div></div>
+      </>}
     </>}
     {tab==="mapa"&&<>
-  <div className="as-social-section-title"><span className="eyebrow">NEGOCIOS CERCA DE TI</span><h1>Explora tiendas en el mapa.</h1>
-    <p>Solo aparecen ubicaciones que sus propietarios han colocado y publicado expresamente. No inferimos direcciones ni mostramos pines ficticios.</p>
-  </div>
-  <div className="as-social-map-filters">
-    <label><span>Buscar negocios o servicios</span><input aria-label="Buscar negocios o servicios" value={query} onChange={e=>setQuery(e.target.value)}/></label>
-    <label><span>Localidad</span><input aria-label="Filtrar por localidad" value={city} onChange={e=>setCity(e.target.value)}/></label>
-  </div>
-  <div className="as-social-category-scroll" aria-label="Filtrar por categoría">
-    {categories.map(c=><button key={c} type="button" className={category===c?"is-active":""} aria-pressed={category===c} onClick={()=>setCategory(c)}>{c}</button>)}
-  </div>
-  <BusinessMap height={470} points={mapPoints}
-    onSelect={id=>{const point=mapPoints.find(point=>point.id===id);if(point)openBusinessProfile(point.organizationId);}}/>
-  <div className="as-social-map-results" aria-label="Sedes del mapa">
-    {mapPoints.map(point=><button key={point.id} type="button" className="button secondary small" onClick={()=>openBusinessProfile(point.organizationId)}>Ver perfil de {point.name}</button>)}
-  </div>
-  <p className="live-muted">Utiliza el buscador de Explorar si un negocio no ha publicado su ubicación. El mapa no solicita tu ubicación personal.</p>
- </>}
- {tab==="novedades"&&<>
-  <div className="as-social-section-title"><span className="eyebrow">COMUNIDAD</span>
-   <h1>Novedades de tus negocios</h1>
-   <p>Publicaciones auténticas de las empresas que has guardado como favoritas.</p></div>
-  {posts.filter(p=>favorites.includes(p.organization_id)).length===0
-    ?<div className="as-social-empty-large"><Sparkles size={26}/><h3>Todavía no tienes novedades</h3><p>Guarda un negocio en favoritos y verás sus publicaciones aquí.</p>
-      <button className="button primary" type="button" onClick={()=>selectTab("explorar")}>Descubrir negocios</button></div>
-    :<div className="as-social-news-feed">{posts.filter(p=>favorites.includes(p.organization_id)).map(post=><article key={post.id} className="as-social-news-post">
-      <button type="button" className="as-social-news-author" onClick={()=>openBusinessProfile(post.organization_id)}>
-       {mediaUrl(organizations.find(o=>o.id===post.organization_id)?.avatar_url)
-         ?<img src={mediaUrl(organizations.find(o=>o.id===post.organization_id)?.avatar_url)} alt=""/>
-         :<span>{orgName(post.organization_id).slice(0,1)}</span>}
-       <strong>{orgName(post.organization_id)}</strong><small>{new Date(post.created_at).toLocaleDateString("es-ES")}</small>
-      </button>
-      {post.body&&<p>{post.body}</p>}
-      {mediaUrl(post.media_url)&&post.media_kind==="image"&&<img className="as-social-news-media" src={mediaUrl(post.media_url)} alt={"Publicación de "+orgName(post.organization_id)}/>}
-      {mediaUrl(post.media_url)&&post.media_kind==="video"&&<BusinessVideo className="as-social-news-media" controls preload="metadata" src={mediaUrl(post.media_url)}/>}
-      <button type="button" className="button secondary small" onClick={()=>openMessages(post.organization_id)}><MessageCircle size={14}/> Contactar con el negocio</button>
-    </article>)}</div>}
-  </>}
-  {tab==="actividad"&&<>
-      <div className="as-social-section-title"><span className="eyebrow">TU ACTIVIDAD</span><h1>Todo lo que contratas, en un lugar.</h1><p>Solicitudes enviadas desde tu identidad Cliente a diferentes negocios.</p></div>
-      <div className="as-social-mini-stats">
-        <div><CalendarDays size={20}/><strong>{requests.length}</strong><span>Solicitudes</span></div>
-        <div><Check size={20}/><strong>{requests.filter(r=>r.status==="accepted"||r.status==="completed").length}</strong><span>Aceptadas o completadas</span></div>
-        <div><Bookmark size={20}/><strong>{favorites.length}</strong><span>Negocios guardados</span></div>
-      </div>
-      {requests.length===0?<div className="as-social-empty-large"><CalendarDays size={27}/><h3>Tu actividad empieza aquí</h3><p>Explora un negocio y solicita uno de sus servicios. Verás su estado en esta sección.</p><button className="button primary" type="button" onClick={()=>selectTab("explorar")}>Explorar negocios <ArrowRight size={15}/></button></div>
-      :<div className="as-social-activity-list">{requests.map(r=><article key={r.id} className="as-social-activity-row">
-        <span className="as-social-activity-icon"><CalendarDays size={22}/></span>
-        <div><small>{orgName(r.organization_id)}</small><strong>{services.find(s=>s.id===r.service_id)?.title||"Solicitud de servicio"}</strong>
-          <p>{r.notes||"Sin comentarios"}{r.requested_date?" · Fecha deseada: "+r.requested_date:""}</p></div>
-        <span className={"as-social-request-state "+r.status}>{({new:"Pendiente",accepted:"Aceptada",rejected:"Rechazada",completed:"Completada"} as Record<string,string>)[r.status]||r.status}</span>
-      </article>)}</div>}
+      <div className="as-social-section-title"><span className="eyebrow">NEGOCIOS CERCA DE TI</span><h1>Explora tiendas en el mapa.</h1><p>Solo aparecen ubicaciones que sus propietarios han colocado y publicado expresamente. No inferimos direcciones ni mostramos pines ficticios.</p></div>
+      <div className="as-social-map-filters"><label><span>Buscar negocios o servicios</span><input aria-label="Buscar negocios o servicios" value={query} onChange={event=>setQuery(event.target.value)}/></label><label><span>Localidad</span><input aria-label="Filtrar por localidad" value={city} onChange={event=>setCity(event.target.value)}/></label></div>
+      <div className="as-social-category-scroll" aria-label="Filtrar por categoría">{categories.map(item=><button key={item} type="button" className={category===item?"is-active":""} aria-pressed={category===item} onClick={()=>setCategory(item)}>{item}</button>)}</div>
+      {!directoryLoading&&<BusinessMap height={470} points={mapPoints} onSelect={id=>{const point=mapPoints.find(point=>point.id===id);if(point)openBusinessProfile(point.organizationId);}}/>}
+      <div className="as-social-map-results" aria-label="Sedes del mapa">{mapPoints.map(point=><button key={point.id} type="button" className="button secondary small" onClick={()=>openBusinessProfile(point.organizationId)}>Ver perfil de {point.name}</button>)}</div>
+      <p className="live-muted">El mapa no solicita tu ubicación personal. Puedes buscar por localidad desde Explorar.</p>
     </>}
     {tab==="favoritos"&&<>
-      <div className="as-social-section-title"><span className="eyebrow">TUS FAVORITOS</span><h1>Los negocios que te gustan.</h1><p>Guárdalos y encuéntralos siempre desde tu cuenta, incluso si cambias de dispositivo.</p></div>
-      {favoriteOrgs.length?<div className="as-social-business-grid">{favoriteOrgs.map(renderBusinessCard)}</div>
-       :<div className="as-social-empty-large"><Heart size={27}/><h3>Todavía no has guardado negocios</h3><p>Marca el corazón en cualquier negocio para añadirlo a favoritos.</p><button type="button" className="button primary" onClick={()=>selectTab("explorar")}>Descubrir negocios</button></div>}
+      <div className="as-social-section-title"><span className="eyebrow">TUS FAVORITOS</span><h1>Los negocios que te gustan.</h1><p>Guárdalos y encuéntralos desde tu cuenta. Sus publicaciones aparecen en Explorar → Siguiendo.</p></div>
+      {favoriteOrgs.length?<div className="as-social-business-grid">{favoriteOrgs.map(renderBusinessCard)}</div>:<div className="as-social-empty-large"><Heart size={27}/><h3>Todavía no has guardado negocios</h3><p>Marca el corazón en cualquier negocio para añadirlo a favoritos.</p><button type="button" className="button primary" onClick={()=>selectTab("explorar")}>Descubrir negocios</button></div>}
     </>}
-    {tab==="mensajes"&&<SocialInbox userId={userId} role="customer" organizations={organizations}
-      targetOrganizationId={targetChatOrg}/>}
+    {tab==="mensajes"&&<div className="as-social-section-title"><span className="eyebrow">CONVERSACIONES</span><h1>Mensajes</h1><p>Tus conversaciones y archivos privados con los negocios.</p></div>}
+    {messagesOpened&&<div hidden={tab!=="mensajes"} className="as-client-messages"><SocialInbox embedded active={tab==="mensajes"} userId={userId} role="customer" organizations={organizations} targetOrganizationId={targetChatOrg}/></div>}
     {tab==="perfil"&&<>
-      <div className="as-social-section-title"><span className="eyebrow">MI IDENTIDAD</span><h1>Tu perfil, a tu manera.</h1><p>Una sola identidad para tus espacios Empresa y Cliente. Cada negocio mantiene aparte su propia ficha comercial.</p></div>
-      <div className="as-social-profile-grid"><div className="as-social-profile-card">
-        <div className="as-social-profile-avatar">{initials}</div>
-        <h2>{[profile.first_name,profile.last_name].filter(Boolean).join(" ")||"Tu nombre"}</h2>
-        <p>{email}</p><span><ShieldCheck size={14}/> Información privada</span>
-        <div className="as-social-profile-stats"><strong>{favorites.length}<small>Favoritos</small></strong><strong>{requests.length}<small>Solicitudes</small></strong></div>
-      </div>
-      <form className="as-social-profile-form" onSubmit={saveProfile}>
-        <h2>Datos personales</h2><p>Se comparten con un negocio únicamente cuando confirmas una solicitud de servicio.</p>
-        <div className="as-social-two-fields">
-          <label>Nombre<input required maxLength={80} value={profile.first_name} onChange={e=>setProfile(p=>({...p,first_name:e.target.value}))}/></label>
-          <label>Apellidos<input required maxLength={100} value={profile.last_name} onChange={e=>setProfile(p=>({...p,last_name:e.target.value}))}/></label>
-          <label>Teléfono<input type="tel" maxLength={40} value={profile.phone} onChange={e=>setProfile(p=>({...p,phone:e.target.value}))}/></label>
-          <label>Localidad<input maxLength={100} value={profile.city} onChange={e=>setProfile(p=>({...p,city:e.target.value}))}/></label>
-        </div>
-        <button type="submit" disabled={busy} className="button primary"><Settings2 size={15}/> Guardar perfil</button>
-      </form></div>
+      <div className="as-social-section-title"><span className="eyebrow">MI IDENTIDAD</span><h1>Perfil</h1><p>Tu identidad, tus datos y tu actividad. Cada negocio mantiene aparte su ficha comercial.</p></div>
+      <section className="as-client-profile-summary"><div className="as-social-profile-avatar">{initials}</div><div><h2>{[profile.first_name,profile.last_name].filter(Boolean).join(" ")||displayName}</h2><p>{email}</p><span><ShieldCheck size={14}/> Información privada</span></div></section>
+      {profileView!=="resumen"&&<nav className="as-client-profile-nav" aria-label="Secciones de Perfil">{([{id:"resumen",label:"Mi perfil"},{id:"datos",label:"Mis datos"},{id:"actividad",label:"Mi actividad"},{id:"configuracion",label:"Configuración"}] as const).map(item=><button type="button" key={item.id} aria-current={profileView===item.id?"page":undefined} className={profileView===item.id?"is-active":""} onClick={()=>selectProfile(item.id)}>{item.label}</button>)}</nav>}
+      {profileView==="resumen"&&<div className="as-client-profile-actions"><button type="button" className="as-client-service-card" onClick={()=>selectProfile("datos")}><UserRound size={23}/><strong>Mis datos</strong><span>Nombre y datos de contacto que compartes al solicitar un servicio.</span></button><button type="button" className="as-client-service-card" onClick={()=>selectProfile("actividad")}><CalendarDays size={23}/><strong>Mi actividad</strong><span>{requests.length} solicitudes · {favorites.length} negocios guardados</span></button><button type="button" className="as-client-service-card" onClick={()=>selectProfile("configuracion")}><Settings2 size={23}/><strong>Configuración y cuenta</strong><span>Apariencia, cambio de experiencia y sesión.</span></button></div>}
+      {profileView==="datos"&&<form className="as-social-profile-form" onSubmit={saveProfile}><h2>Mis datos</h2><p>Se comparten con un negocio únicamente cuando confirmas una solicitud de servicio.</p><div className="as-social-two-fields"><label>Nombre<input required maxLength={80} value={profile.first_name} onChange={event=>setProfile(value=>({...value,first_name:event.target.value}))}/></label><label>Apellidos<input required maxLength={100} value={profile.last_name} onChange={event=>setProfile(value=>({...value,last_name:event.target.value}))}/></label><label>Teléfono<input type="tel" maxLength={40} value={profile.phone} onChange={event=>setProfile(value=>({...value,phone:event.target.value}))}/></label><label>Localidad<input maxLength={100} value={profile.city} onChange={event=>setProfile(value=>({...value,city:event.target.value}))}/></label></div><button type="submit" disabled={busy} className="button primary"><Settings2 size={15}/> Guardar perfil</button></form>}
+      {profileView==="actividad"&&renderActivity()}
+      {profileView==="configuracion"&&<section className="as-client-settings" aria-labelledby="client-settings-title"><h2 id="client-settings-title">Configuración de cuenta</h2><p>Una sola identidad para Empresa y Cliente. Cambiar de experiencia conserva tu sesión y no concede nuevos permisos.</p><div className="as-client-setting-row"><div><h3>Experiencia</h3><p>Accede a tu negocio con esta misma cuenta.</p></div><AccountExperienceSwitcher experience="customer"/></div><div className="as-client-setting-row"><div><h3>Apariencia</h3><p>Utiliza el tema claro u oscuro.</p></div><ThemeToggle/></div><div className="as-client-setting-row"><div><h3>Datos actualizados</h3><p>Vuelve a consultar negocios, solicitudes y favoritos.</p></div><button type="button" className="button secondary" onClick={refresh}><RefreshCw size={15}/> Actualizar datos</button></div><div className="as-client-setting-row"><div><h3>Sesión</h3><p>{email}</p></div><button type="button" className="button secondary" onClick={onLogout}><LogOut size={15}/> Cerrar sesión</button></div></section>}
     </>}
-    </div>
+    </main>
+    <AppBottomNavigation experience="customer" active={tab} onNavigate={id=>selectTab(id as Tab)} hidden={Boolean(detail)}/>
 
     {detail&&<Modal title={selectedOrganization?"Perfil de "+selectedOrganization.name:"Perfil comercial"} className="as-social-profile-dialog as-social-company-dialog"
       onClose={closeBusinessProfile}>

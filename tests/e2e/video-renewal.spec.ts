@@ -4,6 +4,8 @@ import { expect, test } from "@playwright/test";
 import { BUSINESS_MEDIA_BUCKET } from "../../src/lib/business-media";
 import { installSupabaseMock, MOCK_ORGANIZATION_ID, MOCK_SUPABASE_URL } from "./helpers/supabase";
 
+import { openBusinessProfileSection, openBusinessSection } from "./helpers/navigation";
+
 const clip = readFileSync(resolve("tests/fixtures/signed-video.webm"));
 
 for (const playing of [false, true]) {
@@ -55,22 +57,22 @@ for (const playing of [false, true]) {
       await page.getByRole("button", { name: "Ver perfil", exact: true }).click();
     } else {
       await page.goto("/empresa");
-      await page.getByRole("navigation", { name: "Módulos disponibles" })
-        .getByRole("button", { name: "Perfil público", exact: true }).click();
+      await openBusinessProfileSection(page, "Publicaciones y portfolio");
     }
-    const video = page.locator("video").first();
+    const video = playing ? page.getByRole("dialog").locator("video").first() : page.locator(".social-business-editor").locator("video").first();
+    await video.scrollIntoViewIfNeeded();
     await expect.poll(() => video.evaluate((element: HTMLVideoElement) => element.readyState)).toBeGreaterThanOrEqual(1);
-    await video.evaluate(async (element: HTMLVideoElement, startPlaying) => {
+    await video.evaluate((element: HTMLVideoElement) => {
+      element.pause();
       element.currentTime = 1;
       element.playbackRate = 0.75;
       element.volume = 0.3;
       element.muted = true;
       element.loop = true;
-      if (startPlaying) await element.play();
-      else element.pause();
-    }, playing);
+    });
     await expect.poll(() => video.evaluate((element: HTMLVideoElement) => element.seeking)).toBe(false);
     await expect.poll(() => video.evaluate((element: HTMLVideoElement) => element.currentTime)).toBeGreaterThan(0.9);
+    if (playing) await video.evaluate((element: HTMLVideoElement) => element.play());
     const previous = await video.getAttribute("src");
     await page.clock.fastForward(45_050);
     await expect(video).not.toHaveAttribute("src", previous!);
@@ -85,5 +87,24 @@ for (const playing of [false, true]) {
     expect(state.volume).toBeCloseTo(0.3);
     expect(state.muted).toBe(true);
     expect(revision).toBeGreaterThanOrEqual(2);
+    if (!playing) {
+      // Keeping the editor mounted must not leave an invisible video playing.
+      await video.evaluate((element: HTMLVideoElement) => element.play());
+      await openBusinessProfileSection(page, "Diseño y apariencia");
+      await expect.poll(() => video.evaluate((element: HTMLVideoElement) => element.paused)).toBe(true);
+      const hiddenSource = await video.getAttribute("src");
+      await page.clock.fastForward(45_050);
+      await expect(video).not.toHaveAttribute("src", hiddenSource!);
+      await expect.poll(() => video.evaluate((element: HTMLVideoElement) => element.readyState >= 1 && !element.seeking)).toBe(true);
+      expect(await video.evaluate((element: HTMLVideoElement) => element.paused)).toBe(true);
+      await openBusinessProfileSection(page, "Publicaciones y portfolio");
+      expect(await video.evaluate((element: HTMLVideoElement) => element.paused)).toBe(true);
+      expect(await video.evaluate((element: HTMLVideoElement) => element.currentTime)).toBeGreaterThan(0.9);
+      await video.evaluate((element: HTMLVideoElement) => element.play());
+      await openBusinessSection(page, "Inicio");
+      await expect.poll(() => video.evaluate((element: HTMLVideoElement) => element.paused)).toBe(true);
+      await page.clock.fastForward(45_050);
+      expect(await video.evaluate((element: HTMLVideoElement) => element.paused)).toBe(true);
+    }
   });
 }
