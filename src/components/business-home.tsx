@@ -4,16 +4,18 @@ import { ArrowRight, CalendarDays, ClipboardList, FileText, Image, LayoutDashboa
 import { MODULES, type ModuleId } from "@/lib/catalog";
 import { useEffect,useRef,useState } from "react";
 import { getSupabase } from "@/lib/supabase/client";
+import { BUSINESS_MANAGEMENT_ITEMS } from "@/lib/app-navigation";
 
-export type BusinessArea = "inicio" | "negocio" | "diseno" | "gestion" | "clientes" | "solicitudes-empresa" | "mensajes" | "sedes" | "workboard" | "herramientas" | "perfil";
+export type BusinessArea = "gestion-hub" | "agenda" | "inicio" | "negocio" | "diseno" | "gestion" | "clientes" | "solicitudes-empresa" | "mensajes" | "sedes" | "workboard" | "herramientas" | "perfil";
 
-type Company = { name: string; category: string; city: string; description: string; published: boolean };
+type Company = { id?: string; name: string; category: string; city: string; description: string; published: boolean };
 type BusinessHomeProps = {
   organization: Company | null;
   serviceCount: number;
   customerCount: number;
   requestCount: number;
   pendingCount: number;
+  recentRequests?: readonly {id:string;customer_name:string;notes:string;status:string;created_at:string}[];
   onNavigate: (area: BusinessArea) => void;
 };
 
@@ -25,17 +27,26 @@ type Shortcut = {
   value?: string;
 };
 
-export function BusinessHome({organization,serviceCount,customerCount,requestCount,pendingCount,onNavigate}:BusinessHomeProps) {
+export function BusinessHome({organization,serviceCount,customerCount,requestCount,pendingCount,recentRequests=[],onNavigate}:BusinessHomeProps) {
+  const db=getSupabase();
+  const [upcoming,setUpcoming]=useState<{id:string;title:string;scheduled_date:string;kind:string}[]>([]);
+  const [upcomingError,setUpcomingError]=useState(false);
+  const [upcomingReload,setUpcomingReload]=useState(0);
+  useEffect(()=>{
+    setUpcoming([]);setUpcomingError(false);
+    if(!db||!organization?.id)return;
+    let active=true;
+    const date=new Date().toLocaleDateString("sv-SE");
+    db.from("business_work_items").select("id,title,scheduled_date,kind").eq("organization_id",organization.id)
+      .in("status",["pending","in_progress"]).gte("scheduled_date",date).order("scheduled_date",{ascending:true}).limit(5)
+      .then(({data,error})=>{if(active){setUpcomingError(Boolean(error));if(!error)setUpcoming(data||[]);}});
+    return()=>{active=false;};
+  },[db,organization?.id,upcomingReload]);
   const shortcuts:Shortcut[]=[
-    {label:"Perfil del negocio",desc:"Datos comerciales y visibilidad en Explorar",area:"negocio",icon:Settings2,value:organization?.published?"Publicado":"Privado"},
-    {label:"Diseño del perfil",desc:"Organiza el portfolio, los servicios y las publicaciones",area:"diseno",icon:Image,value:"Personalizar"},
-    {label:"Servicios",desc:"Catálogo de servicios y precios reales",area:"gestion",icon:ShoppingBag,value:String(serviceCount)},
-    {label:"Clientes",desc:"Fichas CRM vinculadas a solicitudes",area:"clientes",icon:UsersRound,value:String(customerCount)},
-    {label:"Solicitudes",desc:"Revisar y actualizar estados",area:"solicitudes-empresa",icon:ClipboardList,value:String(requestCount)},
-    {label:"Mensajes",desc:"Conversa con clientes de tu negocio",area:"mensajes",icon:MessageCircle},
-    {label:"Mis tiendas",desc:"Sedes y ubicaciones de tu empresa",area:"sedes",icon:MapPin},
-    {label:"Proyectos y agenda",desc:"Organiza trabajos y citas internas",area:"workboard",icon:CalendarDays},
-    {label:"Herramientas",desc:"Todos los módulos y su estado de desarrollo",area:"herramientas",icon:LayoutDashboard},
+    {label:"Solicitudes",desc:"Revisar y actualizar solicitudes recibidas",area:"solicitudes-empresa",icon:ClipboardList,value:String(pendingCount)+" pendientes"},
+    {label:"Servicios",desc:"Catálogo y precios de tu empresa",area:"gestion",icon:ShoppingBag,value:String(serviceCount)},
+    {label:"Mensajes",desc:"Conversaciones con tus clientes",area:"mensajes",icon:MessageCircle},
+    {label:"Perfil del negocio",desc:"Datos comerciales, diseño y publicaciones",area:"negocio",icon:Settings2,value:organization?.published?"Publicado":"Privado"},
   ];
   return (
     <div className="business-live-home">
@@ -65,7 +76,7 @@ export function BusinessHome({organization,serviceCount,customerCount,requestCou
         <button type="button" className="button primary" onClick={()=>onNavigate(!organization.description.trim()?"negocio":"gestion")}>{!organization.description.trim()?"Editar perfil del negocio":"Añadir servicio"} <ArrowRight size={16}/></button>
       </section>}
       <div className="business-live-section-head">
-        <h3>Tus herramientas</h3><span>Funcionalidades actuales y próximas</span>
+        <h3>Accesos rápidos</h3><button className="button secondary small" type="button" onClick={()=>onNavigate("gestion-hub")}>Abrir Gestión <ArrowRight size={15}/></button>
       </div>
       <div className="business-live-shortcuts">
         {shortcuts.map(({label,desc,area,icon:Icon,value})=>
@@ -76,17 +87,15 @@ export function BusinessHome({organization,serviceCount,customerCount,requestCou
             <ArrowRight size={16} aria-hidden="true"/>
           </button>)}
       </div>
-      <div className="business-live-section-head"><h3>En desarrollo</h3><span>Se activarán por fases</span></div>
-      <div className="business-live-preview-list">
-        <span><CalendarDays size={17}/> Citas y reservas</span>
-        <span><FileText size={17}/> Presupuestos y facturación</span>
-        <span><WalletCards size={17}/> Cobros</span>
-        <span><Image size={17}/> Galerías de entrega</span>
-
-      </div>
+      {recentRequests.length>0&&<section className="live-card business-recent-activity"><div className="business-live-section-head"><h3>Actividad reciente</h3><button className="button secondary small" type="button" onClick={()=>onNavigate("solicitudes-empresa")}>Ver solicitudes</button></div>{recentRequests.slice(0,3).map(request=><article className="live-row" key={request.id}><div><strong>{request.customer_name||"Cliente"}</strong><p>{request.notes||"Solicitud recibida"}</p></div><span className="live-status">{({new:"Nueva",accepted:"Aceptada",rejected:"Rechazada",completed:"Completada"} as Record<string,string>)[request.status]||request.status}</span></article>)}</section>}
+      {(upcoming.length>0||upcomingError)&&<section className="live-card business-upcoming"><div className="business-live-section-head"><h3>Próximos trabajos y citas internas</h3><button className="button secondary small" type="button" onClick={()=>onNavigate("agenda")}>Abrir Agenda</button></div>{upcomingError?<p className="live-muted">No se pudo consultar la planificación. <button className="button secondary small" type="button" onClick={()=>setUpcomingReload(value=>value+1)}>Reintentar planificación</button></p>:upcoming.map(item=><article className="live-row" key={item.id}><strong>{item.title}</strong><time dateTime={item.scheduled_date}>{item.scheduled_date}</time></article>)}</section>}
       <p className="business-live-disclaimer"><ShieldCheck size={15}/> La cuenta, los servicios y el CRM son reales. No se emiten todavía facturas, pagos ni reservas automáticas.</p>
     </div>
   );
+}
+
+export function BusinessManagement({onNavigate,hasOrganization}:{onNavigate:(area:BusinessArea)=>void;hasOrganization:boolean}){
+ return <section className="business-management" aria-label="Gestión de tu negocio"><div className="business-live-section-head"><div><h2>Gestión de tu negocio</h2><p className="live-muted">Clientes, servicios, solicitudes y herramientas de la empresa activa.</p></div></div>{!hasOrganization&&<div className="business-live-next"><h3>Registra tu empresa</h3><p>Completa los datos comerciales para empezar a utilizar sus herramientas.</p><button type="button" className="button primary" onClick={()=>onNavigate("gestion")}>Crear empresa</button></div>}<div className="business-live-shortcuts">{BUSINESS_MANAGEMENT_ITEMS.map(item=><button type="button" className="business-live-shortcut" key={item.id} onClick={()=>onNavigate(item.id as BusinessArea)}><span className="business-live-shortcut-copy"><strong>{item.label}</strong><small>{item.description}</small></span><ArrowRight size={17}/></button>)}</div></section>;
 }
 
 const working: Partial<Record<ModuleId,BusinessArea>>={

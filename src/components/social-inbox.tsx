@@ -18,7 +18,7 @@ type Draft = { body:string; file:File|null };
 type History = { messages:Message[]; hasOlder:boolean };
 type Props = {
  userId:string; role:ConversationContext; organizationId?:string;
- targetOrganizationId?:string|null; organizations?:Org[];
+ targetOrganizationId?:string|null; organizations?:Org[]; active?:boolean; embedded?:boolean;
 };
 const EMPTY_DRAFT:Draft={body:"",file:null};
 const messageFields="id,conversation_id,sender_id,actor_role,body,created_at,attachment_path,attachment_name,attachment_mime,attachment_size";
@@ -28,7 +28,7 @@ export function SocialInbox(props:Props){
  return <ContextInbox key={props.userId+":"+props.role} {...props}/>;
 }
 
-function ContextInbox({userId,role,organizationId,targetOrganizationId,organizations=[]}:Props){
+function ContextInbox({userId,role,organizationId,targetOrganizationId,organizations=[],active:isActive=true,embedded=false}:Props){
  const db=getSupabase();
  const [threads,setThreads]=useState<Conversation[]>([]);
  const [selectedKey,setSelectedKey]=useState(role==="customer"&&targetOrganizationId?`organization:${targetOrganizationId}`:"");
@@ -64,12 +64,14 @@ function ContextInbox({userId,role,organizationId,targetOrganizationId,organizat
  }));
  useEffect(()=>{mounted.current=true;return ()=>{mounted.current=false;};},[]);
  useEffect(()=>{
-   const interval=window.setInterval(refresh,6000);
+   if(!isActive)return;
+   const tick=()=>{if(document.visibilityState==="visible")refresh();};
+   const interval=window.setInterval(tick,6000);
    const onVisible=()=>{if(document.visibilityState==="visible")refresh();};
-   window.addEventListener("focus",refresh);
+   window.addEventListener("focus",tick);
    document.addEventListener("visibilitychange",onVisible);
-   return ()=>{window.clearInterval(interval);window.removeEventListener("focus",refresh);document.removeEventListener("visibilitychange",onVisible);};
- },[]);
+   return ()=>{window.clearInterval(interval);window.removeEventListener("focus",tick);document.removeEventListener("visibilitychange",onVisible);};
+ },[isActive]);
 
  // A profile's Message button selects its destination once. Polling must never
  // override the conversation the person subsequently chooses themselves.
@@ -78,6 +80,7 @@ function ContextInbox({userId,role,organizationId,targetOrganizationId,organizat
  },[role,targetOrganizationId]);
 
  useEffect(()=>{
+   if(!isActive)return;
    if(!db){setError("No existe conexión con Supabase.");return;}
    let active=true;
    if(role==="business"&&!ownedIds.length){setThreads([]);setSelectedKey("");return;}
@@ -95,10 +98,11 @@ function ContextInbox({userId,role,organizationId,targetOrganizationId,organizat
         });
       });
    return ()=>{active=false;};
- },[db,role,ownedSignature,userId,targetOrganizationId,refreshId]);
+ },[db,role,ownedSignature,userId,targetOrganizationId,refreshId,isActive]);
 
  useEffect(()=>{
    const version=++messageLoadVersion.current;
+   if(!isActive)return;
    setLoadingOlder(false);
    if(!db||!selected){setLoadingMessages(false);return;}
    let active=true;
@@ -120,13 +124,13 @@ function ContextInbox({userId,role,organizationId,targetOrganizationId,organizat
        });
      });
    return ()=>{active=false;};
- },[db,selected,refreshId]);
+ },[db,selected,refreshId,isActive]);
 
  // Keep the newest page in view without dragging someone away from older
  // messages they are reading. Prepending history preserves the scroll position.
  useLayoutEffect(()=>{
    const log=logRef.current;
-   if(!log||!messages.length)return;
+   if(!isActive||!log||!messages.length)return;
    const previous=scrollState.current;
    const first=messages[0].id,last=messages[messages.length-1].id;
    if(previous.thread===selected&&previous.last===last&&previous.first!==first){
@@ -137,12 +141,12 @@ function ContextInbox({userId,role,organizationId,targetOrganizationId,organizat
    const bottom=log.scrollHeight-log.scrollTop-log.clientHeight<48;
    scrollState.current={thread:selected,first,last,height:log.scrollHeight,atBottom:bottom};
    setAtBottom(bottom);
- },[selected,messages]);
+ },[selected,messages,isActive]);
 
  // Acknowledge data that has actually rendered, using the server's message
  // timestamp rather than this device's clock. Hidden tabs do not mark reads.
  useEffect(()=>{
-   if(!db||!selected||!atBottom||document.visibilityState!=="visible")return;
+   if(!isActive||!db||!selected||!atBottom||document.visibilityState!=="visible")return;
    const cursor=latestReadCursor(messages);
    if(!cursor||laterReadCursor(readCursors.current[selected],cursor)!==cursor||readCursors.current[selected]===cursor)return;
    let active=true;
@@ -160,9 +164,10 @@ function ContextInbox({userId,role,organizationId,targetOrganizationId,organizat
      });
    });
    return ()=>{active=false;window.cancelAnimationFrame(frame);};
- },[db,selected,messages,role,userId,refreshId,atBottom]);
+ },[db,selected,messages,role,userId,refreshId,atBottom,isActive]);
 
  useEffect(()=>{
+   if(!isActive)return;
    if(!db||threads.length===0){setUnread({});return;}
    let active=true;
    const ids=threads.map(t=>t.id);
@@ -181,7 +186,7 @@ function ContextInbox({userId,role,organizationId,targetOrganizationId,organizat
      setUnread(counts);
    });
    return ()=>{active=false;};
- },[db,threads,role,userId,refreshId]);
+ },[db,threads,role,userId,refreshId,isActive]);
 
  async function loadOlder(){
    if(!db||!selected||!history?.hasOlder||loadingOlder||loadingMessages)return;
@@ -205,7 +210,7 @@ function ContextInbox({userId,role,organizationId,targetOrganizationId,organizat
  async function send(event:FormEvent){
    event.preventDefault();
    const body=draft.trim(),sendingKey=selectedKey,sendingFile=file;
-   if(!db||(!body&&!sendingFile)||body.length>2000||loading||(!selected&&!newTarget))return;
+   if(!isActive||!db||(!body&&!sendingFile)||body.length>2000||loading||(!selected&&!newTarget))return;
    setLoading(true);setError("");
    try {
      let threadId=selected;
@@ -263,17 +268,17 @@ function ContextInbox({userId,role,organizationId,targetOrganizationId,organizat
    if(error||!data?.signedUrl){setError(error?.message||"No se pudo abrir el adjunto.");return;}
    window.location.assign(data.signedUrl);
  }
- const isActive=(t:Conversation)=>conversationKey(t,role)===selectedKey;
+ const isSelectedThread=(t:Conversation)=>conversationKey(t,role)===selectedKey;
  return <section className="as-social-inbox" aria-label="Mensajes reales">
    <div className="as-social-inbox-intro">
-     <div><span className="eyebrow">CONVERSACIONES</span><h2>Mensajes</h2><p>{role==="business"?"Conversaciones de tus negocios, reunidas en una sola bandeja.":"Tus conversaciones privadas con los negocios."} Se actualizan automáticamente.</p></div>
+     {!embedded&&<div><span className="eyebrow">CONVERSACIONES</span><h2>Mensajes</h2><p>{role==="business"?"Conversaciones de tus negocios, reunidas en una sola bandeja.":"Tus conversaciones privadas con los negocios."} Se actualizan automáticamente.</p></div>}
      <button type="button" className="button secondary" onClick={refresh}><RefreshCw size={15}/> Actualizar</button>
    </div>
    <div className="as-social-chat-grid">
     <aside className="as-social-thread-list" aria-label="Tus conversaciones">
       {threads.length===0&&!newTarget&&<div className="as-social-empty"><Inbox size={25}/><strong>Sin conversaciones todavía</strong><span>{role==="customer"?"Visita un negocio y pulsa «Mensaje» para escribirle.":"Las conversaciones aparecerán cuando alguien contacte con tu negocio."}</span></div>}
       {threads.map(thread=><button key={thread.id} type="button"
-       className={isActive(thread)?"as-social-thread is-active":"as-social-thread"}
+       className={isSelectedThread(thread)?"as-social-thread is-active":"as-social-thread"}
        onClick={()=>{setSelectedKey(conversationKey(thread,role));setError("");}}>
          <span className="as-social-thread-avatar"><MessageCircle size={17}/></span>
          <span><strong>{role==="business"?(thread.customer_display_name||"Cliente")+" · "+(organizations.find(o=>o.id===thread.organization_id)?.name||"Negocio"):

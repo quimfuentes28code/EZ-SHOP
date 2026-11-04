@@ -21,7 +21,7 @@ test("los módulos guardados y sus borradores permanecen en su empresa", async (
   await editor.getByRole("button", { name: "Guardar selección", exact: true }).click();
   await expect(editor).toContainText("Herramientas seleccionadas guardadas");
   await expect(primaryGrid.getByRole("button", { name: /^Clientes/ })).toHaveCount(0);
-  await page.getByRole("combobox", { name: "Negocios anteriores", exact: true }).selectOption(second);
+  await page.getByRole("combobox", { name: "Cambiar de empresa activa", exact: true }).selectOption(second);
   await expect(editor.getByRole("checkbox", { name: "Servicios", exact: true })).not.toBeChecked();
   await expect(primaryGrid.getByRole("button", { name: /^Clientes/ })).toBeVisible();
   expect(tables.organization_module_settings).toHaveLength(1);

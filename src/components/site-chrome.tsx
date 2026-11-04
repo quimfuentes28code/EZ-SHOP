@@ -5,7 +5,7 @@ import { ExperienceSwitcher } from "./experience-switcher";
 import { ThemeToggle } from "./theme-toggle";
 export function SiteChrome({ children }: { children: React.ReactNode }) {
   const path = usePathname();
-  if (path === "/empresa" || path === "/demo/empresa") return <>{children}</>;
+  if (path === "/cliente" || path === "/empresa" || path === "/demo/empresa") return <>{children}</>;
   const realAccountArea = path === "/empresa" || path === "/cliente" || path === "/real" || path.startsWith("/registro/empresa") || path.startsWith("/registro/cliente");
   return (
     <>

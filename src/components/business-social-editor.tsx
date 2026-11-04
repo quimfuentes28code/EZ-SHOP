@@ -13,8 +13,10 @@ type Post={id:string;organization_id:string;body:string;media_url:string;media_k
 const accepted=["image/jpeg","image/png","image/webp","video/mp4","video/webm"];
 const accents=["#A47B53","#4E807C","#8A6DC2","#BB705E","#446B92","#647748"];
 
-export function BusinessSocialEditor({organizationId,organizationPublished,onProfileChange}:{
+export function BusinessSocialEditor({organizationId,organizationPublished,onProfileChange,section="all",active=true}:{
  organizationId:string;organizationPublished?:boolean;onProfileChange?:()=>void;
+ section?:"appearance"|"posts"|"visibility"|"all";
+ active?:boolean;
 }){
  const db=getSupabase();
  const [company,setCompany]=useState<CompanyIdentity|null>(null);
@@ -203,10 +205,10 @@ export function BusinessSocialEditor({organizationId,organizationPublished,onPro
  }
  return <section className="live-card social-business-editor">
   <div className="business-live-section-head"><div><span className="eyebrow">MI MARCA Y MI COMUNIDAD</span>
-    <h2>Diseño del perfil público</h2>
+    <h2>{section==="appearance"?"Diseño y apariencia":section==="posts"?"Publicaciones y portfolio":section==="visibility"?"Visibilidad pública":"Diseño del perfil público"}</h2>
     <p className="live-muted">Estás editando el perfil de <strong>{company?.name||"tu empresa"}</strong>. La portada, el logo y las publicaciones se guardan por separado para cada negocio.</p>
   </div></div>
-  {company&&<div className="business-live-publication" role="status">
+  {company&&(section==="all"||section==="visibility")&&<div className="business-live-publication" role="status">
     <div><strong>{company.name}: {company.published?"perfil público":"perfil privado"}</strong>
       <p>Portada: {company.cover_url?"imagen guardada":"sin imagen"} · Logo: {company.avatar_url?"imagen guardada":"sin imagen"}</p>
       <p>{company.published?"Los clientes pueden encontrar esta empresa y abrir su perfil comercial.":"Tus cambios están guardados. Publicar el negocio mostrará su perfil y las sedes y publicaciones que hayas marcado como públicas."}</p>
@@ -216,6 +218,7 @@ export function BusinessSocialEditor({organizationId,organizationPublished,onPro
       {company.published&&<a className="button secondary" href={"/cliente?negocio="+encodeURIComponent(company.id)}>Ver como Cliente</a>}
     </div>
   </div>}
+  <div hidden={section!=="all"&&section!=="appearance"} data-profile-editor-section="appearance">
   <section className="as-profile-layout-editor" aria-labelledby="profile-layout-title">
     <div className="business-live-section-head"><div>
       <span className="eyebrow">MI ESCAPARATE</span>
@@ -268,7 +271,9 @@ export function BusinessSocialEditor({organizationId,organizationPublished,onPro
     </div></div>
     <button type="submit" className="button primary" disabled={busy}>Guardar estilo</button>
   </form>
-  <div className="social-business-divider"/>
+  </div>
+  <div hidden={section!=="all"&&section!=="posts"} data-profile-editor-section="posts">
+  {section==="all"&&<div className="social-business-divider"/>}
   <div className="business-live-section-head"><div><span className="eyebrow">COMPARTIR NOVEDADES</span>
     <h2>Publicaciones de tu empresa</h2>
     <p className="live-muted">Fotos, vídeos cortos, noticias y ofertas para las personas que siguen tu negocio.</p>
@@ -291,13 +296,14 @@ export function BusinessSocialEditor({organizationId,organizationPublished,onPro
         <span>{post.published?"Público":"Borrador"}</span></div>
       {post.body&&<p>{post.body}</p>}
       {post.media_url&&mediaUrls[post.media_url]&&post.media_kind==="image"&&<img src={mediaUrls[post.media_url]} alt="Imagen de publicación"/>}
-      {post.media_url&&mediaUrls[post.media_url]&&post.media_kind==="video"&&<BusinessVideo controls preload="metadata" src={mediaUrls[post.media_url]}/>}
+      {post.media_url&&mediaUrls[post.media_url]&&post.media_kind==="video"&&<BusinessVideo active={active&&(section==="all"||section==="posts")} controls preload="metadata" src={mediaUrls[post.media_url]}/>}
       {post.media_url&&!mediaUrls[post.media_url]&&<p className="live-muted">Cargando archivo o archivo no disponible.</p>}
       <div className="social-post-actions">
        <button type="button" className="button secondary small" onClick={()=>toggle(post.id,post.published)} disabled={busy}>{post.published?<EyeOff size={14}/>:<Eye size={14}/>} {post.published?"Hacer privado":"Publicar"}</button>
        <button type="button" className="button secondary small" onClick={()=>remove(post.id)} disabled={busy}><Trash2 size={14}/> Eliminar</button>
       </div>
     </article>)}
+  </div>
   </div>
   {message&&<p className="live-alert" role="status">{message}</p>}
   <p className="live-muted"><ShieldCheck size={13}/> Los archivos de borradores requieren acceso autorizado. Publica solo fotografías y vídeos que tengas permiso para compartir. Los enlaces que genera esta versión duran 60 segundos; retirar una publicación no recupera copias ya descargadas.</p>

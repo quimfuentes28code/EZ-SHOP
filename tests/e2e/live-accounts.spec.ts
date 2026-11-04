@@ -1,16 +1,18 @@
 import { expect, test } from "@playwright/test";
 import { installSupabaseMock, MOCK_ORGANIZATION_ID } from "./helpers/supabase";
+import { switchAccountExperience, openAccountSettings } from "./helpers/navigation";
 
 test("las cuentas reales conservan una identidad al cambiar entre experiencias", async ({ page }) => {
   const { requests } = await installSupabaseMock(page);
   await page.goto("/empresa");
   await expect(page.getByRole("heading", { name: "Estudio de prueba", exact: true })).toBeVisible();
-  await page.getByRole("combobox", { name: "Cambiar experiencia de la cuenta" }).selectOption("customer");
+  await switchAccountExperience(page, "customer");
   await expect(page).toHaveURL(/\/cliente$/);
   await expect(page.getByText("Tu espacio personal · Gratis", { exact: true })).toBeVisible();
-  await page.getByRole("combobox", { name: "Cambiar experiencia de la cuenta" }).selectOption("business");
+  await switchAccountExperience(page, "business");
   await expect(page).toHaveURL(/\/empresa$/);
-  await expect(page.getByText("persona@example.test", { exact: true })).toBeVisible();
+  await openAccountSettings(page);
+  await expect(page.getByText(/Email verificado en tu cuenta: persona@example.test/)).toBeVisible();
   expect(requests.filter((request) => request.url.includes("/auth/v1/signup"))).toHaveLength(0);
 });
 

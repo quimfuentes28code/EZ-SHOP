@@ -1,7 +1,9 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { SiteChrome } from "@/components/site-chrome";
 import "./globals.css";
 import "./visual-identity.css";
+
+export const viewport: Viewport = { width: "device-width", initialScale: 1, viewportFit: "cover", interactiveWidget: "resizes-content" };
 
 export const metadata: Metadata = {
   title: "AutonoService — Tu negocio. Más fácil.",

@@ -1,5 +1,5 @@
 "use client";
-import { useEffect,useState,type FormEvent } from "react";
+import { useEffect,useRef,useState,type FormEvent } from "react";
 import { CalendarDays, ClipboardList, FileText, FolderKanban, Package, Wrench, Plus, ShieldCheck } from "lucide-react";
 import { getSupabase } from "@/lib/supabase/client";
 
@@ -19,7 +19,14 @@ const states:{value:Status;label:string}[]=[
 ];
 export function BusinessWorkboard({organizationId,initialKind}:{organizationId:string;initialKind?:Kind}){
  const db=getSupabase();
+ // A new company's board may mount while hidden. Apply its entry point once
+ // when first opened, then preserve the kind alongside the unsaved record.
  const [kind,setKind]=useState<Kind>(initialKind||"project");
+ const initialViewSet=useRef(Boolean(initialKind));
+ useEffect(()=>{
+  if(initialViewSet.current||!initialKind)return;
+  initialViewSet.current=true;setKind(initialKind);
+ },[initialKind]);
  const [items,setItems]=useState<Item[]>([]);
  const [title,setTitle]=useState("");const [details,setDetails]=useState("");
  const [date,setDate]=useState("");const [amount,setAmount]=useState("");
